@@ -22,6 +22,17 @@
     "target_stock": { "grain": 260, "salt": 180, "herring": 150, "timber": 120, "cloth": 70 }
   },
   {
+    "id": "bremen",
+    "name": "Bremen",
+    "region": "Nordsee",
+    "population": 10000,
+    "position": { "x": 583, "y": 634 },
+    "production": { "grain": 5, "cloth": 1 },
+    "consumption": { "salt": 3, "herring": 3, "timber": 2 },
+    "stock": { "grain": 280, "salt": 95, "herring": 100, "timber": 85, "cloth": 65 },
+    "target_stock": { "grain": 230, "salt": 150, "herring": 130, "timber": 115, "cloth": 60 }
+  },
+  {
     "id": "visby",
     "name": "Visby",
     "region": "Gotland",
@@ -31,5 +42,16 @@
     "consumption": { "grain": 5, "salt": 5, "cloth": 1 },
     "stock": { "grain": 95, "salt": 90, "herring": 260, "timber": 170, "cloth": 25 },
     "target_stock": { "grain": 160, "salt": 150, "herring": 150, "timber": 120, "cloth": 45 }
+  },
+  {
+    "id": "danzig",
+    "name": "Danzig",
+    "region": "Preussen",
+    "population": 15000,
+    "position": { "x": 971, "y": 545 },
+    "production": { "grain": 9, "timber": 4 },
+    "consumption": { "salt": 5, "herring": 4, "cloth": 2 },
+    "stock": { "grain": 420, "salt": 120, "herring": 115, "timber": 210, "cloth": 35 },
+    "target_stock": { "grain": 280, "salt": 190, "herring": 155, "timber": 150, "cloth": 70 }
   }
 ]

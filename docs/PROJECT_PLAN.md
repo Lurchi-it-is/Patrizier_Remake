@@ -1,6 +1,6 @@
 # Projektplan: Hanseatische Warenwirtschaftssimulation
 
-Version: 0.2.6-foundation  
+Version: 0.2.8-separated-executables
 Datum: 2026-05-31  
 Repo: https://github.com/Lurchi-it-is/Patrizier_Remake.git
 

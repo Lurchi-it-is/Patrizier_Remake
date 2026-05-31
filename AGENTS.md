@@ -11,6 +11,7 @@ Es muss immer in diesem Repository gearbeitet werden.
 ## Projektkontext
 
 - Der Map Editor ist nur ein Feature des Spiels, um Custom-Karten zu erzeugen.
+- Das Hauptspiel und der Map Editor muessen als zwei getrennte Exe-Dateien ausgeliefert werden.
 
 ## Arbeitsregeln
 
