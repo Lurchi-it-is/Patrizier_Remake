@@ -1,6 +1,6 @@
 # Architektur
 
-Version: 0.2.32-continuous-ship-travel
+Version: 0.2.37-player-ship-trading
 
 ## Leitidee
 
@@ -14,7 +14,7 @@ Die Wirtschaftssimulation soll datengetrieben und testbar bleiben. Godot rendert
 - `scripts/data/`: Laden und Validieren der Kataloge zur Laufzeit.
 - `scripts/simulation/`: Engine-nahe, aber UI-unabhaengige Simulationslogik.
 - `scripts/ui/`: Prototyp-Visualisierung fuer realitaetsnahes Karten-Asset, feste Hauptgame-Staedte, klickbare Karteneditor-Punkte, Mouseover-Namen, Stadt-Grundwerte, Zoom/Pan, Piratenrisiko und Status.
-- `assets/maps/`: generierte neutrale Hanseregion-Karte im modernen Hanse-Seekartenstil ohne Laendergrenzen, mit Metadaten, breiter lesbaren Wasserwegen und automatisch erzeugten Navigationsdaten fuer Wasserpfade.
+- `assets/maps/`: generierte neutrale Hanseregion-Weltkarte als natuerlichere Draufsicht ohne Laendergrenzen und Kartenbeschriftung, mit satelliteninspirierten historischen Landbedeckungsstrukturen, Metadaten, breiter lesbaren Wasserwegen und automatisch erzeugten Navigationsdaten fuer Wasserpfade.
 - `scenes/`: Godot-Szenen fuer Einstieg, Karte und spaetere UI.
 - `tools/`: lokale Validierung und Projektpflege.
 
@@ -29,6 +29,7 @@ Die Wirtschaftssimulation soll datengetrieben und testbar bleiben. Godot rendert
 - Stadtmarker koennen getrennte Karten-/Hafenpositionen nutzen, damit wassergebundene Handelsorte auf dem tatsaechlich genutzten Gewaesserzugang liegen.
 - Schiffsbewegung nutzt vorberechnete Navigationspfade aus `assets/maps/hanse_navigation_1600x900.json`; direkte Linien dienen nur als Fallback, falls eine Route fehlt.
 - Das Hauptspiel fuehrt einen kontinuierlichen Simulations-Takt mit einstellbarer Geschwindigkeit; Wirtschaftstage werden bei vollen Simulationstagen abgearbeitet, Schiffspositionen werden fortlaufend interpoliert.
+- KI-Haendler kaufen und verkaufen im Hauptspiel gegen echte Stadtlager; Balancing-Metriken werden als JSONL nach `user://balance_metrics.jsonl` geschrieben.
 - Der Hanseorte-Katalog priorisiert Kuesten-, Sund-, Haff- und Hafenstandorte, wenn weitere Handelsorte ergaenzt werden.
 - `scenes/launcher.tscn` ist der technische Godot-Projektstart und waehlt anhand des Export-Feature-Tags `main_game` oder `map_editor` die eigentliche Einstiegsszene.
 - `scenes/main_game.tscn` nutzt `scripts/main_game.gd`; `scenes/map_editor.tscn` nutzt `scripts/map_editor.gd`.

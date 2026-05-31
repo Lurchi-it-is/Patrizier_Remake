@@ -162,6 +162,7 @@ $requiredPaths = @(
     "scripts\map_editor.gd",
     "scripts\data\catalog_loader.gd",
     "scripts\simulation\simulation_state.gd",
+    "scripts\simulation\balance_metrics_logger.gd",
     "scripts\simulation\trade_price.gd",
     "scripts\simulation\combat_resolver.gd",
     "scripts\ui\map_view.gd",

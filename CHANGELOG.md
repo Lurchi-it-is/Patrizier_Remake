@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.2.37-player-ship-trading - 2026-05-31
+
+- Spielerschiff startet in Luebeck und kann per Rechtsklick auf Wasser oder Staedte ueber Wasserpfade bewegt werden.
+- Stadt-Rechtsklick am aktuellen Hafen oeffnet ein Handelsfenster mit Waren, Bestand, Preis und einfacher Kaufen-/Verkaufen-Aktion.
+- Statusbereich zeigt Spielerschiff, Ladung und Restreisezeit; ein Button spult gezielt bis zur Ankunft am aktuellen Ziel vor.
+
+## 0.2.36-hide-game-route-lines - 2026-05-31
+
+- Hauptspiel blendet sichtbare Routelinien aus; Schiffe nutzen die Wasserpfade weiterhin intern fuer Bewegung und Reisezeit.
+- Normale Simulationsgeschwindigkeit deutlich reduziert, damit Schiffsreisen lesbarer ablaufen.
+
+## 0.2.35-detailed-land-terrain - 2026-05-31
+
+- Landflaechen der Hanseregion-Weltkarte deutlich strukturierter gestaltet.
+- Satellitenkarten-inspirierte Landschaftszonen ergaenzt: kultivierte Tieflander, dichtere Waldraeume im Norden/Osten, Feuchtgebiete und rauere Hochlandzonen.
+- Darstellung historisch abstrahiert, ohne moderne Strassen, Stadtteppiche oder Laendergrenzen.
+- Kartenmetadaten dokumentieren den detaillierten Landbedeckungsstil.
+
+## 0.2.34-ai-trader-metrics - 2026-05-31
+
+- Erste KI-Haendler im Hauptspiel implementiert, die Zielhaefen gewichtet waehlen, echte Stadtlager kaufen, reisen und am Ziel verkaufen.
+- Balancing-Metriken fuer Stadtwaren, Haendlerereignisse und taegliche Haendlerzustaende werden als JSONL-Datenbankdatei nach `user://balance_metrics.jsonl` geschrieben.
+- Simulationskern um Handelsmethoden fuer reale Stadtlagerbestaende erweitert.
+
+## 0.2.33-natural-world-map - 2026-05-31
+
+- Hanseregion-Weltkarte staerker als natuerliche Draufsicht statt als beschriftete Landkarte gestaltet.
+- Kartentitel, Seegebietsbeschriftungen, Kompass und Gitternetz aus dem Hintergrundasset entfernt.
+- Kartengenerator erzeugt nun zusammenhaengende Land-/Meertexturen ohne sichtbare Laendergrenzen.
+- Kartenmetadaten dokumentieren den natuerlichen Weltkartenstil.
+
 ## 0.2.32-continuous-ship-travel - 2026-05-31
 
 - Hauptspiel um einstellbare Simulationsgeschwindigkeit von Stop bis Fast Forward erweitert.

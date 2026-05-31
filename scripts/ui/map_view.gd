@@ -1,6 +1,7 @@
 extends Control
 
 signal editor_city_clicked(city_id: String)
+signal map_right_clicked(source_position: Dictionary, city_id: String, is_water: bool)
 
 const SOURCE_MAP_SIZE := Vector2(1600.0, 900.0)
 const HANSE_REGION_MAP: Texture2D = preload("res://assets/maps/hanse_region_1600x900.png")
@@ -12,6 +13,10 @@ const ZOOM_STEP := 1.18
 var cities: Array = []
 var navigation_routes: Dictionary = {}
 var navigation_city_harbors: Dictionary = {}
+var navigation_grid_rows: Array = []
+var navigation_grid_width: int = 0
+var navigation_grid_height: int = 0
+var navigation_grid_cell_size: int = 4
 var route_ships: Array = []
 var editor_cities: Array = []
 var placed_editor_city_ids: Array[String] = []
@@ -20,6 +25,7 @@ var pirate_zones: Array = []
 var simulation_day: int = 1
 var show_game_layer: bool = true
 var show_editor_layer: bool = false
+var show_route_lines: bool = true
 var map_zoom: float = 1.0
 var map_offset: Vector2 = Vector2.ZERO
 var is_panning: bool = false
@@ -42,6 +48,9 @@ func _gui_input(event: InputEvent) -> void:
 			accept_event()
 		elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN and mouse_event.pressed:
 			_zoom_at(mouse_event.position, 1.0 / ZOOM_STEP)
+			accept_event()
+		elif mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed:
+			_emit_game_right_click(mouse_event.position)
 			accept_event()
 		elif mouse_event.button_index == MOUSE_BUTTON_LEFT:
 			if mouse_event.double_click:
@@ -100,12 +109,17 @@ func set_layers(is_game_layer_visible: bool, is_editor_layer_visible: bool) -> v
 	show_editor_layer = is_editor_layer_visible
 	queue_redraw()
 
+func set_route_lines_visible(is_visible: bool) -> void:
+	show_route_lines = is_visible
+	queue_redraw()
+
 func _draw() -> void:
 	draw_set_transform(map_offset, 0.0, Vector2(map_zoom, map_zoom))
 	_draw_map_background()
 	_draw_pirate_zones()
 	if show_game_layer:
-		_draw_routes()
+		if show_route_lines:
+			_draw_routes()
 		_draw_route_ships()
 		_draw_cities()
 	if show_editor_layer:
@@ -158,21 +172,18 @@ func _draw_route_ships() -> void:
 	var font := get_theme_default_font()
 	for ship_entry in route_ships:
 		var ship: Dictionary = ship_entry
-		var from_city_id := String(ship.get("from", ""))
-		var to_city_id := String(ship.get("to", ""))
 		var progress := clampf(float(ship.get("progress", 0.0)), 0.0, 1.0)
-		var route_points := _navigation_points_between(from_city_id, to_city_id)
-		if route_points.size() < 2:
-			route_points = [_city_position(from_city_id), _city_position(to_city_id)]
+		var route_points: Array[Vector2] = _ship_route_points(ship)
 
 		var ship_position := _interpolate_polyline(route_points, progress)
+		var ship_color: Color = ship.get("color", Color(0.96, 0.96, 0.88))
 		draw_circle(ship_position + Vector2(1.5, 2.0), 8.0, Color(0.02, 0.02, 0.02, 0.42))
-		draw_circle(ship_position, 7.0, Color(0.96, 0.96, 0.88))
-		draw_line(ship_position + Vector2(-9, 7), ship_position + Vector2(11, 7), Color(0.96, 0.96, 0.88), 2.5)
+		draw_circle(ship_position, 7.0, ship_color)
+		draw_line(ship_position + Vector2(-9, 7), ship_position + Vector2(11, 7), ship_color, 2.5)
 
 		var ship_name := String(ship.get("name", ""))
 		if not ship_name.is_empty():
-			draw_string(font, ship_position + Vector2(12, -9), ship_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 12, Color(0.96, 0.96, 0.88, 0.86))
+			draw_string(font, ship_position + Vector2(12, -9), ship_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 12, ship_color)
 
 func _draw_cities() -> void:
 	var font := get_theme_default_font()
@@ -301,11 +312,12 @@ func _city_name_at_screen_position(screen_position: Vector2) -> String:
 				return String(city.get("name", ""))
 
 	if show_game_layer:
-		for city_entry in cities:
-			var city: Dictionary = city_entry
-			var pos := _screen_position_from_map(_scale_position(city.get("position", {})))
-			if screen_position.distance_to(pos) <= 18.0:
-				return String(city.get("name", ""))
+		var game_city_id := _game_city_id_at_screen_position(screen_position)
+		if not game_city_id.is_empty():
+			for city_entry in cities:
+				var city: Dictionary = city_entry
+				if String(city.get("id", "")) == game_city_id:
+					return String(city.get("name", ""))
 
 	return ""
 
@@ -329,6 +341,35 @@ func _editor_city_id_at_screen_position(screen_position: Vector2) -> String:
 func _screen_position_from_map(map_position: Vector2) -> Vector2:
 	return map_position * map_zoom + map_offset
 
+func _source_position_from_screen(screen_position: Vector2) -> Dictionary:
+	var map_position: Vector2 = (screen_position - map_offset) / max(map_zoom, 0.001)
+	return {
+		"x": clampf(map_position.x / max(size.x, 1.0) * SOURCE_MAP_SIZE.x, 0.0, SOURCE_MAP_SIZE.x),
+		"y": clampf(map_position.y / max(size.y, 1.0) * SOURCE_MAP_SIZE.y, 0.0, SOURCE_MAP_SIZE.y),
+	}
+
+func _emit_game_right_click(screen_position: Vector2) -> void:
+	if not show_game_layer:
+		return
+
+	var source_position := _source_position_from_screen(screen_position)
+	var city_id := _game_city_id_at_screen_position(screen_position)
+	var is_water := _is_source_water_position(source_position)
+	map_right_clicked.emit(source_position, city_id, is_water)
+
+func _game_city_id_at_screen_position(screen_position: Vector2) -> String:
+	if not show_game_layer:
+		return ""
+
+	for city_entry in cities:
+		var city: Dictionary = city_entry
+		var city_id := String(city.get("id", ""))
+		var pos := _screen_position_from_map(_scale_position(city.get("position", {})))
+		if screen_position.distance_to(pos) <= 19.0:
+			return city_id
+
+	return ""
+
 func _load_navigation_data() -> void:
 	var text := FileAccess.get_file_as_string(HANSE_NAVIGATION_DATA)
 	if text.is_empty():
@@ -343,6 +384,11 @@ func _load_navigation_data() -> void:
 	var data: Dictionary = parsed
 	navigation_routes = data.get("routes", {})
 	navigation_city_harbors = data.get("city_harbors", {})
+	var grid: Dictionary = data.get("grid", {})
+	navigation_grid_rows = grid.get("rows", [])
+	navigation_grid_width = int(grid.get("width", 0))
+	navigation_grid_height = int(grid.get("height", 0))
+	navigation_grid_cell_size = int(grid.get("cell_size", 4))
 
 func _main_route() -> Array[String]:
 	var preferred_route: Array[String] = ["bremen", "hamburg", "luebeck", "visby", "danzig"]
@@ -384,6 +430,57 @@ func _navigation_points_between(from_city_id: String, to_city_id: String) -> Arr
 		points.append(_scale_position(point))
 	return points
 
+func get_city_harbor_position(city_id: String) -> Dictionary:
+	if navigation_city_harbors.has(city_id):
+		var harbor: Dictionary = navigation_city_harbors[city_id]
+		return harbor.get("harbor_anchor", harbor.get("sea_gate", {}))
+
+	for city_entry in cities:
+		var city: Dictionary = city_entry
+		if String(city.get("id", "")) == city_id:
+			return city.get("position", {})
+
+	return {"x": SOURCE_MAP_SIZE.x * 0.5, "y": SOURCE_MAP_SIZE.y * 0.5}
+
+func get_city_route_source_points(from_city_id: String, to_city_id: String) -> Array:
+	var key := "%s__%s" % [from_city_id, to_city_id]
+	var is_reversed := false
+	if not navigation_routes.has(key):
+		key = "%s__%s" % [to_city_id, from_city_id]
+		is_reversed = true
+	if not navigation_routes.has(key):
+		return [get_city_harbor_position(from_city_id), get_city_harbor_position(to_city_id)]
+
+	var route: Dictionary = navigation_routes[key]
+	var source_points: Array = route.get("points", []).duplicate(true)
+	if is_reversed:
+		source_points.reverse()
+	return source_points
+
+func get_navigation_path_between_source_points(from_position: Dictionary, to_position: Dictionary) -> Array:
+	if navigation_grid_rows.is_empty():
+		return [from_position, to_position]
+
+	var start_cell := _nearest_water_cell(_grid_cell_from_source_position(from_position))
+	var target_cell := _nearest_water_cell(_grid_cell_from_source_position(to_position))
+	if start_cell.x < 0 or target_cell.x < 0:
+		return []
+
+	var path_cells := _find_water_path(start_cell, target_cell)
+	if path_cells.is_empty():
+		return []
+
+	var points: Array = []
+	points.append(from_position)
+	var stride: int = max(1, path_cells.size() / 42)
+	for index in range(0, path_cells.size(), stride):
+		points.append(_source_position_from_grid_cell(path_cells[index]))
+	points.append(to_position)
+	return points
+
+func is_source_water_position(position: Dictionary) -> bool:
+	return _is_source_water_position(position)
+
 func get_route_distance_px(from_city_id: String, to_city_id: String) -> float:
 	var key := "%s__%s" % [from_city_id, to_city_id]
 	if navigation_routes.has(key):
@@ -402,6 +499,127 @@ func _scale_position(position: Dictionary) -> Vector2:
 		float(position.get("x", 0.0)) / SOURCE_MAP_SIZE.x * size.x,
 		float(position.get("y", 0.0)) / SOURCE_MAP_SIZE.y * size.y
 	)
+
+func _ship_route_points(ship: Dictionary) -> Array[Vector2]:
+	if ship.has("path_points"):
+		var route_points: Array[Vector2] = []
+		for point_entry in ship.get("path_points", []):
+			var point: Dictionary = point_entry
+			route_points.append(_scale_position(point))
+		if route_points.size() >= 1:
+			return route_points
+
+	if ship.has("position"):
+		var position: Dictionary = ship.get("position", {})
+		return [_scale_position(position)]
+
+	var from_city_id := String(ship.get("from", ""))
+	var to_city_id := String(ship.get("to", ""))
+	var route_points := _navigation_points_between(from_city_id, to_city_id)
+	if route_points.size() < 2:
+		route_points = [_city_position(from_city_id), _city_position(to_city_id)]
+	return route_points
+
+func _is_source_water_position(position: Dictionary) -> bool:
+	var cell := _grid_cell_from_source_position(position)
+	return _is_water_cell(cell.x, cell.y)
+
+func _grid_cell_from_source_position(position: Dictionary) -> Vector2i:
+	if navigation_grid_cell_size <= 0:
+		return Vector2i(-1, -1)
+	return Vector2i(
+		clampi(floori(float(position.get("x", 0.0)) / float(navigation_grid_cell_size)), 0, max(0, navigation_grid_width - 1)),
+		clampi(floori(float(position.get("y", 0.0)) / float(navigation_grid_cell_size)), 0, max(0, navigation_grid_height - 1))
+	)
+
+func _source_position_from_grid_cell(cell: Vector2i) -> Dictionary:
+	return {
+		"x": float(cell.x * navigation_grid_cell_size) + float(navigation_grid_cell_size) * 0.5,
+		"y": float(cell.y * navigation_grid_cell_size) + float(navigation_grid_cell_size) * 0.5,
+	}
+
+func _is_water_cell(cell_x: int, cell_y: int) -> bool:
+	if cell_y < 0 or cell_y >= navigation_grid_rows.size() or cell_x < 0 or cell_x >= navigation_grid_width:
+		return false
+
+	var row := String(navigation_grid_rows[cell_y])
+	if cell_x >= row.length():
+		return false
+	return row.substr(cell_x, 1) == "1"
+
+func _nearest_water_cell(origin: Vector2i) -> Vector2i:
+	if _is_water_cell(origin.x, origin.y):
+		return origin
+
+	var max_radius := 28
+	for radius in range(1, max_radius + 1):
+		for y_offset in range(-radius, radius + 1):
+			for x_offset in range(-radius, radius + 1):
+				if abs(x_offset) != radius and abs(y_offset) != radius:
+					continue
+				var candidate := Vector2i(origin.x + x_offset, origin.y + y_offset)
+				if _is_water_cell(candidate.x, candidate.y):
+					return candidate
+
+	return Vector2i(-1, -1)
+
+func _find_water_path(start_cell: Vector2i, target_cell: Vector2i) -> Array[Vector2i]:
+	if start_cell == target_cell:
+		return [start_cell]
+
+	var open: Array[int] = [_cell_id(start_cell)]
+	var came_from: Dictionary = {}
+	var g_score: Dictionary = {_cell_id(start_cell): 0.0}
+	var f_score: Dictionary = {_cell_id(start_cell): start_cell.distance_to(target_cell)}
+	var closed: Dictionary = {}
+	var directions: Array[Vector2i] = [
+		Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
+		Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)
+	]
+
+	while not open.is_empty():
+		open.sort_custom(func(a: int, b: int) -> bool: return float(f_score.get(a, 1000000000.0)) < float(f_score.get(b, 1000000000.0)))
+		var current_id: int = open.pop_front()
+		var current_cell: Vector2i = _cell_from_id(current_id)
+		if current_cell == target_cell:
+			return _reconstruct_path(came_from, current_id)
+
+		closed[current_id] = true
+		for direction in directions:
+			var neighbor: Vector2i = current_cell + direction
+			if not _is_water_cell(neighbor.x, neighbor.y):
+				continue
+
+			var neighbor_id: int = _cell_id(neighbor)
+			if closed.has(neighbor_id):
+				continue
+
+			var step_cost: float = 1.4142 if direction.x != 0 and direction.y != 0 else 1.0
+			var tentative_g: float = float(g_score.get(current_id, 1000000000.0)) + step_cost
+			if tentative_g >= float(g_score.get(neighbor_id, 1000000000.0)):
+				continue
+
+			came_from[neighbor_id] = current_id
+			g_score[neighbor_id] = tentative_g
+			f_score[neighbor_id] = tentative_g + neighbor.distance_to(target_cell)
+			if not open.has(neighbor_id):
+				open.append(neighbor_id)
+
+	return []
+
+func _reconstruct_path(came_from: Dictionary, current_id: int) -> Array[Vector2i]:
+	var path: Array[Vector2i] = [_cell_from_id(current_id)]
+	while came_from.has(current_id):
+		current_id = int(came_from[current_id])
+		path.append(_cell_from_id(current_id))
+	path.reverse()
+	return path
+
+func _cell_id(cell: Vector2i) -> int:
+	return cell.y * navigation_grid_width + cell.x
+
+func _cell_from_id(cell_id: int) -> Vector2i:
+	return Vector2i(cell_id % navigation_grid_width, floori(float(cell_id) / float(max(1, navigation_grid_width))))
 
 func _interpolate_demo_route(route: Array) -> Vector2:
 	if route.size() < 2:

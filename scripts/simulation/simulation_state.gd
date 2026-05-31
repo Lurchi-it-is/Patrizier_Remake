@@ -36,6 +36,53 @@ func get_price(city_id: String, good_id: String) -> int:
 	var target: float = float(city.get("target_stock", {}).get(good_id, 1))
 	return TradePrice.calculate(int(good.get("base_price", 1)), stock, target)
 
+func get_stock(city_id: String, good_id: String) -> float:
+	if not city_state.has(city_id):
+		return 0.0
+
+	var city: Dictionary = city_state[city_id]
+	return float(city.get("stock", {}).get(good_id, 0.0))
+
+func get_target_stock(city_id: String, good_id: String) -> float:
+	if not city_state.has(city_id):
+		return 0.0
+
+	var city: Dictionary = city_state[city_id]
+	return float(city.get("target_stock", {}).get(good_id, 0.0))
+
+func buy_from_city(city_id: String, good_id: String, requested_amount: float) -> Dictionary:
+	if not city_state.has(city_id) or not goods_by_id.has(good_id) or requested_amount <= 0.0:
+		return {"amount": 0.0, "unit_price": 0, "total_price": 0.0}
+
+	var unit_price: int = get_price(city_id, good_id)
+	var city: Dictionary = city_state[city_id]
+	var stock: Dictionary = city.get("stock", {})
+	var available: float = float(stock.get(good_id, 0.0))
+	var amount: float = min(requested_amount, available)
+	if amount <= 0.0:
+		return {"amount": 0.0, "unit_price": unit_price, "total_price": 0.0}
+
+	stock[good_id] = max(0.0, available - amount)
+	city["stock"] = stock
+	return {"amount": amount, "unit_price": unit_price, "total_price": amount * float(unit_price)}
+
+func sell_to_city(city_id: String, good_id: String, amount: float) -> Dictionary:
+	if not city_state.has(city_id) or not goods_by_id.has(good_id) or amount <= 0.0:
+		return {"amount": 0.0, "unit_price": 0, "total_price": 0.0}
+
+	var unit_price: int = get_price(city_id, good_id)
+	var city: Dictionary = city_state[city_id]
+	var stock: Dictionary = city.get("stock", {})
+	stock[good_id] = float(stock.get(good_id, 0.0)) + amount
+	city["stock"] = stock
+	return {"amount": amount, "unit_price": unit_price, "total_price": amount * float(unit_price)}
+
+func city_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for city_id in city_state.keys():
+		ids.append(String(city_id))
+	return ids
+
 func _advance_one_day() -> void:
 	for city_id in city_state.keys():
 		var city: Dictionary = city_state[city_id]
@@ -50,7 +97,7 @@ func _apply_production(city: Dictionary) -> void:
 
 func _apply_consumption(city: Dictionary) -> void:
 	var stock: Dictionary = city.get("stock", {})
-	var consumption := _combined_daily_consumption(city)
+	var consumption: Dictionary = _combined_daily_consumption(city)
 	for good_id in consumption.keys():
 		stock[good_id] = max(0.0, float(stock.get(good_id, 0)) - float(consumption[good_id]))
 	city["stock"] = stock
@@ -72,7 +119,7 @@ func _combined_daily_consumption(city: Dictionary) -> Dictionary:
 			continue
 
 		var group: Dictionary = population_groups_by_id[group_id]
-		var group_population := float(population_groups[group_id])
+		var group_population: float = float(population_groups[group_id])
 		var needs: Dictionary = group.get("daily_consumption_per_1000", {})
 		for good_id in needs.keys():
 			combined[good_id] = float(combined.get(good_id, 0.0)) + group_population / 1000.0 * float(needs[good_id])

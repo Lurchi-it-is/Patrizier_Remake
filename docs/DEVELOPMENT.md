@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.32-continuous-ship-travel
+Version: 0.2.37-player-ship-trading
 
 ## Branch- und Worktree-Regel
 

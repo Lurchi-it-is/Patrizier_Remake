@@ -42,9 +42,13 @@ SEA_DEEP = "#15323a"
 SEA_MID = "#2a6169"
 SEA_SHALLOW = "#6f988c"
 LAND_BASE = "#566743"
-LAND_FIELD = "#83754f"
+LAND_FIELD = "#897e55"
 LAND_FOREST = "#304b32"
 LAND_HIGHLAND = "#817760"
+LAND_CROP = "#a79961"
+LAND_MEADOW = "#728654"
+LAND_WETLAND = "#53664f"
+LAND_ROCK = "#6f6d63"
 LAND_SHADOW = "#263421"
 RIVER_DARK = "#1f4c56"
 RIVER_LIGHT = "#79aebb"
@@ -583,6 +587,33 @@ def world_extent() -> tuple[float, float, float, float]:
     return x_min, x_max, y_min, y_max
 
 
+def lon_lat_grids(rows: int, cols: int) -> tuple[np.ndarray, np.ndarray]:
+    x_min, x_max, y_min, y_max = world_extent()
+    xs = np.linspace(x_min, x_max, cols)
+    ys = np.linspace(y_min, y_max, rows)
+    grid_x, lat_grid = np.meshgrid(xs, ys)
+    lon_grid = grid_x / COS_CENTER + LON_MIN
+    return lon_grid, lat_grid
+
+
+def smoothstep(value: np.ndarray, lower: float, upper: float) -> np.ndarray:
+    t = np.clip((value - lower) / (upper - lower), 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def gaussian_2d(
+    lon_grid: np.ndarray,
+    lat_grid: np.ndarray,
+    lon_center: float,
+    lat_center: float,
+    lon_width: float,
+    lat_width: float,
+) -> np.ndarray:
+    lon_part = ((lon_grid - lon_center) / lon_width) ** 2
+    lat_part = ((lat_grid - lat_center) / lat_width) ** 2
+    return np.exp(-(lon_part + lat_part))
+
+
 def build_sea_texture(rows: int, cols: int) -> np.ndarray:
     fine = softened_noise(rows, cols, 11, 2)
     broad = softened_noise(rows, cols, 12, 24)
@@ -607,30 +638,74 @@ def build_sea_texture(rows: int, cols: int) -> np.ndarray:
 
 
 def build_land_texture(rows: int, cols: int) -> np.ndarray:
+    lon_grid, lat_grid = lon_lat_grids(rows, cols)
     broad = softened_noise(rows, cols, 21, 28)
     medium = softened_noise(rows, cols, 22, 9)
     fine = softened_noise(rows, cols, 23, 2)
-    north = np.linspace(0.0, 1.0, rows)[:, None]
-    west_east = np.linspace(0.0, 1.0, cols)[None, :]
+    parcel = softened_noise(rows, cols, 24, 2)
+    ridge_noise = softened_noise(rows, cols, 25, 14)
+    woodland_spots = softened_noise(rows, cols, 26, 3)
+    field_patch = softened_noise(rows, cols, 27, 1)
 
-    fields = np.clip(0.42 + medium * 0.52 - north * 0.18, 0.0, 1.0)
-    forest = np.clip((broad - 0.42) * 2.3 + north * 0.24, 0.0, 1.0)
+    england_fields = gaussian_2d(lon_grid, lat_grid, -1.5, 52.8, 3.1, 1.9)
+    low_country_fields = gaussian_2d(lon_grid, lat_grid, 6.2, 52.3, 4.3, 1.6)
+    north_german_fields = gaussian_2d(lon_grid, lat_grid, 10.7, 53.3, 5.2, 1.2)
+    danish_fields = gaussian_2d(lon_grid, lat_grid, 10.4, 55.7, 3.6, 1.1)
+    polish_fields = gaussian_2d(lon_grid, lat_grid, 18.3, 52.8, 5.7, 1.8)
+    baltic_fields = gaussian_2d(lon_grid, lat_grid, 23.0, 56.0, 4.6, 1.4)
+    fields = np.maximum.reduce(
+        [england_fields, low_country_fields, north_german_fields, danish_fields, polish_fields, baltic_fields]
+    )
+    fields = np.clip(fields * (0.56 + parcel * 0.62), 0.0, 1.0)
+
+    scandinavian_forest = smoothstep(lat_grid, 55.7, 59.4) * gaussian_2d(lon_grid, lat_grid, 17.0, 59.0, 13.5, 4.8)
+    baltic_forest = gaussian_2d(lon_grid, lat_grid, 25.2, 57.5, 6.2, 2.8)
+    east_forest = gaussian_2d(lon_grid, lat_grid, 29.5, 58.2, 4.6, 2.4)
+    upland_forest = gaussian_2d(lon_grid, lat_grid, 14.2, 50.5, 4.3, 1.1)
+    forest = np.maximum.reduce([scandinavian_forest, baltic_forest, east_forest, upland_forest])
+    scattered_woods = np.clip((woodland_spots - 0.58) * 4.8, 0.0, 1.0) * (1.0 - fields * 0.52)
+    forest = np.clip(forest * (0.62 + broad * 0.74) + scattered_woods * 0.32 - fields * 0.34, 0.0, 1.0)
+
+    norway_highland = gaussian_2d(lon_grid, lat_grid, 7.3, 60.0, 2.7, 3.4) * smoothstep(lat_grid, 56.8, 58.6)
+    scotland_highland = gaussian_2d(lon_grid, lat_grid, -4.6, 57.0, 2.0, 2.1)
+    swedish_highland = gaussian_2d(lon_grid, lat_grid, 13.0, 61.1, 4.5, 1.8)
     highland = np.clip(
-        np.exp(-((west_east - 0.13) / 0.10) ** 2) * north * 0.55
-        + np.exp(-((west_east - 0.42) / 0.13) ** 2) * north * 0.35
-        + (broad - 0.55) * 0.70,
+        np.maximum.reduce([norway_highland, scotland_highland, swedish_highland]) * (0.72 + ridge_noise * 0.58),
         0.0,
         1.0,
     )
 
+    wetlands = np.maximum(
+        gaussian_2d(lon_grid, lat_grid, 4.8, 52.5, 2.2, 1.0),
+        gaussian_2d(lon_grid, lat_grid, 8.7, 53.4, 3.8, 0.9),
+    )
+    wetlands = np.maximum(wetlands, gaussian_2d(lon_grid, lat_grid, 20.0, 54.4, 2.8, 0.8))
+    wetlands = np.clip(wetlands * (0.45 + medium * 0.50), 0.0, 0.85)
+
     low = hex_rgb(LAND_BASE)
     field = hex_rgb(LAND_FIELD)
+    crop = hex_rgb(LAND_CROP)
+    meadow = hex_rgb(LAND_MEADOW)
     forest_color = hex_rgb(LAND_FOREST)
     highland_color = hex_rgb(LAND_HIGHLAND)
-    land = low * (1.0 - fields[:, :, None] * 0.45) + field * (fields[:, :, None] * 0.45)
-    land = land * (1.0 - forest[:, :, None] * 0.46) + forest_color * (forest[:, :, None] * 0.46)
-    land = land * (1.0 - highland[:, :, None] * 0.32) + highland_color * (highland[:, :, None] * 0.32)
-    land += (fine[:, :, None] - 0.5) * 0.040
+    wetland_color = hex_rgb(LAND_WETLAND)
+    rock_color = hex_rgb(LAND_ROCK)
+    field_mix = np.clip(parcel * 0.46 + field_patch * 0.54, 0.0, 1.0)
+    field_pattern = meadow * (1.0 - field_mix[:, :, None] * 0.62) + crop * (field_mix[:, :, None] * 0.62)
+    parcel_lines = np.sin((lon_grid * 3.3 + lat_grid * 4.8 + parcel * 3.5) * math.pi)
+    field_pattern *= (0.96 + np.where(parcel_lines > 0.34, 0.045, -0.018))[:, :, None]
+    land = low * (1.0 - medium[:, :, None] * 0.18) + field * (medium[:, :, None] * 0.18)
+    land = land * (1.0 - fields[:, :, None] * 0.84) + field_pattern * (fields[:, :, None] * 0.84)
+    land = land * (1.0 - wetlands[:, :, None] * 0.46) + wetland_color * (wetlands[:, :, None] * 0.46)
+    land = land * (1.0 - forest[:, :, None] * 0.68) + forest_color * (forest[:, :, None] * 0.68)
+    land = land * (1.0 - highland[:, :, None] * 0.58) + highland_color * (highland[:, :, None] * 0.32) + rock_color * (highland[:, :, None] * 0.26)
+
+    height = highland * 1.35 + forest * 0.18 + broad * 0.18
+    gradient_y, gradient_x = np.gradient(height)
+    shade = np.clip(1.0 + gradient_y * 9.0 - gradient_x * 7.0, 0.76, 1.24)
+    land *= shade[:, :, None]
+    land += (fine[:, :, None] - 0.5) * 0.050
+    land += (fields * (field_patch - 0.5))[:, :, None] * 0.070
     return np.clip(land, 0.0, 1.0)
 
 
@@ -692,7 +767,7 @@ def build_visual_land_mask(country_data: dict, rows: int, cols: int) -> np.ndarr
 def draw_geography(ax) -> None:
     country_data = load_country_data()
     x_min, x_max, y_min, y_max = world_extent()
-    rows, cols = 360, 640
+    rows, cols = 540, 960
     terrain = build_land_texture(rows, cols)
     land_mask = build_visual_land_mask(country_data, rows, cols)
     land_rgba = np.dstack([terrain, np.where(land_mask, 1.0, 0.0)])
@@ -846,8 +921,8 @@ def write_metadata() -> None:
             "Researched historical waterway references for selected Hanse cities",
         ],
         "visual_style": {
-            "name": "modern_hanse_sea_chart",
-            "basis": "Historically inspired Hanse sea chart with modern readability, muted land colors, brass accents and a teal North/Baltic Sea palette.",
+            "name": "detailed_historical_landcover_view",
+            "basis": "Top-down Hanse-era world view with satellite-inspired regional terrain: cultivated lowlands, denser northern/eastern forests, wetlands and rough highlands, without modern roads or cities.",
         },
         "historical_waterways": [
             {

@@ -1,6 +1,6 @@
 # KI-Haendler und Warenfluss
 
-Version: 0.2.32-continuous-ship-travel
+Version: 0.2.37-player-ship-trading
 
 ## Zielbild
 
@@ -260,6 +260,7 @@ Der aktuelle technische Unterbau:
 
 - `assets/maps/hanse_navigation_1600x900.json` enthaelt ein Wasser-/See-Raster, Hafenanker, See-Gates und vorberechnete Routen.
 - `scripts/ui/map_view.gd` kann sichtbare Routen und Schiffspositionen entlang dieser Polylines zeichnen.
+- `user://balance_metrics.jsonl` speichert Entwicklungsmetriken fuer Stadtbestaende, Preise und KI-Haendlerereignisse.
 
 ## MVP-Implementierungsreihenfolge
 

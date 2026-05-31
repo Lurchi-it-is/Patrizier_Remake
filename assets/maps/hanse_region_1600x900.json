@@ -17,8 +17,8 @@
     "Researched historical waterway references for selected Hanse cities"
   ],
   "visual_style": {
-    "name": "modern_hanse_sea_chart",
-    "basis": "Historically inspired Hanse sea chart with modern readability, muted land colors, brass accents and a teal North/Baltic Sea palette."
+    "name": "detailed_historical_landcover_view",
+    "basis": "Top-down Hanse-era world view with satellite-inspired regional terrain: cultivated lowlands, denser northern/eastern forests, wetlands and rough highlands, without modern roads or cities."
   },
   "historical_waterways": [
     {
