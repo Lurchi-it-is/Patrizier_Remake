@@ -1,6 +1,6 @@
 # Projektplan: Hanseatische Warenwirtschaftssimulation
 
-Version: 0.2.8-separated-executables
+Version: 0.2.37-player-ship-trading
 Datum: 2026-05-31  
 Repo: https://github.com/Lurchi-it-is/Patrizier_Remake.git
 
@@ -20,7 +20,7 @@ Technisch ist fuer ein kleines bis mittleres Team Godot 4.x eine gute Standardem
 
 - Die Hanse war ein Netzwerk norddeutscher und nordeuropaeischer Handelsstaedte, besonders aktiv im Nord- und Ostseeraum. Der Schwerpunkt lag im Spaetmittelalter, vor allem zwischen dem 13. und 15. Jahrhundert.
 - Luebeck war ein zentraler Knoten. Bedeutende Handelsraeume und Kontore lagen unter anderem in Bergen, London, Bruegge und Nowgorod.
-- Geeignete Spielwaren sind Getreide, Salz, Fisch bzw. Stockfisch, Hering, Holz, Eisen, Felle, Wachs, Tuch, Bier, Wein, Fleisch, Wolle, Flachs und Gewuerze.
+- Geeignete Spielwaren sind Getreide, Salz, Hering, Stockfisch, Bier, Holz, Pech/Teer, Flachs, Wolle, Eisen, Wachs, Pelze, Tuch, Wein und Gewuerze.
 - Historische Spielstaedte fuer einen ersten Umfang: Luebeck, Hamburg, Bremen, Rostock, Wismar, Stralsund, Stettin, Danzig, Koenigsberg, Riga, Reval/Tallinn, Visby, Stockholm, Bergen, Oslo/Toensberg, London, Bruegge, Nowgorod.
 - Piraterie passt historisch stark in das Setting. Die Vitalienbrueder/Victual Brothers begannen als Kaperfahrer und wurden im spaeten 14. Jahrhundert zu einer grossen Bedrohung fuer den Ostseehandel.
 - Die Kogge war ein zentrales Hanse-Schiff fuer Handel und konnte bei Bedrohung auch militaerisch genutzt werden. Mittelalterliche Seekaempfe sollten frueh eher Entern, Besatzung, Moral und Beute betonen als spaetneuzeitliche Breitseiten-Schlachten.
@@ -337,6 +337,9 @@ Moegliche Arbeitstitel:
 - Die Hanse / hanse.org: Urspruenge, Luebeck, Nowgorod und Handelswaren: https://www.hanse.org/en/the-medieval-hanseatic-league/the-origins
 - Die Hanse / hanse.org: Kontore in Nowgorod, London, Bruegge und Bergen: https://www.hanse.org/en/the-medieval-hanseatic-league/die-kontore
 - Kalmar Laens Museum: Handelswaren der Hanse: https://medeltiden.kalmarlansmuseum.se/en/society/the-hanseatic-league/trade-and-merchandise/
+- Encyclopedia.com: Hanseatic League, Warenstroeme und Kontore: https://www.encyclopedia.com/history/encyclopedias-almanacs-transcripts-and-maps/hanseatic-league
+- ZPE: Einwohner mittelalterlicher Staedte und Stadtgesellschaft: https://zpe.gov.pl/a/inhabitants-of-medieval-cities/DdLIQ3ljf
+- Encyclopedia.com: Patricians and Artisans, soziale Stadtgruppen: https://www.encyclopedia.com/history/news-wires-white-papers-and-books/patricians-and-artisans
 - Steam: Patrician IV Feature-Beschreibung als Genre-Referenz: https://store.steampowered.com/app/57620/Patrician_IV/
 - Steam: Patrician III Feature-Beschreibung als Genre-Referenz: https://store.steampowered.com/app/33570/Patrician_III/
 - GameSpot: Patrician II Review, Hinweise zu dynamischen Preisen und Spielmix: https://www.gamespot.com/reviews/patrician-ii-review/1900-2819467/

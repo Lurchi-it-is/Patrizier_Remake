@@ -10,6 +10,8 @@ $requiredVersionFiles = @(
     "docs\PROJECT_PLAN.md",
     "docs\ARCHITECTURE.md",
     "docs\DEVELOPMENT.md",
+    "docs\HANSE_ECONOMY_BALANCING.md",
+    "docs\AI_TRADER_DESIGN.md",
     "project.godot"
 )
 
@@ -32,18 +34,118 @@ foreach ($jsonFile in $jsonFiles) {
 $goods = Get-Content -Raw "data\goods.json" | ConvertFrom-Json
 $goodIds = @{}
 foreach ($good in $goods) {
+    if ($goodIds.ContainsKey($good.id)) {
+        throw "Duplicate good id '$($good.id)'"
+    }
+
+    if ($null -eq $good.unit) {
+        throw "Good '$($good.id)' is missing historical unit metadata"
+    }
+
+    foreach ($field in @("name", "abbreviation", "basis")) {
+        if ([string]::IsNullOrWhiteSpace([string]$good.unit.$field)) {
+            throw "Good '$($good.id)' unit is missing '$field'"
+        }
+    }
+
     $goodIds[$good.id] = $true
 }
 
+$populationGroups = Get-Content -Raw "data\population_groups.json" | ConvertFrom-Json
+$populationGroupIds = @{}
+foreach ($group in $populationGroups) {
+    if ($populationGroupIds.ContainsKey($group.id)) {
+        throw "Duplicate population group id '$($group.id)'"
+    }
+
+    $populationGroupIds[$group.id] = $true
+    foreach ($need in $group.daily_consumption_per_1000.PSObject.Properties) {
+        if (-not $goodIds.ContainsKey($need.Name)) {
+            throw "Population group '$($group.id)' references unknown good '$($need.Name)'"
+        }
+    }
+}
+
 $cities = Get-Content -Raw "data\cities.json" | ConvertFrom-Json
+$cityEconomyReports = @()
+$regionalProduction = @{}
+$regionalConsumption = @{}
 foreach ($city in $cities) {
+    $dailyConsumption = @{}
     foreach ($section in @("production", "consumption", "stock", "target_stock")) {
         $properties = $city.$section.PSObject.Properties
         foreach ($property in $properties) {
             if (-not $goodIds.ContainsKey($property.Name)) {
                 throw "City '$($city.id)' references unknown good '$($property.Name)' in '$section'"
             }
+
+            if ($section -eq "consumption") {
+                $dailyConsumption[$property.Name] = [double]$property.Value
+            }
+
+            if ($section -eq "production") {
+                if (-not $regionalProduction.ContainsKey($property.Name)) {
+                    $regionalProduction[$property.Name] = 0.0
+                }
+
+                $regionalProduction[$property.Name] += [double]$property.Value
+            }
         }
+    }
+
+    if ($city.production.PSObject.Properties.Count -eq 0) {
+        throw "City '$($city.id)' has no production profile"
+    }
+
+    if ($city.consumption.PSObject.Properties.Count -eq 0) {
+        throw "City '$($city.id)' has no consumption profile"
+    }
+
+    $groupPopulation = 0
+    foreach ($groupProperty in $city.population_groups.PSObject.Properties) {
+        if (-not $populationGroupIds.ContainsKey($groupProperty.Name)) {
+            throw "City '$($city.id)' references unknown population group '$($groupProperty.Name)'"
+        }
+
+        $groupPopulation += [int]$groupProperty.Value
+        $group = $populationGroups | Where-Object { $_.id -eq $groupProperty.Name } | Select-Object -First 1
+        foreach ($need in $group.daily_consumption_per_1000.PSObject.Properties) {
+            if (-not $dailyConsumption.ContainsKey($need.Name)) {
+                $dailyConsumption[$need.Name] = 0.0
+            }
+
+            $dailyConsumption[$need.Name] += ([double]$groupProperty.Value / 1000.0) * [double]$need.Value
+        }
+    }
+
+    if ($groupPopulation -ne [int]$city.population) {
+        throw "City '$($city.id)' population_groups sum $groupPopulation does not match population $($city.population)"
+    }
+
+    foreach ($goodId in $dailyConsumption.Keys) {
+        if (-not ($city.target_stock.PSObject.Properties.Name -contains $goodId)) {
+            throw "City '$($city.id)' has no target_stock for consumed good '$goodId'"
+        }
+
+        if (-not $regionalConsumption.ContainsKey($goodId)) {
+            $regionalConsumption[$goodId] = 0.0
+        }
+
+        $regionalConsumption[$goodId] += [double]$dailyConsumption[$goodId]
+    }
+
+    $productionGoods = ($city.production.PSObject.Properties | Where-Object { [double]$_.Value -gt 0 }).Count
+    $consumptionGoods = ($dailyConsumption.GetEnumerator() | Where-Object { [double]$_.Value -gt 0 }).Count
+    $cityEconomyReports += "City economy '$($city.id)': $productionGoods produced goods, $consumptionGoods consumed goods, population groups $groupPopulation/$($city.population)"
+}
+
+$cityEconomyReports | Write-Output
+
+foreach ($goodId in $regionalConsumption.Keys) {
+    $produced = [double]$regionalProduction.Get_Item($goodId)
+    $consumed = [double]$regionalConsumption[$goodId]
+    if ($produced -lt $consumed) {
+        throw "Regional production/supply for good '$goodId' is below daily consumption: $produced < $consumed"
     }
 }
 
@@ -60,15 +162,64 @@ $requiredPaths = @(
     "scripts\map_editor.gd",
     "scripts\data\catalog_loader.gd",
     "scripts\simulation\simulation_state.gd",
+    "scripts\simulation\balance_metrics_logger.gd",
     "scripts\simulation\trade_price.gd",
     "scripts\simulation\combat_resolver.gd",
-    "scripts\ui\map_view.gd"
+    "scripts\ui\map_view.gd",
+    "assets\maps\hanse_navigation_1600x900.json",
+    "assets\maps\hanse_navigation_debug_1600x900.png"
 )
 
 foreach ($path in $requiredPaths) {
     if (-not (Test-Path $path)) {
         throw "Required path missing: $path"
     }
+}
+
+$navigation = Get-Content -Raw "assets\maps\hanse_navigation_1600x900.json" | ConvertFrom-Json
+if ($navigation.grid.width -le 0 -or $navigation.grid.height -le 0 -or $navigation.grid.cell_size -le 0) {
+    throw "Navigation grid metadata is incomplete"
+}
+
+if ($navigation.grid.rows.Count -ne $navigation.grid.height) {
+    throw "Navigation grid row count does not match height"
+}
+
+if ($navigation.grid.sea_rows.Count -ne $navigation.grid.height) {
+    throw "Navigation sea grid row count does not match height"
+}
+
+foreach ($row in $navigation.grid.rows) {
+    if ([string]$row -notmatch "^[01]+$" -or ([string]$row).Length -ne $navigation.grid.width) {
+        throw "Navigation grid row has invalid width or characters"
+    }
+}
+
+foreach ($row in $navigation.grid.sea_rows) {
+    if ([string]$row -notmatch "^[01]+$" -or ([string]$row).Length -ne $navigation.grid.width) {
+        throw "Navigation sea grid row has invalid width or characters"
+    }
+}
+
+$hanseCities = Get-Content -Raw "data\hanse_cities.json" | ConvertFrom-Json
+foreach ($city in $hanseCities) {
+    if ($null -eq $navigation.city_harbors.$($city.id)) {
+        throw "Navigation data has no harbor anchor for Hanse city '$($city.id)'"
+    }
+
+    if ($null -eq $navigation.city_harbors.$($city.id).sea_gate) {
+        throw "Navigation data has no sea gate for Hanse city '$($city.id)'"
+    }
+}
+
+$routeCount = ($navigation.routes.PSObject.Properties | Measure-Object).Count
+$expectedRouteCount = $hanseCities.Count * ($hanseCities.Count - 1)
+if ($routeCount -lt $expectedRouteCount) {
+    throw "Navigation data contains too few sea routes: $routeCount < $expectedRouteCount"
+}
+
+if (@($navigation.unreachable_routes).Count -gt 0) {
+    throw "Navigation data contains unreachable routes"
 }
 
 $projectSettings = Get-Content -Raw "project.godot"

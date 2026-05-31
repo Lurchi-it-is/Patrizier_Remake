@@ -1,0 +1,59 @@
+[
+  {
+    "id": "poor",
+    "name": "Arme und Tageloehner",
+    "description": "Unterschicht mit knappem Grundbedarf; Verbrauch konzentriert sich auf Brotgetreide, Fisch, Salz und einfaches Bier.",
+    "daily_consumption_per_1000": {
+      "grain": 0.45,
+      "herring": 0.16,
+      "salt": 0.08,
+      "beer": 0.12,
+      "timber": 0.01
+    }
+  },
+  {
+    "id": "craftsmen",
+    "name": "Handwerker und Gesellen",
+    "description": "Werkstaetten und Gesellenhaushalte mit staerkerem Bedarf an Bier, einfachem Tuch und kleineren Bau- und Metallmengen.",
+    "daily_consumption_per_1000": {
+      "grain": 0.40,
+      "herring": 0.14,
+      "salt": 0.07,
+      "beer": 0.16,
+      "cloth": 0.02,
+      "timber": 0.03,
+      "iron": 0.01
+    }
+  },
+  {
+    "id": "burghers",
+    "name": "Buerger und Kaufleute",
+    "description": "Wohlhabendere Stadtbuerger mit regelmaessigem Bedarf an Tuch, Wein, Kerzenwachs und geringen Luxuswarenmengen.",
+    "daily_consumption_per_1000": {
+      "grain": 0.36,
+      "herring": 0.12,
+      "salt": 0.06,
+      "beer": 0.18,
+      "cloth": 0.04,
+      "wine": 0.02,
+      "wax": 0.01,
+      "spices": 0.004
+    }
+  },
+  {
+    "id": "patricians",
+    "name": "Patrizier und Reiche",
+    "description": "Kaufmannseliten und Ratsfamilien mit ueberproportionalem Verbrauch an Tuch, Wein, Wachs, Pelzen und Gewuerzen.",
+    "daily_consumption_per_1000": {
+      "grain": 0.30,
+      "herring": 0.10,
+      "salt": 0.05,
+      "beer": 0.16,
+      "cloth": 0.08,
+      "wine": 0.08,
+      "wax": 0.03,
+      "furs": 0.012,
+      "spices": 0.012
+    }
+  }
+]

@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.8-separated-executables
+Version: 0.2.37-player-ship-trading
 
 ## Branch- und Worktree-Regel
 
@@ -26,8 +26,14 @@ powershell -ExecutionPolicy Bypass -File tools\validate_project.ps1
 Der Check prueft:
 
 - JSON-Syntax der Datenkataloge
+- Warenreferenzen in Stadtwirtschaft und Einwohnergruppen
+- Einheiten-Metadaten je Ware
+- Einwohnergruppensummen je Stadt
+- regionale Deckung von Erzeugung/Zufluss gegen Verbrauch der festen Startstaedte
 - Versionskonsistenz zwischen `VERSION`, `project.godot`, `README.md`, `CHANGELOG.md` und Dokumentation
 - Existenz der Godot-Startszene, der getrennten Hauptspiel-/Map-Editor-Szenen und der Windows-Export-Presets
+
+Testanleitungen muessen immer den konkreten Startbefehl fuer die betroffene App oder Szene enthalten.
 
 ## Windows-Exports
 

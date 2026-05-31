@@ -1,5 +1,182 @@
 # Changelog
 
+## 0.2.37-player-ship-trading - 2026-05-31
+
+- Spielerschiff startet in Luebeck und kann per Rechtsklick auf Wasser oder Staedte ueber Wasserpfade bewegt werden.
+- Stadt-Rechtsklick am aktuellen Hafen oeffnet ein Handelsfenster mit Waren, Bestand, Preis und einfacher Kaufen-/Verkaufen-Aktion.
+- Statusbereich zeigt Spielerschiff, Ladung und Restreisezeit; ein Button spult gezielt bis zur Ankunft am aktuellen Ziel vor.
+
+## 0.2.36-hide-game-route-lines - 2026-05-31
+
+- Hauptspiel blendet sichtbare Routelinien aus; Schiffe nutzen die Wasserpfade weiterhin intern fuer Bewegung und Reisezeit.
+- Normale Simulationsgeschwindigkeit deutlich reduziert, damit Schiffsreisen lesbarer ablaufen.
+
+## 0.2.35-detailed-land-terrain - 2026-05-31
+
+- Landflaechen der Hanseregion-Weltkarte deutlich strukturierter gestaltet.
+- Satellitenkarten-inspirierte Landschaftszonen ergaenzt: kultivierte Tieflander, dichtere Waldraeume im Norden/Osten, Feuchtgebiete und rauere Hochlandzonen.
+- Darstellung historisch abstrahiert, ohne moderne Strassen, Stadtteppiche oder Laendergrenzen.
+- Kartenmetadaten dokumentieren den detaillierten Landbedeckungsstil.
+
+## 0.2.34-ai-trader-metrics - 2026-05-31
+
+- Erste KI-Haendler im Hauptspiel implementiert, die Zielhaefen gewichtet waehlen, echte Stadtlager kaufen, reisen und am Ziel verkaufen.
+- Balancing-Metriken fuer Stadtwaren, Haendlerereignisse und taegliche Haendlerzustaende werden als JSONL-Datenbankdatei nach `user://balance_metrics.jsonl` geschrieben.
+- Simulationskern um Handelsmethoden fuer reale Stadtlagerbestaende erweitert.
+
+## 0.2.33-natural-world-map - 2026-05-31
+
+- Hanseregion-Weltkarte staerker als natuerliche Draufsicht statt als beschriftete Landkarte gestaltet.
+- Kartentitel, Seegebietsbeschriftungen, Kompass und Gitternetz aus dem Hintergrundasset entfernt.
+- Kartengenerator erzeugt nun zusammenhaengende Land-/Meertexturen ohne sichtbare Laendergrenzen.
+- Kartenmetadaten dokumentieren den natuerlichen Weltkartenstil.
+
+## 0.2.32-continuous-ship-travel - 2026-05-31
+
+- Hauptspiel um einstellbare Simulationsgeschwindigkeit von Stop bis Fast Forward erweitert.
+- Demo-Schiffe bewegen sich kontinuierlich entlang der Wasserpfade; Reisezeit entsteht aus Routenlaenge und Schiffsgeschwindigkeit.
+- Wirtschaftstage laufen automatisch bei voller Simulationszeit weiter, wodurch Lagerbestaende und Marktpreise fortlaufend aktualisiert werden.
+
+## 0.2.31-modern-hanse-map-style - 2026-05-31
+
+- Hanseregion-Weltkarte visuell an den neuen Design Guide angelehnt: moderner Seekartenlook mit hanseatisch gedeckter Farbpalette.
+- Kartengenerator um zentrale Stilfarben, ruhigeres Meer, waermere Landflaechen, dezente Kartenlinien und Kompassakzent erweitert.
+- Kartenmetadaten dokumentieren den neuen visuellen Stil.
+
+## 0.2.30-ai-trader-design - 2026-05-31
+
+- KI-Haendlerkonzept fuer stabilisierenden, glaubwuerdigen Warenfluss dokumentiert.
+- Globale Startsettings, unsichtbare Haendlerprofile, Zielwahl, Beladung, Verkauf und Marktinformationen der KI festgelegt.
+- Stadt-, Preis-, Produktions-, Verbrauchs- und Bevoelkerungsannahmen fuer den ersten KI-Warenfluss zusammengefasst.
+
+## 0.2.29-sea-navigation-data - 2026-05-31
+
+- Kartengenerator erzeugt automatisch Navigationsdaten aus Landpolygonen, Flusslinien und Hafenmarkern.
+- Navigationsdaten enthalten ein grobes Wasser-Raster, Hafenanker je Hanseort und vorberechnete Wasserpfade zwischen Hanseorten.
+- Fernrouten laufen ueber offene Seezellen; Fluss- und Hafenzellen dienen nur noch als lokaler Zugang zum naechsten See-Gate.
+- Kartenansicht zeichnet die Hauptspielroute und den Schiffsmarker ueber Wasserpfade statt ueber direkte Linien, mit Fallback bei fehlenden Routen.
+- Validierung prueft, dass Navigationsdaten, Debug-Maske, Hafenanker und Routendaten vorhanden sind.
+
+## 0.2.28-city-supply-visible - 2026-05-31
+
+- Map Editor benennt die Versorgungsspalte als `Erzeugung/Zufluss`, damit Hinterland- und Handelszufluss nicht als lokale Produktion missverstanden wird.
+- Luebeck erhaelt sichtbare Zuflusswerte fuer Getreide und weitere verbrauchte Waren, statt dort `0` anzuzeigen.
+
+## 0.2.27-production-consumption-coverage - 2026-05-31
+
+- Produktion und Handelszufluss der festen Startstaedte so angepasst, dass jede verbrauchte Ware regional mindestens gedeckt ist.
+- Map-Editor-Defaults fuer Hanseorte auf besser skalierte Erzeugungs-/Zuflusswerte gegen gruppenbasierten Verbrauch angehoben.
+- Validierung prueft nun die regionale Deckung von Produktion/Zufluss gegen Tagesverbrauch je Ware.
+
+## 0.2.26-historical-units-production-balancing - 2026-05-31
+
+- Warenkatalog um historische Spiel-Einheiten wie Last, Fass, Schiffspfund, Fuder, Ballen, Timmer und Kiste erweitert.
+- Produktion der festen Spielstaedte und Map-Editor-Defaults auf diese groesseren Einheiten neu balanciert.
+- Map Editor und Hauptspiel zeigen Warenpreise bzw. Produktionswerte mit Einheitshinweisen an.
+- Validierung prueft, dass jede Ware Einheiten-Metadaten besitzt.
+
+## 0.2.25-north-sea-trade-sites - 2026-05-31
+
+- Primaere Nordsee-Handelsstandorte Hull, Boston, King's Lynn, Great Yarmouth, Kampen und Stade in den Hanseorte-Katalog aufgenommen.
+- Hafen-/Gewaessermarker, historische Wasserwegsreferenzen und Routen fuer die neuen Nordsee-Standorte ergaenzt.
+- Defaultwerte fuer Einwohner, Erzeugung und Verbrauch der neuen Standorte im Map Editor hinterlegt.
+
+## 0.2.24-map-editor-population-groups - 2026-05-31
+
+- Map Editor zeigt je Stadt die Verteilung auf Arme/Tageloehner, Handwerker/Gesellen, Buerger/Kaufleute und Patrizier/Reiche.
+- Typische Einwohnerverteilungen werden je Stadttyp automatisch aus der Gesamtbevoelkerung berechnet und koennen pro Gruppe angepasst werden.
+- Verbrauchswerte im Map Editor werden aus Einwohnergruppenbedarf plus Stadt-/Gewerbeverbrauch abgeleitet und als Tagesverbrauch angezeigt.
+- Custom-Kartenexport schreibt `population_groups`, damit Simulation und exportierte Karten dieselbe Verbrauchslogik nutzen.
+
+## 0.2.23-aalborg-bay-shore - 2026-05-31
+
+- Aalborg-Marker von der westlichen Seite der Landzunge an den Ufersaum der Aalborg-Bucht verschoben.
+- Aalborg-Wasserwegsreferenz auf Aalborg-Bucht/Limfjord aktualisiert.
+- Kartengenerator, Kartenmetadaten und Hanse-Staedtedaten auf die neue Aalborg-Position synchronisiert.
+
+## 0.2.22-koenigsberg-haff-shore - 2026-05-31
+
+- Koenigsberg-Marker vom offenen Wasser auf den Kuestensaum am Frischen Haff verschoben.
+- Kartengenerator, Kartenmetadaten und Hanse-Staedtedaten auf die neue Haffrandposition synchronisiert.
+
+## 0.2.21-koenigsberg-frisches-haff - 2026-05-31
+
+- Koenigsberg-Marker auf die Danzig/Elbing-Seite des Frischen Haffs verschoben.
+- Kartengenerator und Hanse-Staedtedaten auf denselben neuen Wasserpunkt synchronisiert.
+
+## 0.2.20-hanse-goods-population-needs - 2026-05-31
+
+- Handelswarenkatalog um typische Hanse-Waren wie Stockfisch, Bier, Pech/Teer, Flachs, Wolle, Eisen, Wachs, Pelze, Wein und Gewuerze erweitert.
+- Einwohnergruppen fuer Arme, Handwerker, Buerger/Kaufleute und Patrizier/Reiche mit eigenen Bedarfen und Verbrauchsraten ergaenzt.
+- Feste Spielstaedte erhalten getrennte, historisch grob begruendete Erzeugungs-, Verbrauchs-, Lager- und Zielbestandsprofile.
+- Simulation addiert gruppenbasierten Tagesverbrauch zum Stadtverbrauch; Validierung prueft Warenreferenzen, Gruppensummen und Stadtwirtschaft.
+
+## 0.2.19-water-snapped-map-markers - 2026-05-31
+
+- Stadtmarker im Kartengenerator auf sichtbare Wasserpixel der generierten Hanseregion-Karte eingerastet.
+- Kartenbild, Kartenmetadaten, Hanse-Staedtedaten und feste Spielstadtpositionen auf dieselben Markerkoordinaten synchronisiert.
+- Gezeichnete Stadtpunkte und Routen nutzen nun die wassernahe Markerposition statt abweichender historischer Stadtmitten.
+
+## 0.2.18-start-command-in-tests - 2026-05-31
+
+- AGENTS-Regel ergaenzt: Testanleitungen muessen immer den konkreten Startbefehl fuer die betroffene App oder Szene enthalten.
+- Entwicklungsdokumentation um dieselbe Vorgabe erweitert.
+
+## 0.2.17-coastal-trade-sites - 2026-05-31
+
+- Weitere wichtige Kuesten- und Seehandelsorte nach Recherche ergaenzt: Malmoe, Skanor-Falsterbo, Helsingborg, Kalmar, Abo, Viborg, Narva, Elbing, Memel und Aalborg.
+- Kartenmetadaten um historische Wasserwegs-/Handelsbegruendungen fuer die neuen Orte erweitert.
+- Defaultwerte fuer Einwohner, Erzeugung und Verbrauch der neuen Standorte ergaenzt.
+
+## 0.2.16-map-marker-agent-rule - 2026-05-31
+
+- AGENTS-Regel ergaenzt: wassergebundene historische Handelsstaedte werden am sinnvoll nutzbaren Gewaesserzugang markiert.
+- Festgelegt, dass historische `lon`/`lat`-Koordinaten erhalten bleiben und abweichende Karten-/Hafenmarker separat konsistent gepflegt werden.
+- Dokumentationspflicht fuer recherchierte Wasserwege bei Staedten ohne klaren offenen Seeanschluss verankert.
+
+## 0.2.15-water-aligned-city-markers - 2026-05-31
+
+- Stadtmarker fuer wassergebundene Handelsorte auf Hafen-, Fluss- oder Kuestenzugangspunkte verschoben.
+- London, Bremen und Stettin sowie weitere Fluss-/Hafenstaedte liegen nun auf dem genutzten Gewaesser statt nur auf der historischen Stadtmitte.
+- Kartengenerator dokumentiert getrennte historische Koordinaten und Markerkoordinaten in den Kartenmetadaten.
+
+## 0.2.14-map-river-visibility - 2026-05-31
+
+- Laendergrenzen aus dem generierten Kartenasset entfernt.
+- Fluesse breiter und wasserfarbener dargestellt, damit sie als befahrbare Wasserwege lesbarer sind.
+- Hanseregion-Karte aus dem Generator neu erzeugt.
+
+## 0.2.13-map-click-city-selection - 2026-05-31
+
+- Stadtpunkte im Map Editor koennen direkt auf der Karte angeklickt werden.
+- Kartenklick waehlt die Stadt aus, setzt bei Bedarf die Checkbox und aktualisiert das Grundwerte-Panel.
+- Hover- und Klickerkennung beruecksichtigen Zoom und Pan.
+
+## 0.2.12-city-hover-and-defaults - 2026-05-31
+
+- Kartenansicht zeigt Stadtnamen als Mouseover-Tooltip auf sichtbaren Stadtpunkten.
+- Map Editor erhaelt Defaultwerte fuer Einwohner, Erzeugung und Verbrauch je historischem Hanseort.
+- Bestehende Spielstadtwerte bleiben priorisiert; Defaults fuellen nur bisher leere Editor-Orte.
+
+## 0.2.11-map-view-zoom - 2026-05-31
+
+- Kartenansicht um Mausrad-Zoom bis 500 Prozent erweitert.
+- Gezoomte Karte kann per Ziehen verschoben werden und bleibt an den Kartenraendern begrenzt.
+- Map-Editor-Legende zeigt den aktuellen Zoomfaktor.
+
+## 0.2.10-historical-water-access - 2026-05-31
+
+- Vorherige grobe Wasserzugangsdarstellung zurueckgerollt und durch recherchierte Wasserwege ersetzt.
+- Themse, Zwin, Rhein, Weser, Elbe, Trave, Warnow, Ryck, Oder, Weichsel/Mottlau, Pregel, Duena und Volkhov/Ladoga/Neva als dezente Kartenwasserwege ergaenzt.
+- Kartenmetadaten dokumentieren Typ, betroffene Stadt und historische Grundlage der Wasserwege.
+
+## 0.2.9-map-editor-city-values - 2026-05-31
+
+- Map Editor um ein Stadt-Grundwerte-Panel pro ausgewaehlter Stadt erweitert.
+- Einwohner, Erzeugung und Verbrauch koennen je Stadt ueber Eingabefelder angepasst werden.
+- Vorhandene Spielstadtwerte werden als Startwerte geladen; weitere Hanseorte erhalten Defaultwerte nach Stadttyp.
+- Ausgewaehlte Custom-Staedte koennen inklusive Grundwerten als JSON gespeichert werden.
+
 ## 0.2.8-separated-executables - 2026-05-31
 
 - Hauptspiel und Map Editor technisch in getrennte Szenen und Startskripte aufgeteilt.
