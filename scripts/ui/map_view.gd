@@ -1,7 +1,12 @@
 extends Control
 
+signal editor_city_clicked(city_id: String)
+
 const SOURCE_MAP_SIZE := Vector2(1600.0, 900.0)
 const HANSE_REGION_MAP: Texture2D = preload("res://assets/maps/hanse_region_1600x900.png")
+const MIN_ZOOM := 1.0
+const MAX_ZOOM := 5.0
+const ZOOM_STEP := 1.18
 
 var cities: Array = []
 var editor_cities: Array = []
@@ -11,11 +16,60 @@ var pirate_zones: Array = []
 var simulation_day: int = 1
 var show_game_layer: bool = true
 var show_editor_layer: bool = false
+var map_zoom: float = 1.0
+var map_offset: Vector2 = Vector2.ZERO
+var is_panning: bool = false
+var hovered_city_name: String = ""
+var hover_screen_position: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	custom_minimum_size = Vector2(760, 520)
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	clip_contents = true
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP and mouse_event.pressed:
+			_zoom_at(mouse_event.position, ZOOM_STEP)
+			accept_event()
+		elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN and mouse_event.pressed:
+			_zoom_at(mouse_event.position, 1.0 / ZOOM_STEP)
+			accept_event()
+		elif mouse_event.button_index == MOUSE_BUTTON_LEFT:
+			if mouse_event.double_click:
+				_reset_zoom()
+				accept_event()
+				return
+			if mouse_event.pressed:
+				var clicked_city_id := _editor_city_id_at_screen_position(mouse_event.position)
+				if not clicked_city_id.is_empty():
+					editor_city_clicked.emit(clicked_city_id)
+					_update_hovered_city(mouse_event.position)
+					accept_event()
+					return
+			is_panning = mouse_event.pressed
+			accept_event()
+	elif event is InputEventMouseMotion:
+		var motion_event := event as InputEventMouseMotion
+		if is_panning and map_zoom > MIN_ZOOM:
+			map_offset += motion_event.relative
+			_clamp_map_offset()
+			_update_hovered_city(motion_event.position)
+			queue_redraw()
+			accept_event()
+		else:
+			_update_hovered_city(motion_event.position)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		_clamp_map_offset()
+		queue_redraw()
+	elif what == NOTIFICATION_MOUSE_EXIT:
+		hovered_city_name = ""
+		queue_redraw()
 
 func set_catalog(catalog: Dictionary) -> void:
 	cities = catalog.get("cities", [])
@@ -38,6 +92,7 @@ func set_layers(is_game_layer_visible: bool, is_editor_layer_visible: bool) -> v
 	queue_redraw()
 
 func _draw() -> void:
+	draw_set_transform(map_offset, 0.0, Vector2(map_zoom, map_zoom))
 	_draw_map_background()
 	_draw_pirate_zones()
 	if show_game_layer:
@@ -45,7 +100,9 @@ func _draw() -> void:
 		_draw_cities()
 	if show_editor_layer:
 		_draw_editor_cities()
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	_draw_legend()
+	_draw_hovered_city_name()
 
 func _draw_map_background() -> void:
 	draw_texture_rect(HANSE_REGION_MAP, Rect2(Vector2.ZERO, size), false)
@@ -112,7 +169,7 @@ func _draw_editor_cities() -> void:
 		draw_arc(pos, radius + 2.5, 0.0, TAU, 48, Color(0.98, 0.96, 0.86, 0.72 if is_selected else 0.24), 1.2)
 
 		if is_selected:
-			draw_string(font, pos + Vector2(11, -8), String(city.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, -1.0, 14, Color(0.98, 0.96, 0.86, 0.92))
+			draw_arc(pos, radius + 5.0, 0.0, TAU, 48, Color(0.98, 0.96, 0.86, 0.42), 1.0)
 
 func _editor_city_color(kind: String) -> Color:
 	match kind:
@@ -134,13 +191,108 @@ func _draw_legend() -> void:
 		cities.size()
 	]
 	if show_editor_layer:
-		text = "Map Editor | Editorpunkte: %d / %d | Rot: Piratenrisiko" % [
+		text = "Map Editor | Zoom: %d%% | Editorpunkte: %d / %d | Rot: Piratenrisiko" % [
+			int(round(map_zoom * 100.0)),
 			placed_editor_city_ids.size(),
 			editor_cities.size()
 		]
-	var legend_width := 560.0 if show_editor_layer else 590.0
+	var legend_width := 650.0 if show_editor_layer else 590.0
 	draw_rect(Rect2(Vector2(18, 18), Vector2(legend_width, 34)), Color(0.02, 0.03, 0.04, 0.55), true)
 	draw_string(font, Vector2(30, 41), text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 15, Color(0.93, 0.94, 0.90))
+
+func _draw_hovered_city_name() -> void:
+	if hovered_city_name.is_empty():
+		return
+
+	var font := get_theme_default_font()
+	var font_size := 15
+	var padding := Vector2(9, 6)
+	var text_size := font.get_string_size(hovered_city_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
+	var panel_size := text_size + padding * 2.0
+	var panel_position := hover_screen_position + Vector2(14, -panel_size.y - 10)
+	panel_position.x = clamp(panel_position.x, 8.0, max(8.0, size.x - panel_size.x - 8.0))
+	panel_position.y = clamp(panel_position.y, 58.0, max(58.0, size.y - panel_size.y - 8.0))
+
+	draw_rect(Rect2(panel_position, panel_size), Color(0.02, 0.03, 0.04, 0.78), true)
+	draw_rect(Rect2(panel_position, panel_size), Color(0.95, 0.90, 0.72, 0.55), false, 1.0)
+	draw_string(font, panel_position + Vector2(padding.x, padding.y + font_size), hovered_city_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, Color(0.98, 0.96, 0.86))
+
+func _zoom_at(screen_position: Vector2, factor: float) -> void:
+	var old_zoom: float = map_zoom
+	var next_zoom: float = clampf(map_zoom * factor, MIN_ZOOM, MAX_ZOOM)
+	if is_equal_approx(old_zoom, next_zoom):
+		return
+
+	var map_position_before_zoom: Vector2 = (screen_position - map_offset) / old_zoom
+	map_zoom = next_zoom
+	map_offset = screen_position - map_position_before_zoom * map_zoom
+	_clamp_map_offset()
+	_update_hovered_city(screen_position)
+	queue_redraw()
+
+func _reset_zoom() -> void:
+	map_zoom = MIN_ZOOM
+	map_offset = Vector2.ZERO
+	is_panning = false
+	hovered_city_name = ""
+	queue_redraw()
+
+func _clamp_map_offset() -> void:
+	if map_zoom <= MIN_ZOOM:
+		map_zoom = MIN_ZOOM
+		map_offset = Vector2.ZERO
+		return
+
+	var scaled_size: Vector2 = size * map_zoom
+	var min_offset: Vector2 = size - scaled_size
+	map_offset.x = clamp(map_offset.x, min_offset.x, 0.0)
+	map_offset.y = clamp(map_offset.y, min_offset.y, 0.0)
+
+func _update_hovered_city(screen_position: Vector2) -> void:
+	var city_name := _city_name_at_screen_position(screen_position)
+	if city_name == hovered_city_name and hover_screen_position == screen_position:
+		return
+
+	hovered_city_name = city_name
+	hover_screen_position = screen_position
+	queue_redraw()
+
+func _city_name_at_screen_position(screen_position: Vector2) -> String:
+	if show_editor_layer:
+		for city_entry in editor_cities:
+			var city: Dictionary = city_entry
+			var city_id: String = _editor_city_id_at_screen_position(screen_position)
+			if not city_id.is_empty() and city_id == String(city.get("id", "")):
+				return String(city.get("name", ""))
+
+	if show_game_layer:
+		for city_entry in cities:
+			var city: Dictionary = city_entry
+			var pos := _screen_position_from_map(_scale_position(city.get("position", {})))
+			if screen_position.distance_to(pos) <= 18.0:
+				return String(city.get("name", ""))
+
+	return ""
+
+func _editor_city_id_at_screen_position(screen_position: Vector2) -> String:
+	if not show_editor_layer:
+		return ""
+
+	for city_entry in editor_cities:
+		var city: Dictionary = city_entry
+		var city_id := String(city.get("id", ""))
+		if not placed_editor_city_ids.has(city_id):
+			continue
+
+		var pos := _screen_position_from_map(_scale_position(city.get("position", {})))
+		var radius := 12.0 if city_id == selected_editor_city_id else 10.0
+		if screen_position.distance_to(pos) <= radius:
+			return city_id
+
+	return ""
+
+func _screen_position_from_map(map_position: Vector2) -> Vector2:
+	return map_position * map_zoom + map_offset
 
 func _main_route() -> Array[String]:
 	var preferred_route: Array[String] = ["bremen", "hamburg", "luebeck", "visby", "danzig"]

@@ -2,6 +2,7 @@ extends RefCounted
 
 const DATA_FILES := {
 	"goods": "res://data/goods.json",
+	"population_groups": "res://data/population_groups.json",
 	"cities": "res://data/cities.json",
 	"hanse_cities": "res://data/hanse_cities.json",
 	"ship_types": "res://data/ship_types.json",

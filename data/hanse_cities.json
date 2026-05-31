@@ -6,7 +6,7 @@
     "kind": "kontor",
     "lon": -0.1276,
     "lat": 51.5072,
-    "position": { "x": 231, "y": 745 }
+    "position": { "x": 231, "y": 744 }
   },
   {
     "id": "bruegge",
@@ -15,7 +15,7 @@
     "kind": "kontor",
     "lon": 3.2247,
     "lat": 51.2093,
-    "position": { "x": 364, "y": 766 }
+    "position": { "x": 366, "y": 752 }
   },
   {
     "id": "koeln",
@@ -33,7 +33,7 @@
     "kind": "member",
     "lon": 8.8017,
     "lat": 53.0793,
-    "position": { "x": 583, "y": 634 }
+    "position": { "x": 584, "y": 634 }
   },
   {
     "id": "hamburg",
@@ -51,7 +51,7 @@
     "kind": "core",
     "lon": 10.6866,
     "lat": 53.8655,
-    "position": { "x": 658, "y": 579 }
+    "position": { "x": 665, "y": 568 }
   },
   {
     "id": "wismar",
@@ -60,7 +60,7 @@
     "kind": "member",
     "lon": 11.4629,
     "lat": 53.8931,
-    "position": { "x": 688, "y": 577 }
+    "position": { "x": 685, "y": 572 }
   },
   {
     "id": "rostock",
@@ -69,7 +69,7 @@
     "kind": "member",
     "lon": 12.0991,
     "lat": 54.0924,
-    "position": { "x": 713, "y": 563 }
+    "position": { "x": 710, "y": 557 }
   },
   {
     "id": "stralsund",
@@ -78,7 +78,7 @@
     "kind": "member",
     "lon": 13.077,
     "lat": 54.3091,
-    "position": { "x": 752, "y": 548 }
+    "position": { "x": 753, "y": 546 }
   },
   {
     "id": "greifswald",
@@ -87,7 +87,7 @@
     "kind": "member",
     "lon": 13.3815,
     "lat": 54.0958,
-    "position": { "x": 764, "y": 563 }
+    "position": { "x": 766, "y": 558 }
   },
   {
     "id": "stettin",
@@ -105,7 +105,43 @@
     "kind": "trade",
     "lon": 12.5683,
     "lat": 55.6761,
-    "position": { "x": 732, "y": 452 }
+    "position": { "x": 732, "y": 451 }
+  },
+  {
+    "id": "malmoe",
+    "name": "Malmoe",
+    "region": "Schonen",
+    "kind": "trade",
+    "lon": 13.0038,
+    "lat": 55.605,
+    "position": { "x": 746, "y": 457 }
+  },
+  {
+    "id": "skanor_falsterbo",
+    "name": "Skanor-Falsterbo",
+    "region": "Schonen",
+    "kind": "trade",
+    "lon": 12.8469,
+    "lat": 55.3978,
+    "position": { "x": 743, "y": 471 }
+  },
+  {
+    "id": "helsingborg",
+    "name": "Helsingborg",
+    "region": "Schonen",
+    "kind": "trade",
+    "lon": 12.6945,
+    "lat": 56.0465,
+    "position": { "x": 736, "y": 426 }
+  },
+  {
+    "id": "aalborg",
+    "name": "Aalborg",
+    "region": "Daenemark",
+    "kind": "trade",
+    "lon": 9.9217,
+    "lat": 57.0488,
+    "position": { "x": 646, "y": 348 }
   },
   {
     "id": "oslo",
@@ -114,7 +150,7 @@
     "kind": "trade",
     "lon": 10.7522,
     "lat": 59.9139,
-    "position": { "x": 660, "y": 154 }
+    "position": { "x": 653, "y": 166 }
   },
   {
     "id": "bergen",
@@ -123,7 +159,7 @@
     "kind": "kontor",
     "lon": 5.3221,
     "lat": 60.3929,
-    "position": { "x": 446, "y": 120 }
+    "position": { "x": 440, "y": 125 }
   },
   {
     "id": "stockholm",
@@ -135,13 +171,22 @@
     "position": { "x": 949, "y": 195 }
   },
   {
+    "id": "kalmar",
+    "name": "Kalmar",
+    "region": "Schweden",
+    "kind": "trade",
+    "lon": 16.3568,
+    "lat": 56.6634,
+    "position": { "x": 881, "y": 382 }
+  },
+  {
     "id": "visby",
     "name": "Visby",
     "region": "Gotland",
     "kind": "core",
     "lon": 18.2948,
     "lat": 57.6348,
-    "position": { "x": 957, "y": 314 }
+    "position": { "x": 956, "y": 313 }
   },
   {
     "id": "danzig",
@@ -150,7 +195,16 @@
     "kind": "member",
     "lon": 18.6466,
     "lat": 54.352,
-    "position": { "x": 971, "y": 545 }
+    "position": { "x": 975, "y": 540 }
+  },
+  {
+    "id": "elbing",
+    "name": "Elbing",
+    "region": "Preussen",
+    "kind": "member",
+    "lon": 19.4088,
+    "lat": 54.1561,
+    "position": { "x": 990, "y": 543 }
   },
   {
     "id": "koenigsberg",
@@ -159,7 +213,16 @@
     "kind": "member",
     "lon": 20.5106,
     "lat": 54.7104,
-    "position": { "x": 1045, "y": 520 }
+    "position": { "x": 1022, "y": 522 }
+  },
+  {
+    "id": "memel",
+    "name": "Memel",
+    "region": "Preussen",
+    "kind": "trade",
+    "lon": 21.1443,
+    "lat": 55.7033,
+    "position": { "x": 1068, "y": 450 }
   },
   {
     "id": "riga",
@@ -177,7 +240,34 @@
     "kind": "member",
     "lon": 24.7536,
     "lat": 59.437,
-    "position": { "x": 1212, "y": 187 }
+    "position": { "x": 1212, "y": 184 }
+  },
+  {
+    "id": "abo",
+    "name": "Abo",
+    "region": "Finnland",
+    "kind": "trade",
+    "lon": 22.2666,
+    "lat": 60.4518,
+    "position": { "x": 1112, "y": 120 }
+  },
+  {
+    "id": "viborg",
+    "name": "Viborg",
+    "region": "Finnland",
+    "kind": "trade",
+    "lon": 28.7528,
+    "lat": 60.709,
+    "position": { "x": 1363, "y": 104 }
+  },
+  {
+    "id": "narva",
+    "name": "Narva",
+    "region": "Livland",
+    "kind": "trade",
+    "lon": 28.1903,
+    "lat": 59.3772,
+    "position": { "x": 1346, "y": 191 }
   },
   {
     "id": "nowgorod",
@@ -186,6 +276,6 @@
     "kind": "kontor",
     "lon": 31.2755,
     "lat": 58.5228,
-    "position": { "x": 1469, "y": 252 }
+    "position": { "x": 1470, "y": 251 }
   }
 ]

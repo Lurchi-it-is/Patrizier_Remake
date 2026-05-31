@@ -13,16 +13,250 @@
   },
   "data_sources": [
     "Natural Earth 1:50m Admin 0 countries",
-    "Natural Earth 1:50m rivers and lake centerlines"
+    "Natural Earth 1:10m rivers and lake centerlines",
+    "Researched historical waterway references for selected Hanse cities"
+  ],
+  "historical_waterways": [
+    {
+      "id": "thames_london",
+      "name": "Thames to London",
+      "kind": "tidal_river",
+      "cities": [
+        "london"
+      ],
+      "basis": "London Hanse kontor at the Steelyard on the Thames.",
+      "source_names": [
+        "Thames"
+      ]
+    },
+    {
+      "id": "zwin_bruegge",
+      "name": "Zwin, Damme and Reie access to Bruegge",
+      "kind": "tidal_inlet",
+      "cities": [
+        "bruegge"
+      ],
+      "basis": "Bruges used the medieval Zwin inlet, with Damme and Sluis as access points.",
+      "source_names": []
+    },
+    {
+      "id": "rhine_koeln",
+      "name": "Lower Rhine to Koeln",
+      "kind": "river",
+      "cities": [
+        "koeln"
+      ],
+      "basis": "Cologne's Hanseatic trade used its Rhine harbour and lower Rhine route.",
+      "source_names": [
+        "Rhine"
+      ]
+    },
+    {
+      "id": "weser_bremen",
+      "name": "Weser to Bremen",
+      "kind": "river",
+      "cities": [
+        "bremen"
+      ],
+      "basis": "Bremen's maritime access followed the Weser; the medieval quay lay on the riverside.",
+      "source_names": [
+        "Weser"
+      ]
+    },
+    {
+      "id": "elbe_hamburg",
+      "name": "Elbe to Hamburg",
+      "kind": "tidal_river",
+      "cities": [
+        "hamburg"
+      ],
+      "basis": "Hamburg is an Elbe port, roughly 100 km from the North Sea.",
+      "source_names": [
+        "Elbe"
+      ]
+    },
+    {
+      "id": "trave_luebeck",
+      "name": "Trave from Travemuende to Luebeck",
+      "kind": "river",
+      "cities": [
+        "luebeck"
+      ],
+      "basis": "Luebeck's harbour lay on the Trave near the Baltic.",
+      "source_names": []
+    },
+    {
+      "id": "warnow_rostock",
+      "name": "Unterwarnow to Rostock",
+      "kind": "river_estuary",
+      "cities": [
+        "rostock"
+      ],
+      "basis": "Rostock developed on the Warnow; Warnemuende secured Baltic access.",
+      "source_names": []
+    },
+    {
+      "id": "ryck_greifswald",
+      "name": "Ryck to Greifswald",
+      "kind": "river",
+      "cities": [
+        "greifswald"
+      ],
+      "basis": "Greifswald's medieval Hanseatic port used the Ryck near Greifswalder Bay.",
+      "source_names": []
+    },
+    {
+      "id": "oder_stettin",
+      "name": "Oder and lagoon access to Stettin",
+      "kind": "river_lagoon",
+      "cities": [
+        "stettin"
+      ],
+      "basis": "Stettin/Szczecin was reached through the Oder system and Baltic lagoon waters.",
+      "source_names": [
+        "Oder"
+      ]
+    },
+    {
+      "id": "vistula_danzig",
+      "name": "Vistula and Motlawa access to Danzig",
+      "kind": "delta_river",
+      "cities": [
+        "danzig"
+      ],
+      "basis": "Danzig/Gdansk stood at the Vistula-Baltic nexus; the old port used the Motlawa.",
+      "source_names": [
+        "Vistula"
+      ]
+    },
+    {
+      "id": "pregel_koenigsberg",
+      "name": "Pregel and lagoon access to Koenigsberg",
+      "kind": "river_lagoon",
+      "cities": [
+        "koenigsberg"
+      ],
+      "basis": "Koenigsberg/Kaliningrad used the Pregel/Pregolya and lagoon route to the Baltic.",
+      "source_names": []
+    },
+    {
+      "id": "daugava_riga",
+      "name": "Daugava to Riga",
+      "kind": "river",
+      "cities": [
+        "riga"
+      ],
+      "basis": "Riga's medieval port developed by the Daugava/Ridzene waters.",
+      "source_names": [
+        "Daugava"
+      ]
+    },
+    {
+      "id": "scania_herring_ports",
+      "name": "Scania herring ports around Oresund",
+      "kind": "coastal_market",
+      "cities": [
+        "malmoe",
+        "skanor_falsterbo",
+        "helsingborg"
+      ],
+      "basis": "The Scania herring market connected Oresund coastal towns with merchants from Luebeck and other Hanseatic towns.",
+      "source_names": []
+    },
+    {
+      "id": "kalmar_sound",
+      "name": "Kalmar Sound trading access",
+      "kind": "coastal_sound",
+      "cities": [
+        "kalmar"
+      ],
+      "basis": "Kalmar was a Baltic trading place with connections to the Hanseatic League.",
+      "source_names": []
+    },
+    {
+      "id": "aura_turku",
+      "name": "Aura river harbour to Abo/Turku",
+      "kind": "river_harbour",
+      "cities": [
+        "abo"
+      ],
+      "basis": "Turku's German Hanseatic trade concentrated around the river harbour in the late 13th century.",
+      "source_names": []
+    },
+    {
+      "id": "viborg_bay",
+      "name": "Viborg Bay trading access",
+      "kind": "coastal_bay",
+      "cities": [
+        "viborg"
+      ],
+      "basis": "Viborg traded goods from Novgorod, with trade mainly controlled by Hanseatic merchants.",
+      "source_names": []
+    },
+    {
+      "id": "narva_river",
+      "name": "Narva river and Gulf of Finland access",
+      "kind": "river_port",
+      "cities": [
+        "narva"
+      ],
+      "basis": "Narva's medieval trade role depended on its river and Gulf of Finland route between Livonia and Russian trade.",
+      "source_names": []
+    },
+    {
+      "id": "elbing_lagoon",
+      "name": "Elbing river and Vistula Lagoon access",
+      "kind": "river_lagoon",
+      "cities": [
+        "elbing"
+      ],
+      "basis": "Elbing joined the Hanseatic League in the late 13th century and operated as a Baltic commercial port.",
+      "source_names": []
+    },
+    {
+      "id": "memel_curonian_lagoon",
+      "name": "Memel and Curonian Lagoon access",
+      "kind": "lagoon_port",
+      "cities": [
+        "memel"
+      ],
+      "basis": "Memel/Klaipeda was involved in maritime trade from the 13th century at the Curonian Lagoon outlet.",
+      "source_names": []
+    },
+    {
+      "id": "aalborg_limfjord",
+      "name": "Aalborg Bay and Limfjord access",
+      "kind": "fjord_port",
+      "cities": [
+        "aalborg"
+      ],
+      "basis": "Aalborg controlled a Limfjord crossing and had maritime access through Aalborg Bay.",
+      "source_names": []
+    },
+    {
+      "id": "volkhov_nowgorod",
+      "name": "Neva, Ladoga and Volkhov route to Nowgorod",
+      "kind": "river_lake_route",
+      "cities": [
+        "nowgorod"
+      ],
+      "basis": "Novgorod was connected to Baltic trade through the Neva, Lake Ladoga and Volkhov route.",
+      "source_names": [
+        "Neva",
+        "Volkhov"
+      ]
+    }
   ],
   "city_pixels": {
     "london": {
       "name": "London",
       "lon": -0.1276,
       "lat": 51.5072,
+      "marker_lon": -0.13837499999999991,
+      "marker_lat": 51.51866666666666,
       "position": {
         "x": 231,
-        "y": 745
+        "y": 744
       },
       "kind": "kontor"
     },
@@ -30,9 +264,11 @@
       "name": "Bruegge",
       "lon": 3.2247,
       "lat": 51.2093,
+      "marker_lon": 3.2872500000000002,
+      "marker_lat": 51.404888888888884,
       "position": {
-        "x": 364,
-        "y": 766
+        "x": 366,
+        "y": 752
       },
       "kind": "kontor"
     },
@@ -40,6 +276,8 @@
       "name": "Koeln",
       "lon": 6.9603,
       "lat": 50.9375,
+      "marker_lon": 6.9666250000000005,
+      "marker_lat": 50.93555555555555,
       "position": {
         "x": 511,
         "y": 785
@@ -50,8 +288,10 @@
       "name": "Bremen",
       "lon": 8.8017,
       "lat": 53.0793,
+      "marker_lon": 8.819,
+      "marker_lat": 53.08311111111111,
       "position": {
-        "x": 583,
+        "x": 584,
         "y": 634
       },
       "kind": "member"
@@ -60,6 +300,8 @@
       "name": "Hamburg",
       "lon": 9.9937,
       "lat": 53.5511,
+      "marker_lon": 9.98625,
+      "marker_lat": 53.55244444444445,
       "position": {
         "x": 630,
         "y": 601
@@ -70,9 +312,11 @@
       "name": "Luebeck",
       "lon": 10.6866,
       "lat": 53.8655,
+      "marker_lon": 10.874375,
+      "marker_lat": 54.02177777777778,
       "position": {
-        "x": 658,
-        "y": 579
+        "x": 665,
+        "y": 568
       },
       "kind": "core"
     },
@@ -80,9 +324,11 @@
       "name": "Wismar",
       "lon": 11.4629,
       "lat": 53.8931,
+      "marker_lon": 11.381874999999997,
+      "marker_lat": 53.964888888888886,
       "position": {
-        "x": 688,
-        "y": 577
+        "x": 685,
+        "y": 572
       },
       "kind": "member"
     },
@@ -90,9 +336,11 @@
       "name": "Rostock",
       "lon": 12.0991,
       "lat": 54.0924,
+      "marker_lon": 12.01625,
+      "marker_lat": 54.17822222222222,
       "position": {
-        "x": 713,
-        "y": 563
+        "x": 710,
+        "y": 557
       },
       "kind": "member"
     },
@@ -100,9 +348,11 @@
       "name": "Stralsund",
       "lon": 13.077,
       "lat": 54.3091,
+      "marker_lon": 13.107375000000001,
+      "marker_lat": 54.334666666666664,
       "position": {
-        "x": 752,
-        "y": 548
+        "x": 753,
+        "y": 546
       },
       "kind": "member"
     },
@@ -110,9 +360,11 @@
       "name": "Greifswald",
       "lon": 13.3815,
       "lat": 54.0958,
+      "marker_lon": 13.437250000000002,
+      "marker_lat": 54.164,
       "position": {
-        "x": 764,
-        "y": 563
+        "x": 766,
+        "y": 558
       },
       "kind": "member"
     },
@@ -120,6 +372,8 @@
       "name": "Stettin",
       "lon": 14.5528,
       "lat": 53.4285,
+      "marker_lon": 14.553749999999997,
+      "marker_lat": 53.42444444444445,
       "position": {
         "x": 810,
         "y": 610
@@ -130,9 +384,59 @@
       "name": "Kopenhagen",
       "lon": 12.5683,
       "lat": 55.6761,
+      "marker_lon": 12.5745,
+      "marker_lat": 55.68577777777778,
       "position": {
         "x": 732,
-        "y": 452
+        "y": 451
+      },
+      "kind": "trade"
+    },
+    "malmoe": {
+      "name": "Malmoe",
+      "lon": 13.0038,
+      "lat": 55.605,
+      "marker_lon": 12.929749999999999,
+      "marker_lat": 55.60044444444444,
+      "position": {
+        "x": 746,
+        "y": 457
+      },
+      "kind": "trade"
+    },
+    "skanor_falsterbo": {
+      "name": "Skanor-Falsterbo",
+      "lon": 12.8469,
+      "lat": 55.3978,
+      "marker_lon": 12.853625000000001,
+      "marker_lat": 55.40133333333333,
+      "position": {
+        "x": 743,
+        "y": 471
+      },
+      "kind": "trade"
+    },
+    "helsingborg": {
+      "name": "Helsingborg",
+      "lon": 12.6945,
+      "lat": 56.0465,
+      "marker_lon": 12.676000000000002,
+      "marker_lat": 56.041333333333334,
+      "position": {
+        "x": 736,
+        "y": 426
+      },
+      "kind": "trade"
+    },
+    "aalborg": {
+      "name": "Aalborg",
+      "lon": 9.9217,
+      "lat": 57.0488,
+      "marker_lon": 10.39225,
+      "marker_lat": 57.150666666666666,
+      "position": {
+        "x": 646,
+        "y": 348
       },
       "kind": "trade"
     },
@@ -140,9 +444,11 @@
       "name": "Oslo",
       "lon": 10.7522,
       "lat": 59.9139,
+      "marker_lon": 10.569875,
+      "marker_lat": 59.739111111111114,
       "position": {
-        "x": 660,
-        "y": 154
+        "x": 653,
+        "y": 166
       },
       "kind": "trade"
     },
@@ -150,9 +456,11 @@
       "name": "Bergen",
       "lon": 5.3221,
       "lat": 60.3929,
+      "marker_lon": 5.165000000000001,
+      "marker_lat": 60.32222222222222,
       "position": {
-        "x": 446,
-        "y": 120
+        "x": 440,
+        "y": 125
       },
       "kind": "kontor"
     },
@@ -160,9 +468,23 @@
       "name": "Stockholm",
       "lon": 18.0686,
       "lat": 59.3293,
+      "marker_lon": 18.080875000000002,
+      "marker_lat": 59.32666666666667,
       "position": {
         "x": 949,
         "y": 195
+      },
+      "kind": "trade"
+    },
+    "kalmar": {
+      "name": "Kalmar",
+      "lon": 16.3568,
+      "lat": 56.6634,
+      "marker_lon": 16.355375000000002,
+      "marker_lat": 56.66711111111111,
+      "position": {
+        "x": 881,
+        "y": 382
       },
       "kind": "trade"
     },
@@ -170,9 +492,11 @@
       "name": "Visby",
       "lon": 18.2948,
       "lat": 57.6348,
+      "marker_lon": 18.2585,
+      "marker_lat": 57.64844444444444,
       "position": {
-        "x": 957,
-        "y": 314
+        "x": 956,
+        "y": 313
       },
       "kind": "core"
     },
@@ -180,9 +504,23 @@
       "name": "Danzig",
       "lon": 18.6466,
       "lat": 54.352,
+      "marker_lon": 18.740625,
+      "marker_lat": 54.42,
       "position": {
-        "x": 971,
-        "y": 545
+        "x": 975,
+        "y": 540
+      },
+      "kind": "member"
+    },
+    "elbing": {
+      "name": "Elbing",
+      "lon": 19.4088,
+      "lat": 54.1561,
+      "marker_lon": 19.12125,
+      "marker_lat": 54.37733333333333,
+      "position": {
+        "x": 990,
+        "y": 543
       },
       "kind": "member"
     },
@@ -190,16 +528,32 @@
       "name": "Koenigsberg",
       "lon": 20.5106,
       "lat": 54.7104,
+      "marker_lon": 19.93325,
+      "marker_lat": 54.676,
       "position": {
-        "x": 1045,
-        "y": 520
+        "x": 1022,
+        "y": 522
       },
       "kind": "member"
+    },
+    "memel": {
+      "name": "Memel",
+      "lon": 21.1443,
+      "lat": 55.7033,
+      "marker_lon": 21.1005,
+      "marker_lat": 55.7,
+      "position": {
+        "x": 1068,
+        "y": 450
+      },
+      "kind": "trade"
     },
     "riga": {
       "name": "Riga",
       "lon": 24.1052,
       "lat": 56.9496,
+      "marker_lon": 24.094749999999998,
+      "marker_lat": 56.95155555555556,
       "position": {
         "x": 1186,
         "y": 362
@@ -210,19 +564,59 @@
       "name": "Reval",
       "lon": 24.7536,
       "lat": 59.437,
+      "marker_lon": 24.7545,
+      "marker_lat": 59.483111111111114,
       "position": {
         "x": 1212,
-        "y": 187
+        "y": 184
       },
       "kind": "member"
+    },
+    "abo": {
+      "name": "Abo",
+      "lon": 22.2666,
+      "lat": 60.4518,
+      "marker_lon": 22.217,
+      "marker_lat": 60.39333333333333,
+      "position": {
+        "x": 1112,
+        "y": 120
+      },
+      "kind": "trade"
+    },
+    "viborg": {
+      "name": "Viborg",
+      "lon": 28.7528,
+      "lat": 60.709,
+      "marker_lon": 28.586125000000003,
+      "marker_lat": 60.62088888888889,
+      "position": {
+        "x": 1363,
+        "y": 104
+      },
+      "kind": "trade"
+    },
+    "narva": {
+      "name": "Narva",
+      "lon": 28.1903,
+      "lat": 59.3772,
+      "marker_lon": 28.154750000000007,
+      "marker_lat": 59.38355555555555,
+      "position": {
+        "x": 1346,
+        "y": 191
+      },
+      "kind": "trade"
     },
     "nowgorod": {
       "name": "Nowgorod",
       "lon": 31.2755,
       "lat": 58.5228,
+      "marker_lon": 31.301249999999996,
+      "marker_lat": 58.53022222222222,
       "position": {
-        "x": 1469,
-        "y": 252
+        "x": 1470,
+        "y": 251
       },
       "kind": "kontor"
     }

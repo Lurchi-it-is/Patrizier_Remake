@@ -92,7 +92,7 @@ func _build_header() -> Control:
 	title_box.add_child(subtitle)
 
 	var version := Label.new()
-	version.text = "0.2.8-separated-executables"
+	version.text = String(ProjectSettings.get_setting("application/config/version", ""))
 	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	version.add_theme_font_size_override("font_size", 14)
 	header.add_child(version)
@@ -182,16 +182,22 @@ func _market_preview() -> String:
 	var lines: Array[String] = []
 	for city_id in simulation.city_state.keys():
 		var city: Dictionary = simulation.city_state[city_id]
-		var grain_price: int = simulation.get_price(city_id, "grain")
-		var salt_price: int = simulation.get_price(city_id, "salt")
-		var herring_price: int = simulation.get_price(city_id, "herring")
-		lines.append("[b]%s[/b]\nGetreide %d | Salz %d | Hering %d" % [
+		lines.append("[b]%s[/b]\n%s" % [
 			city.get("name", city_id),
-			grain_price,
-			salt_price,
-			herring_price
+			_market_goods_preview(city_id)
 		])
 	return "\n\n".join(lines)
+
+func _market_goods_preview(city_id: String) -> String:
+	var entries: Array[String] = []
+	for good_entry in catalog.get("goods", []):
+		var good: Dictionary = good_entry
+		var good_id := String(good.get("id", ""))
+		entries.append("%s %d" % [
+			String(good.get("name", good_id)),
+			simulation.get_price(city_id, good_id)
+		])
+	return " | ".join(entries)
 
 func _combat_preview() -> String:
 	return "Route: Bremen -> Hamburg -> Luebeck -> Visby -> Danzig\nStatus: %s\nSchaden: %.1f\nFrachtverlust: %.1f%%\nKopfgeld: %d" % [

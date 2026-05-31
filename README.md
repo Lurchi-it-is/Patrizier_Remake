@@ -4,7 +4,7 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.8-separated-executables`
+Version: `0.2.24-map-editor-population-groups`
 
 Das Projektfundament enthaelt:
 
@@ -13,6 +13,17 @@ Das Projektfundament enthaelt:
 - feste Startkarte mit fuenf geladenen Spielstaedten: Bremen, Hamburg, Luebeck, Visby und Danzig
 - getrennte Startpunkte und Windows-Export-Presets fuer Hauptspiel und Map Editor
 - Karteneditor-Auswahl fuer historische Hanseorte mit scrollbarer Checkbox-Liste und punktgenauer Platzierung auf dem Kartenasset
+- Karteneditor-Grundwerte pro Stadt fuer Einwohner, Erzeugung und Verbrauch inklusive JSON-Export
+- zoombare und verschiebbare Kartenansicht im Map Editor
+- Stadtnamen werden auf der Karte per Mouseover angezeigt
+- Stadtpunkte koennen direkt auf der Karte angeklickt und ausgewaehlt werden
+- Stadtmarker historischer Wasserhandelsorte sitzen auf sichtbaren Wasserpixeln an Hafen-, Fluss- oder Kuestenzugangspunkten
+- zusaetzliche wichtige Kuesten- und Seehandelsorte wie Malmoe, Skanor-Falsterbo, Kalmar, Abo, Viborg, Narva, Elbing, Memel und Aalborg
+- sinnvolle Defaultwerte fuer Einwohner, Erzeugung und Verbrauch je Hanseort
+- erweiterte Hanse-Handelswaren inklusive Stockfisch, Bier, Pech/Teer, Flachs, Wolle, Eisen, Wachs, Pelzen, Wein und Gewuerzen
+- Einwohnergruppen fuer Arme, Handwerker, Buerger und Patrizier mit eigenen Bedarfen und Tagesverbrauch
+- sichtbare Einwohnergruppen-Verteilung im Map Editor; Verbrauchswerte werden daraus abgeleitet
+- recherchierte, breiter lesbare Wasserwege ohne Laendergrenzen fuer historisch per Fluss, Muendung oder Lagune angelaufene Handelsstaedte
 - datengetriebene Beispielkataloge fuer Waren, Staedte, Schiffstypen und Piratenzonen
 - erste Simulationsbausteine fuer Preisbildung, Tages-Tick und Seeschlacht-Auto-Resolver
 - lokale Validierung fuer JSON-Daten und Versionskonsistenz

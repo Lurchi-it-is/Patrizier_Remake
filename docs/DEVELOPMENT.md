@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.8-separated-executables
+Version: 0.2.24-map-editor-population-groups
 
 ## Branch- und Worktree-Regel
 
@@ -26,8 +26,12 @@ powershell -ExecutionPolicy Bypass -File tools\validate_project.ps1
 Der Check prueft:
 
 - JSON-Syntax der Datenkataloge
+- Warenreferenzen in Stadtwirtschaft und Einwohnergruppen
+- Einwohnergruppensummen je Stadt
 - Versionskonsistenz zwischen `VERSION`, `project.godot`, `README.md`, `CHANGELOG.md` und Dokumentation
 - Existenz der Godot-Startszene, der getrennten Hauptspiel-/Map-Editor-Szenen und der Windows-Export-Presets
+
+Testanleitungen muessen immer den konkreten Startbefehl fuer die betroffene App oder Szene enthalten.
 
 ## Windows-Exports
 

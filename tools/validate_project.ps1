@@ -32,20 +32,85 @@ foreach ($jsonFile in $jsonFiles) {
 $goods = Get-Content -Raw "data\goods.json" | ConvertFrom-Json
 $goodIds = @{}
 foreach ($good in $goods) {
+    if ($goodIds.ContainsKey($good.id)) {
+        throw "Duplicate good id '$($good.id)'"
+    }
     $goodIds[$good.id] = $true
 }
 
+$populationGroups = Get-Content -Raw "data\population_groups.json" | ConvertFrom-Json
+$populationGroupIds = @{}
+foreach ($group in $populationGroups) {
+    if ($populationGroupIds.ContainsKey($group.id)) {
+        throw "Duplicate population group id '$($group.id)'"
+    }
+
+    $populationGroupIds[$group.id] = $true
+    foreach ($need in $group.daily_consumption_per_1000.PSObject.Properties) {
+        if (-not $goodIds.ContainsKey($need.Name)) {
+            throw "Population group '$($group.id)' references unknown good '$($need.Name)'"
+        }
+    }
+}
+
 $cities = Get-Content -Raw "data\cities.json" | ConvertFrom-Json
+$cityEconomyReports = @()
 foreach ($city in $cities) {
+    $dailyConsumption = @{}
     foreach ($section in @("production", "consumption", "stock", "target_stock")) {
         $properties = $city.$section.PSObject.Properties
         foreach ($property in $properties) {
             if (-not $goodIds.ContainsKey($property.Name)) {
                 throw "City '$($city.id)' references unknown good '$($property.Name)' in '$section'"
             }
+
+            if ($section -eq "consumption") {
+                $dailyConsumption[$property.Name] = [double]$property.Value
+            }
         }
     }
+
+    if ($city.production.PSObject.Properties.Count -eq 0) {
+        throw "City '$($city.id)' has no production profile"
+    }
+
+    if ($city.consumption.PSObject.Properties.Count -eq 0) {
+        throw "City '$($city.id)' has no consumption profile"
+    }
+
+    $groupPopulation = 0
+    foreach ($groupProperty in $city.population_groups.PSObject.Properties) {
+        if (-not $populationGroupIds.ContainsKey($groupProperty.Name)) {
+            throw "City '$($city.id)' references unknown population group '$($groupProperty.Name)'"
+        }
+
+        $groupPopulation += [int]$groupProperty.Value
+        $group = $populationGroups | Where-Object { $_.id -eq $groupProperty.Name } | Select-Object -First 1
+        foreach ($need in $group.daily_consumption_per_1000.PSObject.Properties) {
+            if (-not $dailyConsumption.ContainsKey($need.Name)) {
+                $dailyConsumption[$need.Name] = 0.0
+            }
+
+            $dailyConsumption[$need.Name] += ([double]$groupProperty.Value / 1000.0) * [double]$need.Value
+        }
+    }
+
+    if ($groupPopulation -ne [int]$city.population) {
+        throw "City '$($city.id)' population_groups sum $groupPopulation does not match population $($city.population)"
+    }
+
+    foreach ($goodId in $dailyConsumption.Keys) {
+        if (-not ($city.target_stock.PSObject.Properties.Name -contains $goodId)) {
+            throw "City '$($city.id)' has no target_stock for consumed good '$goodId'"
+        }
+    }
+
+    $productionGoods = ($city.production.PSObject.Properties | Where-Object { [double]$_.Value -gt 0 }).Count
+    $consumptionGoods = ($dailyConsumption.GetEnumerator() | Where-Object { [double]$_.Value -gt 0 }).Count
+    $cityEconomyReports += "City economy '$($city.id)': $productionGoods produced goods, $consumptionGoods consumed goods, population groups $groupPopulation/$($city.population)"
 }
+
+$cityEconomyReports | Write-Output
 
 $requiredPaths = @(
     "export_presets.cfg",

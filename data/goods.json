@@ -2,7 +2,7 @@
   {
     "id": "grain",
     "name": "Getreide",
-    "category": "basic",
+    "category": "food",
     "volume": 1,
     "base_price": 55,
     "perishable_days": 120
@@ -10,7 +10,7 @@
   {
     "id": "salt",
     "name": "Salz",
-    "category": "basic",
+    "category": "preservation",
     "volume": 1,
     "base_price": 95,
     "perishable_days": 0
@@ -24,6 +24,22 @@
     "perishable_days": 45
   },
   {
+    "id": "stockfish",
+    "name": "Stockfisch",
+    "category": "food",
+    "volume": 1,
+    "base_price": 88,
+    "perishable_days": 180
+  },
+  {
+    "id": "beer",
+    "name": "Bier",
+    "category": "food",
+    "volume": 1,
+    "base_price": 62,
+    "perishable_days": 90
+  },
+  {
     "id": "timber",
     "name": "Holz",
     "category": "construction",
@@ -32,11 +48,75 @@
     "perishable_days": 0
   },
   {
+    "id": "pitch_tar",
+    "name": "Pech und Teer",
+    "category": "shipbuilding",
+    "volume": 1,
+    "base_price": 82,
+    "perishable_days": 0
+  },
+  {
+    "id": "flax",
+    "name": "Flachs",
+    "category": "raw_material",
+    "volume": 1,
+    "base_price": 72,
+    "perishable_days": 0
+  },
+  {
+    "id": "wool",
+    "name": "Wolle",
+    "category": "raw_material",
+    "volume": 1,
+    "base_price": 118,
+    "perishable_days": 0
+  },
+  {
+    "id": "iron",
+    "name": "Eisen",
+    "category": "metal",
+    "volume": 2,
+    "base_price": 155,
+    "perishable_days": 0
+  },
+  {
+    "id": "wax",
+    "name": "Wachs",
+    "category": "raw_material",
+    "volume": 1,
+    "base_price": 132,
+    "perishable_days": 0
+  },
+  {
+    "id": "furs",
+    "name": "Pelze",
+    "category": "luxury",
+    "volume": 1,
+    "base_price": 225,
+    "perishable_days": 0
+  },
+  {
     "id": "cloth",
     "name": "Tuch",
     "category": "luxury",
     "volume": 1,
     "base_price": 180,
+    "perishable_days": 0
+  },
+  {
+    "id": "wine",
+    "name": "Wein",
+    "category": "luxury",
+    "volume": 1,
+    "base_price": 245,
+    "perishable_days": 0
+  },
+  {
+    "id": "spices",
+    "name": "Gewuerze",
+    "category": "luxury",
+    "volume": 1,
+    "base_price": 430,
     "perishable_days": 0
   }
 ]
