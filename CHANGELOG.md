@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.27-production-consumption-coverage - 2026-05-31
+
+- Produktion und Handelszufluss der festen Startstaedte so angepasst, dass jede verbrauchte Ware regional mindestens gedeckt ist.
+- Map-Editor-Defaults fuer Hanseorte auf besser skalierte Erzeugungs-/Zuflusswerte gegen gruppenbasierten Verbrauch angehoben.
+- Validierung prueft nun die regionale Deckung von Produktion/Zufluss gegen Tagesverbrauch je Ware.
+
 ## 0.2.26-historical-units-production-balancing - 2026-05-31
 
 - Warenkatalog um historische Spiel-Einheiten wie Last, Fass, Schiffspfund, Fuder, Ballen, Timmer und Kiste erweitert.

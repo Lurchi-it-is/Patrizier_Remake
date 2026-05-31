@@ -7,7 +7,7 @@ config_version=5
 
 config/name="Hanseatische Warenwirtschaftssimulation"
 config/description="Datengetriebene Hanse-Handels- und Seeschlacht-Simulation."
-config/version="0.2.26-historical-units-production-balancing"
+config/version="0.2.27-production-consumption-coverage"
 run/main_scene="res://scenes/launcher.tscn"
 config/features=PackedStringArray("4.3")
 

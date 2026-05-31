@@ -3,7 +3,7 @@ extends Control
 const CatalogLoader = preload("res://scripts/data/catalog_loader.gd")
 const MapView = preload("res://scripts/ui/map_view.gd")
 const CITY_VALUES_EXPORT_PATH := "user://custom_map_city_values.json"
-const EDITOR_VERSION := "0.2.26-historical-units-production-balancing"
+const EDITOR_VERSION := "0.2.27-production-consumption-coverage"
 const POPULATION_GROUP_DISTRIBUTION_BY_KIND := {
 	"core": {"poor": 0.40, "craftsmen": 0.35, "burghers": 0.20, "patricians": 0.05},
 	"kontor": {"poor": 0.35, "craftsmen": 0.25, "burghers": 0.30, "patricians": 0.10},
@@ -11,38 +11,38 @@ const POPULATION_GROUP_DISTRIBUTION_BY_KIND := {
 	"trade": {"poor": 0.55, "craftsmen": 0.30, "burghers": 0.13, "patricians": 0.02}
 }
 const DEFAULT_CITY_ECONOMY := {
-	"london": {"population": 30000, "production": {"cloth": 2, "wool": 3}, "consumption": {"grain": 12, "herring": 5, "salt": 4, "timber": 3, "wine": 2, "spices": 0.4}},
-	"hull": {"population": 7000, "production": {"wool": 1.5, "grain": 3, "iron": 0.4}, "consumption": {"salt": 4, "herring": 3, "timber": 3, "cloth": 1, "beer": 1}},
-	"boston": {"population": 8000, "production": {"wool": 2, "grain": 3}, "consumption": {"salt": 4, "herring": 3, "timber": 2, "cloth": 1, "beer": 1}},
-	"kings_lynn": {"population": 7000, "production": {"wool": 1.2, "grain": 3, "beer": 2}, "consumption": {"salt": 4, "herring": 3, "timber": 2, "cloth": 1}},
+	"london": {"population": 30000, "production": {"grain": 8, "beer": 5, "cloth": 4, "wool": 5, "iron": 1, "wine": 2, "spices": 0.5}, "consumption": {"herring": 3, "salt": 2, "timber": 2, "wine": 1, "spices": 0.2}},
+	"hull": {"population": 7000, "production": {"grain": 5, "beer": 2, "wool": 2, "iron": 0.6}, "consumption": {"salt": 1, "herring": 1, "timber": 1, "cloth": 0.3}},
+	"boston": {"population": 8000, "production": {"grain": 5, "beer": 2, "wool": 2.5}, "consumption": {"salt": 1, "herring": 1, "timber": 1, "cloth": 0.3}},
+	"kings_lynn": {"population": 7000, "production": {"grain": 5, "beer": 2, "wool": 1.5}, "consumption": {"salt": 1, "herring": 1, "timber": 1, "cloth": 0.3}},
 	"great_yarmouth": {"population": 8000, "production": {"herring": 8, "wool": 2}, "consumption": {"salt": 6, "grain": 4, "timber": 2, "cloth": 1}},
-	"bruegge": {"population": 35000, "production": {"cloth": 3.5}, "consumption": {"grain": 10, "herring": 4, "salt": 3, "timber": 2, "wool": 5, "wax": 1, "furs": 1, "wine": 3, "spices": 0.6}},
-	"koeln": {"population": 30000, "production": {"cloth": 1.5, "beer": 8, "iron": 0.5}, "consumption": {"grain": 8, "herring": 5, "stockfish": 2, "salt": 4, "timber": 3, "wine": 2, "spices": 0.3}},
-	"kampen": {"population": 9000, "production": {"grain": 4, "beer": 4, "cloth": 0.4}, "consumption": {"salt": 4, "herring": 3, "timber": 2, "wool": 1}},
+	"bruegge": {"population": 35000, "production": {"grain": 8, "beer": 5, "cloth": 6, "wine": 3, "spices": 0.6}, "consumption": {"herring": 3, "salt": 2, "timber": 2, "wool": 3, "wax": 0.5, "furs": 0.5}},
+	"koeln": {"population": 30000, "production": {"grain": 8, "beer": 7, "cloth": 3, "iron": 2, "wine": 1}, "consumption": {"herring": 3, "stockfish": 1, "salt": 2, "timber": 1, "spices": 0.2}},
+	"kampen": {"population": 9000, "production": {"grain": 6, "beer": 3, "cloth": 1}, "consumption": {"salt": 1, "herring": 1, "timber": 1, "wool": 0.5}},
 	"stade": {"population": 7000, "production": {"grain": 4, "beer": 2, "timber": 1}, "consumption": {"salt": 3, "herring": 3, "cloth": 1, "iron": 0.5}},
-	"wismar": {"population": 8000, "production": {"herring": 5, "beer": 3, "timber": 1}, "consumption": {"grain": 5, "salt": 3, "cloth": 1, "iron": 0.5}},
-	"rostock": {"population": 10000, "production": {"herring": 4, "grain": 2.5, "beer": 4}, "consumption": {"salt": 3, "timber": 2, "cloth": 1, "pitch_tar": 0.5}},
-	"stralsund": {"population": 9000, "production": {"herring": 6, "timber": 1}, "consumption": {"grain": 5, "salt": 3, "cloth": 1, "beer": 1}},
-	"greifswald": {"population": 7000, "production": {"grain": 3, "herring": 3}, "consumption": {"salt": 3, "timber": 2, "cloth": 1, "beer": 1}},
-	"stettin": {"population": 9000, "production": {"grain": 4, "timber": 2, "pitch_tar": 0.5}, "consumption": {"salt": 4, "herring": 3, "cloth": 1, "iron": 0.5}},
+	"wismar": {"population": 8000, "production": {"grain": 3, "herring": 5, "beer": 2, "timber": 1}, "consumption": {"salt": 1, "cloth": 0.5, "iron": 0.3}},
+	"rostock": {"population": 10000, "production": {"grain": 5, "herring": 4, "beer": 3, "timber": 1}, "consumption": {"salt": 1, "cloth": 0.5, "pitch_tar": 0.3}},
+	"stralsund": {"population": 9000, "production": {"grain": 3, "herring": 7, "timber": 1}, "consumption": {"salt": 1, "cloth": 0.5, "beer": 0.5}},
+	"greifswald": {"population": 7000, "production": {"grain": 5, "herring": 3, "beer": 1}, "consumption": {"salt": 1, "timber": 0.5, "cloth": 0.3}},
+	"stettin": {"population": 9000, "production": {"grain": 7, "timber": 3, "pitch_tar": 0.7}, "consumption": {"salt": 1, "herring": 1, "cloth": 0.5, "iron": 0.3}},
 	"kopenhagen": {"population": 12000, "production": {"herring": 5, "grain": 3, "beer": 3}, "consumption": {"salt": 4, "timber": 2, "cloth": 1, "wine": 0.5}},
 	"malmoe": {"population": 9000, "production": {"herring": 7, "grain": 3}, "consumption": {"salt": 5, "timber": 2, "cloth": 1}},
 	"skanor_falsterbo": {"population": 4000, "production": {"herring": 10}, "consumption": {"salt": 7, "grain": 3, "timber": 1, "cloth": 1, "beer": 0.5}},
 	"helsingborg": {"population": 5000, "production": {"herring": 5, "grain": 2}, "consumption": {"salt": 4, "timber": 1, "cloth": 1}},
 	"aalborg": {"population": 6000, "production": {"herring": 4, "grain": 3, "beer": 2}, "consumption": {"salt": 3, "timber": 2, "cloth": 1}},
-	"oslo": {"population": 5000, "production": {"timber": 2.5, "herring": 3, "pitch_tar": 0.5}, "consumption": {"grain": 5, "salt": 3, "cloth": 1, "beer": 1}},
-	"bergen": {"population": 8000, "production": {"stockfish": 8, "timber": 0.8, "furs": 0.2}, "consumption": {"grain": 7, "salt": 4, "cloth": 1, "beer": 1}},
+	"oslo": {"population": 5000, "production": {"timber": 3, "herring": 3, "pitch_tar": 0.6}, "consumption": {"grain": 2, "salt": 1, "cloth": 0.4, "beer": 0.5}},
+	"bergen": {"population": 8000, "production": {"stockfish": 9, "timber": 1, "furs": 0.4}, "consumption": {"grain": 3, "salt": 1.5, "cloth": 0.5, "beer": 0.8}},
 	"stockholm": {"population": 7000, "production": {"timber": 2, "iron": 0.8, "herring": 2}, "consumption": {"grain": 5, "salt": 3, "cloth": 1, "wine": 0.4}},
 	"kalmar": {"population": 7000, "production": {"grain": 3, "herring": 4, "timber": 2}, "consumption": {"salt": 4, "cloth": 1, "beer": 1}},
-	"elbing": {"population": 9000, "production": {"grain": 5, "timber": 1.5, "flax": 0.8}, "consumption": {"salt": 4, "herring": 3, "cloth": 1}},
-	"koenigsberg": {"population": 9000, "production": {"grain": 6, "timber": 1.5, "wax": 0.4}, "consumption": {"salt": 4, "herring": 3, "cloth": 1}},
-	"memel": {"population": 4000, "production": {"timber": 2.5, "herring": 3, "pitch_tar": 0.5}, "consumption": {"grain": 4, "salt": 3, "cloth": 1}},
-	"riga": {"population": 12000, "production": {"timber": 2.5, "grain": 4, "flax": 1.5, "wax": 0.7}, "consumption": {"salt": 4, "herring": 3, "cloth": 1, "beer": 1}},
-	"reval": {"population": 8000, "production": {"timber": 2, "herring": 3, "wax": 0.4}, "consumption": {"grain": 4, "salt": 3, "cloth": 1}},
-	"abo": {"population": 6000, "production": {"herring": 4, "timber": 1.5, "pitch_tar": 0.5}, "consumption": {"grain": 5, "salt": 3, "cloth": 1}},
-	"viborg": {"population": 5000, "production": {"timber": 2.5, "herring": 2, "pitch_tar": 0.5}, "consumption": {"grain": 5, "salt": 3, "cloth": 1}},
-	"narva": {"population": 4000, "production": {"timber": 2, "grain": 2, "flax": 0.5}, "consumption": {"salt": 4, "herring": 2, "cloth": 1}},
-	"nowgorod": {"population": 20000, "production": {"furs": 1.5, "wax": 1.5, "timber": 2, "flax": 1}, "consumption": {"salt": 5, "herring": 3, "stockfish": 1, "cloth": 2, "wine": 0.6, "spices": 0.2}}
+	"elbing": {"population": 9000, "production": {"grain": 8, "timber": 2, "flax": 1}, "consumption": {"salt": 1, "herring": 1, "cloth": 0.5}},
+	"koenigsberg": {"population": 9000, "production": {"grain": 9, "timber": 2, "wax": 0.7}, "consumption": {"salt": 1, "herring": 1, "cloth": 0.5}},
+	"memel": {"population": 4000, "production": {"grain": 2, "timber": 3, "herring": 3, "pitch_tar": 0.7}, "consumption": {"salt": 1, "cloth": 0.3}},
+	"riga": {"population": 12000, "production": {"grain": 8, "timber": 3, "flax": 2, "wax": 1}, "consumption": {"salt": 1.5, "herring": 1, "cloth": 0.6, "beer": 0.8}},
+	"reval": {"population": 8000, "production": {"grain": 3, "timber": 2.5, "herring": 3, "wax": 0.6}, "consumption": {"salt": 1, "cloth": 0.5}},
+	"abo": {"population": 6000, "production": {"grain": 2, "herring": 4, "timber": 2, "pitch_tar": 0.6}, "consumption": {"salt": 1, "cloth": 0.4}},
+	"viborg": {"population": 5000, "production": {"grain": 2, "timber": 3, "herring": 2, "pitch_tar": 0.6}, "consumption": {"salt": 1, "cloth": 0.4}},
+	"narva": {"population": 4000, "production": {"timber": 2.5, "grain": 2.5, "flax": 0.7}, "consumption": {"salt": 1, "herring": 0.5, "cloth": 0.3}},
+	"nowgorod": {"population": 20000, "production": {"grain": 5, "furs": 2, "wax": 2, "timber": 3, "flax": 2}, "consumption": {"salt": 2, "herring": 1, "stockfish": 0.5, "cloth": 1, "wine": 0.3, "spices": 0.1}}
 }
 
 var catalog: Dictionary = {}

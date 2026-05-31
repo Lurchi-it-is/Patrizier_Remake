@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.26-historical-units-production-balancing
+Version: 0.2.27-production-consumption-coverage
 
 ## Branch- und Worktree-Regel
 
@@ -29,6 +29,7 @@ Der Check prueft:
 - Warenreferenzen in Stadtwirtschaft und Einwohnergruppen
 - Einheiten-Metadaten je Ware
 - Einwohnergruppensummen je Stadt
+- regionale Deckung von Erzeugung/Zufluss gegen Verbrauch der festen Startstaedte
 - Versionskonsistenz zwischen `VERSION`, `project.godot`, `README.md`, `CHANGELOG.md` und Dokumentation
 - Existenz der Godot-Startszene, der getrennten Hauptspiel-/Map-Editor-Szenen und der Windows-Export-Presets
 

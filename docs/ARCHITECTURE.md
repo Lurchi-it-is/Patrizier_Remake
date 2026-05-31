@@ -1,6 +1,6 @@
 # Architektur
 
-Version: 0.2.26-historical-units-production-balancing
+Version: 0.2.27-production-consumption-coverage
 
 ## Leitidee
 
@@ -37,6 +37,7 @@ Die Wirtschaftssimulation soll datengetrieben und testbar bleiben. Godot rendert
 - Preise werden aus Basispreis, Stadtbestand und Zielbestand berechnet.
 - Stadtverbrauch besteht aus explizitem Stadt-/Gewerbeverbrauch plus Bedarfen der Einwohnergruppen; diese Logik gilt fuer feste Staedte und exportierte Map-Editor-Staedte.
 - Produktions- und Verbrauchswerte laufen pro Tag in der jeweiligen Wareneinheit aus `data/goods.json`.
+- `production` steht in den Stadtprofilen fuer lokale Erzeugung plus gesicherten Tageszufluss aus dem direkten Hinterland oder Kontorhandel.
 - Piratenrisiko wird pro Seezone modelliert.
 - Seeschlachten starten mit einem Auto-Resolver und koennen spaeter um einen manuellen taktischen Modus erweitert werden.
 

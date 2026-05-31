@@ -1,6 +1,6 @@
 # Hanse-Wirtschaftsbalancing
 
-Version: 0.2.26-historical-units-production-balancing
+Version: 0.2.27-production-consumption-coverage
 
 ## Recherchebasis
 
@@ -25,6 +25,8 @@ Alle Produktions-, Verbrauchs-, Lager- und Zielbestandswerte sind Tageswerte in 
 - Gewuerze: Kiste, grob 25 kg.
 
 Die groesseren Einheiten machen kleine Dezimalwerte bei hochwertigen oder schweren Waren plausibler: Eine Produktion von `0.5` Wachs bedeutet kein halbes Stueck, sondern etwa ein halbes Schiffspfund pro Tag.
+
+`production` wird im Balancing als lokale Erzeugung plus gesicherter Tageszufluss aus direktem Hinterland oder Kontorhandel verstanden. Dadurch koennen reine Importwaren wie Wein, Gewuerze, Stockfisch oder Pelze in Hafenstaedten als Zufluss erscheinen, ohne dass sie dort lokal angebaut oder gefangen werden.
 
 Quellen:
 
@@ -70,3 +72,4 @@ Die Validierung prueft je Stadt:
 - alle Einwohnergruppen gegen `data/population_groups.json`
 - Summe der Einwohnergruppen gegen `population`
 - Zielbestaende fuer alle verbrauchten Waren inklusive gruppenbasiertem Verbrauch
+- regionale Deckung der festen Startkarte: jede verbrauchte Ware muss durch Produktion/Zufluss mindestens gedeckt sein

@@ -66,6 +66,8 @@ foreach ($group in $populationGroups) {
 
 $cities = Get-Content -Raw "data\cities.json" | ConvertFrom-Json
 $cityEconomyReports = @()
+$regionalProduction = @{}
+$regionalConsumption = @{}
 foreach ($city in $cities) {
     $dailyConsumption = @{}
     foreach ($section in @("production", "consumption", "stock", "target_stock")) {
@@ -77,6 +79,14 @@ foreach ($city in $cities) {
 
             if ($section -eq "consumption") {
                 $dailyConsumption[$property.Name] = [double]$property.Value
+            }
+
+            if ($section -eq "production") {
+                if (-not $regionalProduction.ContainsKey($property.Name)) {
+                    $regionalProduction[$property.Name] = 0.0
+                }
+
+                $regionalProduction[$property.Name] += [double]$property.Value
             }
         }
     }
@@ -114,6 +124,12 @@ foreach ($city in $cities) {
         if (-not ($city.target_stock.PSObject.Properties.Name -contains $goodId)) {
             throw "City '$($city.id)' has no target_stock for consumed good '$goodId'"
         }
+
+        if (-not $regionalConsumption.ContainsKey($goodId)) {
+            $regionalConsumption[$goodId] = 0.0
+        }
+
+        $regionalConsumption[$goodId] += [double]$dailyConsumption[$goodId]
     }
 
     $productionGoods = ($city.production.PSObject.Properties | Where-Object { [double]$_.Value -gt 0 }).Count
@@ -122,6 +138,14 @@ foreach ($city in $cities) {
 }
 
 $cityEconomyReports | Write-Output
+
+foreach ($goodId in $regionalConsumption.Keys) {
+    $produced = [double]$regionalProduction.Get_Item($goodId)
+    $consumed = [double]$regionalConsumption[$goodId]
+    if ($produced -lt $consumed) {
+        throw "Regional production/supply for good '$goodId' is below daily consumption: $produced < $consumed"
+    }
+}
 
 $requiredPaths = @(
     "export_presets.cfg",

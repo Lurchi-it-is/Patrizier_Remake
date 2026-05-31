@@ -4,7 +4,7 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.26-historical-units-production-balancing`
+Version: `0.2.27-production-consumption-coverage`
 
 Das Projektfundament enthaelt:
 
@@ -22,6 +22,7 @@ Das Projektfundament enthaelt:
 - sinnvolle Defaultwerte fuer Einwohner, Erzeugung und Verbrauch je Hanseort
 - erweiterte Hanse-Handelswaren inklusive Stockfisch, Bier, Pech/Teer, Flachs, Wolle, Eisen, Wachs, Pelzen, Wein und Gewuerzen
 - historische Spiel-Einheiten je Ware, z.B. Last, Fass, Schiffspfund, Ballen, Timmer und Kiste
+- validierte regionale Deckung von Erzeugung/Zufluss gegen Tagesverbrauch der festen Startstaedte
 - Einwohnergruppen fuer Arme, Handwerker, Buerger und Patrizier mit eigenen Bedarfen und Tagesverbrauch
 - sichtbare Einwohnergruppen-Verteilung im Map Editor; Verbrauchswerte werden daraus abgeleitet
 - recherchierte, breiter lesbare Wasserwege ohne Laendergrenzen fuer historisch per Fluss, Muendung oder Lagune angelaufene Handelsstaedte
