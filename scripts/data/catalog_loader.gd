@@ -8,20 +8,20 @@ const DATA_FILES := {
 }
 
 func load_all() -> Dictionary:
-	var catalog := {}
+	var catalog: Dictionary = {}
 	for key in DATA_FILES.keys():
 		catalog[key] = _load_json_array(DATA_FILES[key])
 	return catalog
 
 func _load_json_array(path: String) -> Array:
-	var text := FileAccess.get_file_as_string(path)
+	var text: String = FileAccess.get_file_as_string(path)
 	if text.is_empty():
 		push_error("Could not read data file: %s" % path)
 		return []
 
-	var parsed := JSON.parse_string(text)
+	var parsed: Variant = JSON.parse_string(text)
 	if typeof(parsed) != TYPE_ARRAY:
 		push_error("Data file must contain a JSON array: %s" % path)
 		return []
 
-	return parsed
+	return parsed as Array

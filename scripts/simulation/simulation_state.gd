@@ -7,11 +7,13 @@ var goods_by_id: Dictionary = {}
 var city_state: Dictionary = {}
 
 func _init(catalog: Dictionary) -> void:
-	for good in catalog.get("goods", []):
+	for good_entry in catalog.get("goods", []):
+		var good: Dictionary = good_entry
 		goods_by_id[good["id"]] = good
 
-	for city in catalog.get("cities", []):
-		var state := city.duplicate(true)
+	for city_entry in catalog.get("cities", []):
+		var city: Dictionary = city_entry
+		var state: Dictionary = city.duplicate(true)
 		city_state[state["id"]] = state
 
 func advance_days(days: int) -> void:
@@ -23,15 +25,15 @@ func get_price(city_id: String, good_id: String) -> int:
 	if not city_state.has(city_id) or not goods_by_id.has(good_id):
 		return 0
 
-	var city := city_state[city_id]
-	var good := goods_by_id[good_id]
-	var stock := float(city.get("stock", {}).get(good_id, 0))
-	var target := float(city.get("target_stock", {}).get(good_id, 1))
+	var city: Dictionary = city_state[city_id]
+	var good: Dictionary = goods_by_id[good_id]
+	var stock: float = float(city.get("stock", {}).get(good_id, 0))
+	var target: float = float(city.get("target_stock", {}).get(good_id, 1))
 	return TradePrice.calculate(int(good.get("base_price", 1)), stock, target)
 
 func _advance_one_day() -> void:
 	for city_id in city_state.keys():
-		var city := city_state[city_id]
+		var city: Dictionary = city_state[city_id]
 		_apply_production(city)
 		_apply_consumption(city)
 

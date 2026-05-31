@@ -75,8 +75,8 @@ func _build_layout(catalog: Dictionary, simulation, combat_preview: Dictionary) 
 func _market_preview(simulation) -> String:
 	var lines: Array[String] = ["[b]Markt-Vorschau[/b]"]
 	for city_id in simulation.city_state.keys():
-		var city := simulation.city_state[city_id]
-		var grain_price := simulation.get_price(city_id, "grain")
-		var salt_price := simulation.get_price(city_id, "salt")
+		var city: Dictionary = simulation.city_state[city_id]
+		var grain_price: int = simulation.get_price(city_id, "grain")
+		var salt_price: int = simulation.get_price(city_id, "salt")
 		lines.append("%s: Getreide %d, Salz %d" % [city.get("name", city_id), grain_price, salt_price])
 	return "\n".join(lines)

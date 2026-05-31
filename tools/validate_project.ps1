@@ -63,4 +63,34 @@ foreach ($path in $requiredPaths) {
     }
 }
 
+$godotCandidates = @(
+    "C:\Users\rje-m\Downloads\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe",
+    "godot",
+    "godot4"
+)
+
+$godotCommand = $null
+foreach ($candidate in $godotCandidates) {
+    if (Test-Path -LiteralPath $candidate) {
+        $godotCommand = $candidate
+        break
+    }
+
+    $resolved = Get-Command $candidate -ErrorAction SilentlyContinue
+    if ($null -ne $resolved) {
+        $godotCommand = $resolved.Source
+        break
+    }
+}
+
+if ($null -ne $godotCommand) {
+    $godotOutput = & $godotCommand --headless --path . --quit 2>&1
+    if ($LASTEXITCODE -ne 0 -or ($godotOutput -match "SCRIPT ERROR|ERROR:|Parse Error|Compile Error")) {
+        $godotOutput | Write-Output
+        throw "Godot headless validation failed"
+    }
+} else {
+    Write-Warning "Godot executable not found; skipped engine validation"
+}
+
 Write-Output "Project validation passed for version $version"
