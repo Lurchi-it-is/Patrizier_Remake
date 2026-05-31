@@ -23,6 +23,7 @@ Es muss immer in diesem Repository gearbeitet werden.
 - Bei Aenderungen am Projekt muss die Versionsnummer immer dokumentiert und gepflegt werden.
 - Nach jedem abgeschlossenen Implementierungsschritt muss eine kurze Testanleitung bereitgestellt werden, inklusive konkret ausfuehrbarer Befehle und erwarteter Pruefpunkte.
 - In jeder Testanleitung muss der konkrete Startbefehl fuer die betroffene App oder Szene genannt werden.
+- UI-Strukturentscheidungen duerfen nicht eigenmaechtig geaendert werden: Fenster, Sidebars, Popups, Dialoge und deren Platzierung duerfen nur dann verlegt, zusammengelegt oder ersetzt werden, wenn der Nutzer das ausdruecklich angefragt oder nach vorheriger Rueckfrage freigegeben hat.
 
 ## Karten- und Ortsregeln
 

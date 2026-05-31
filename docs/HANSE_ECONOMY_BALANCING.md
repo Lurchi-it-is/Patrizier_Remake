@@ -1,6 +1,6 @@
 # Hanse-Wirtschaftsbalancing
 
-Version: 0.2.37-player-ship-trading
+Version: 0.2.47-trade-window-fit
 
 ## Recherchebasis
 

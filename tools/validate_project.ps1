@@ -33,6 +33,7 @@ foreach ($jsonFile in $jsonFiles) {
 
 $goods = Get-Content -Raw "data\goods.json" | ConvertFrom-Json
 $goodIds = @{}
+$goodsById = @{}
 foreach ($good in $goods) {
     if ($goodIds.ContainsKey($good.id)) {
         throw "Duplicate good id '$($good.id)'"
@@ -49,6 +50,7 @@ foreach ($good in $goods) {
     }
 
     $goodIds[$good.id] = $true
+    $goodsById[$good.id] = $good
 }
 
 $populationGroups = Get-Content -Raw "data\population_groups.json" | ConvertFrom-Json
@@ -81,6 +83,10 @@ foreach ($city in $cities) {
 
             if ($section -eq "consumption") {
                 $dailyConsumption[$property.Name] = [double]$property.Value
+            }
+
+            if ($section -eq "stock" -and [double]$property.Value -ne [math]::Floor([double]$property.Value)) {
+                throw "City '$($city.id)' stock for good '$($property.Name)' must be a whole unit"
             }
 
             if ($section -eq "production") {
@@ -149,6 +155,30 @@ foreach ($goodId in $regionalConsumption.Keys) {
     }
 }
 
+foreach ($goodId in $goodIds.Keys) {
+    $good = $goodsById[$goodId]
+    $prices = @()
+    foreach ($city in $cities) {
+        $stock = [double]$city.stock.$goodId
+        $target = [double]$city.target_stock.$goodId
+        if ($target -le 0) {
+            $prices += [int]$good.base_price
+            continue
+        }
+
+        $stockRatio = [math]::Min([math]::Max($stock / $target, 0.35), 2.25)
+        $scarcityMultiplier = [math]::Pow(1.0 / $stockRatio, 0.34)
+        $boundedMultiplier = [math]::Min([math]::Max($scarcityMultiplier, 0.78), 1.38)
+        $prices += [int][math]::Round([double]$good.base_price * $boundedMultiplier)
+    }
+
+    $minPrice = ($prices | Measure-Object -Minimum).Minimum
+    $maxPrice = ($prices | Measure-Object -Maximum).Maximum
+    if ($minPrice -le 0 -or ($maxPrice / $minPrice) -gt 1.75) {
+        throw "Start price spread for good '$goodId' is too high: $minPrice..$maxPrice"
+    }
+}
+
 $requiredPaths = @(
     "export_presets.cfg",
     "project.godot",
@@ -166,6 +196,7 @@ $requiredPaths = @(
     "scripts\simulation\trade_price.gd",
     "scripts\simulation\combat_resolver.gd",
     "scripts\ui\map_view.gd",
+    "assets\ui\hanse_trade_window_frame.png",
     "assets\maps\hanse_navigation_1600x900.json",
     "assets\maps\hanse_navigation_debug_1600x900.png"
 )

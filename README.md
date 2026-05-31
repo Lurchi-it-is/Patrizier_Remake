@@ -4,7 +4,7 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.37-player-ship-trading`
+Version: `0.2.47-trade-window-fit`
 
 Das Projektfundament enthaelt:
 
@@ -30,6 +30,11 @@ Das Projektfundament enthaelt:
 - automatisch erzeugte Navigationsdaten mit Wasser-Raster, Hafenankern und vorberechneten Wasserpfaden fuer sichtbare Schiffsrouten
 - kontinuierliche Schiffbewegung mit Reisezeit aus Wasserpfadlaenge und einstellbarer Simulationsgeschwindigkeit
 - erste KI-Haendler, die echte Stadtlager kaufen/verkaufen und Balancing-Metriken nach `user://balance_metrics.jsonl` schreiben
+- rechte Hauptspiel-Sidebar mit Spieleruebersicht, Kapital und aktiver Schiffsladung
+- Handelsfenster zeigt Schiffsbestand, saubere Handelsspalten und den durchschnittlich bezahlten Einkaufspreis je geladener Ware
+- Handelsfenster nutzt einen hanseatisch-mittelalterlichen Holz-/Goldstil mit Stadtpanel, Warentabelle, Warendetails, Statusleiste und Mengenwahl fuer 1x/5x/10x/Max
+- Warenbestaende und gehandelte Warenmengen werden als ganze Einheiten gefuehrt
+- gedaempfte dynamische Preise, damit reine Ueberschusskaeufe keine exorbitanten Arbitragegewinne erzeugen
 - dokumentiertes KI-Haendlerkonzept fuer stabilisierenden Warenfluss, Haendlerprofile, Settings und MVP-Umsetzung
 - datengetriebene Beispielkataloge fuer Waren, Staedte, Schiffstypen und Piratenzonen
 - erste Simulationsbausteine fuer Preisbildung, Tages-Tick und Seeschlacht-Auto-Resolver

@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.2.47-trade-window-fit - 2026-05-31
+
+- Handelsfenster gestrafft: Nachfrage-Anzeigen, Informationstext und unterer Abschlussbutton entfernt.
+- Warentabelle nach dem Entfernen der Nachfrage-Spalte breiter ausgerichtet, damit Warennamen und Aktionen sauberer in die Spalten passen.
+- Unbenutztes Pergament-UI-Asset aus der Projektvalidierung entfernt.
+
+## 0.2.46-trade-quantity-controls - 2026-05-31
+
+- Handelsfenster um Mengenumschaltung fuer `1x`, `5x`, `10x` und `Max` erweitert.
+- Kauf- und Verkaufaktionen verwenden die aktive Mengenwahl und bleiben durch Kapital, Stadtbestand, Schiffsladung und Frachtraum begrenzt.
+- Warentabelle im Handelsfenster mit klaren Kauf-/Verkauf-Spalten und horizontaler Skalierung fuer kleinere Fenster ueberarbeitet.
+
+## 0.2.45-hanse-trade-window-style - 2026-05-31
+
+- Handelsfenster visuell im hanseatisch-mittelalterlichen Holz-/Goldstil ueberarbeitet.
+- Layout in Stadtinformationen, zentrale Warentabelle, ausgewaehlte Ware und untere Statusleiste gegliedert.
+- Warentabelle zeigt Nachfrage, Stadtbestand, Preis, Schiffsladung und Durchschnittspreis in klar getrennten Spalten.
+
+## 0.2.44-tempered-price-spread - 2026-05-31
+
+- Preisformel abgeflacht: Lagerueberschuss und Mangel bewegen Preise nur noch moderat statt mit extremen Multiplikatoren.
+- Validierung begrenzt die Startpreis-Spanne je Ware, damit offensichtliche Arbitrage durch reine Ueberschusskaeufe nicht das Spiel dominiert.
+
+## 0.2.43-integer-goods-stock - 2026-05-31
+
+- Stadtlager und Schiffsladung werden als ganze Wareneinheiten gefuehrt; Kauf, Verkauf und KI-Handel schneiden Mengen auf ganze Einheiten.
+- Handelsfenster und Sidebar zeigen Warenbestaende ohne Nachkommastellen.
+- Validierung prueft, dass feste Stadtlagerbestaende ganzzahlige Einheiten sind.
+
+## 0.2.42-trade-window-columns - 2026-05-31
+
+- Handelsfenster optisch ueberarbeitet: Schiffsbestand im Fenster ergaenzt und Warenhandel in saubere Spalten fuer Stadtbestand, Preis, Schiffsladung, Durchschnittspreis und Aktionen aufgeteilt.
+
+## 0.2.41-stable-trade-window-input - 2026-05-31
+
+- Crash-Ursache im Handelsfenster behoben: Das Fenster wird nicht mehr waehrend laufender Maus-Events oder pro Simulationsframe neu aufgebaut.
+- Handelsaktionen und Schliessen werden deferred verarbeitet; das Handelsfenster wird nur beim Oeffnen und nach abgeschlossener Transaktion aktualisiert.
+
+## 0.2.40-trade-window-input - 2026-05-31
+
+- Handelsmenue wieder als separates zentriertes Handelsfenster umgesetzt.
+- Handelsbuttons und Schliessen-Aktion verwenden direkte Maus-Input-Handler, damit Klicks im dynamisch aufgebauten Handelsfenster sicher verarbeitet werden.
+
+## 0.2.39-ui-approval-rule - 2026-05-31
+
+- AGENTS-Arbeitsregel ergaenzt: UI-Strukturen wie Fenster, Sidebars, Popups und Dialogplatzierungen duerfen nicht ohne ausdrueckliche Anfrage oder Rueckfrage verlegt, zusammengelegt oder ersetzt werden.
+
+## 0.2.38-player-sidebar-capital - 2026-05-31
+
+- Rechte Hauptspiel-Sidebar auf eine Spieleruebersicht reduziert, inklusive aktuellem Kapital, Position, Schiff und aktiver Ladung.
+- Handelsfenster zeigt Kapital, Transaktionsfeedback und den durchschnittlich bezahlten Preis je geladener Ware.
+- Spieler-Kauf-/Verkauf-Aktionen verrechnen nun Kapital, aktualisieren Fracht sichtbar und nutzen eindeutig gebundene Handelsbuttons.
+
 ## 0.2.37-player-ship-trading - 2026-05-31
 
 - Spielerschiff startet in Luebeck und kann per Rechtsklick auf Wasser oder Staedte ueber Wasserpfade bewegt werden.

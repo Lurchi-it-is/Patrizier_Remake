@@ -1,6 +1,6 @@
 # Architektur
 
-Version: 0.2.37-player-ship-trading
+Version: 0.2.47-trade-window-fit
 
 ## Leitidee
 
@@ -30,6 +30,11 @@ Die Wirtschaftssimulation soll datengetrieben und testbar bleiben. Godot rendert
 - Schiffsbewegung nutzt vorberechnete Navigationspfade aus `assets/maps/hanse_navigation_1600x900.json`; direkte Linien dienen nur als Fallback, falls eine Route fehlt.
 - Das Hauptspiel fuehrt einen kontinuierlichen Simulations-Takt mit einstellbarer Geschwindigkeit; Wirtschaftstage werden bei vollen Simulationstagen abgearbeitet, Schiffspositionen werden fortlaufend interpoliert.
 - KI-Haendler kaufen und verkaufen im Hauptspiel gegen echte Stadtlager; Balancing-Metriken werden als JSONL nach `user://balance_metrics.jsonl` geschrieben.
+- Die rechte Hauptspiel-Sidebar ist auf Spielerstatus fokussiert: Kapital, Position, aktives Schiff und Ladung. Markt- und Piraten-Demoausgaben erscheinen dort nicht mehr.
+- Spielerhandel fuehrt einen Kapitalstand, aktualisiert die Schiffsladung und speichert je Ware den durchschnittlich bezahlten Einkaufspreis fuer das Handelsfenster.
+- Warenbestaende in Stadtlagern und Schiffsladungen sind spielseitig ganze Einheiten; Handel mit Teilmengen wie halben Faessern ist nicht erlaubt.
+- Dynamische Preise reagieren gedaempft auf Lagerueberschuss und Mangel; Startpreis-Spannen werden validiert, damit Marktunterschiede nicht allein durch offensichtliche Ueberschussstaedte trivialen Gewinn erzeugen.
+- Das Handelsfenster bleibt ein separates zentriertes Fenster und ist visuell als Holz-/Gold-Handelsoberflaeche mit Stadtpanel, Warentabelle, Warendetails, Mengenwahl und Statusleiste aufgebaut.
 - Der Hanseorte-Katalog priorisiert Kuesten-, Sund-, Haff- und Hafenstandorte, wenn weitere Handelsorte ergaenzt werden.
 - `scenes/launcher.tscn` ist der technische Godot-Projektstart und waehlt anhand des Export-Feature-Tags `main_game` oder `map_editor` die eigentliche Einstiegsszene.
 - `scenes/main_game.tscn` nutzt `scripts/main_game.gd`; `scenes/map_editor.tscn` nutzt `scripts/map_editor.gd`.

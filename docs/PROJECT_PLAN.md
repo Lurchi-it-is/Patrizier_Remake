@@ -1,6 +1,6 @@
 # Projektplan: Hanseatische Warenwirtschaftssimulation
 
-Version: 0.2.37-player-ship-trading
+Version: 0.2.47-trade-window-fit
 Datum: 2026-05-31  
 Repo: https://github.com/Lurchi-it-is/Patrizier_Remake.git
 

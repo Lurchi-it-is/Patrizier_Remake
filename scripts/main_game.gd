@@ -7,12 +7,19 @@ const BalanceMetricsLogger = preload("res://scripts/simulation/balance_metrics_l
 const MapView = preload("res://scripts/ui/map_view.gd")
 
 const DEMO_ROUTE: Array[String] = ["bremen", "hamburg", "luebeck", "visby", "danzig"]
+const TRADE_WINDOW_FRAME_PATH := "res://assets/ui/hanse_trade_window_frame.png"
 const BASE_SHIP_PIXELS_PER_DAY := 80.0
 const AI_TRADER_COUNT := 5
 const AI_SHIP_TYPE_ID := "kogge"
 const PLAYER_START_CITY_ID := "luebeck"
 const PLAYER_SHIP_TYPE_ID := "kogge"
-const PLAYER_TRADE_AMOUNT := 1.0
+const PLAYER_START_CAPITAL := 2500.0
+const TRADE_COLOR_GOLD := Color(0.86, 0.64, 0.28)
+const TRADE_COLOR_TEXT := Color(0.95, 0.86, 0.66)
+const TRADE_COLOR_MUTED := Color(0.68, 0.60, 0.45)
+const TRADE_COLOR_WOOD := Color(0.16, 0.09, 0.035)
+const TRADE_COLOR_DARK := Color(0.055, 0.052, 0.035)
+const TRADE_COLOR_DARK_GREEN := Color(0.035, 0.12, 0.105)
 const SPEED_OPTIONS := [
 	{"label": "Stop", "days_per_second": 0.0},
 	{"label": "1x", "days_per_second": 0.04},
@@ -29,18 +36,23 @@ var simulation_time_days: float = 0.0
 var current_speed_index: int = 1
 var ai_traders: Array = []
 var player_ship: Dictionary = {}
+var player_capital: float = PLAYER_START_CAPITAL
 var trade_city_id: String = ""
+var trade_feedback_text: String = ""
+var selected_trade_good_id: String = ""
+var selected_trade_quantity: int = 1
+var trade_window_frame_texture: Texture2D
 var ship_type_by_id: Dictionary = {}
 var rng := RandomNumberGenerator.new()
 
-var day_label: Label
-var clock_label: Label
 var speed_select: OptionButton
 var fast_forward_button: Button
-var travel_label: RichTextLabel
-var market_label: RichTextLabel
-var combat_label: RichTextLabel
-var trade_popup: PopupPanel
+var player_capital_label: Label
+var player_location_label: Label
+var player_ship_label: Label
+var player_cargo_label: RichTextLabel
+var trade_popup: Control
+var trade_window_panel: Control
 var trade_content: VBoxContainer
 var map_view
 
@@ -48,6 +60,7 @@ func _ready() -> void:
 	var loader := CatalogLoader.new()
 	catalog = loader.load_all()
 	_index_ship_types()
+	_load_trade_textures()
 	simulation = SimulationState.new(catalog)
 	rng.seed = 1401
 	metrics_logger = BalanceMetricsLogger.new()
@@ -66,6 +79,10 @@ func _process(delta: float) -> void:
 		return
 
 	_advance_world(days_delta)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		_resize_trade_window()
 
 func _advance_world(days_delta: float) -> void:
 	if days_delta <= 0.0:
@@ -129,9 +146,7 @@ func _build_layout() -> void:
 	sidebar.add_theme_constant_override("separation", 12)
 	sidebar_scroll.add_child(sidebar)
 
-	sidebar.add_child(_build_status_panel())
-	sidebar.add_child(_build_market_panel())
-	sidebar.add_child(_build_combat_panel())
+	sidebar.add_child(_build_player_overview_panel())
 	_build_trade_popup()
 
 func _build_header() -> Control:
@@ -149,7 +164,7 @@ func _build_header() -> Control:
 	title_box.add_child(title)
 
 	var subtitle := Label.new()
-	subtitle.text = "Phase 0.2: Hauptgame-Prototyp mit festen Staedten, Markt und Piratenrisiko"
+	subtitle.text = "Phase 0.2: Hauptgame-Prototyp mit Spielerhandel und Schiffsrouten"
 	subtitle.add_theme_font_size_override("font_size", 15)
 	title_box.add_child(subtitle)
 
@@ -161,31 +176,34 @@ func _build_header() -> Control:
 
 	return header
 
-func _build_status_panel() -> Control:
+func _build_player_overview_panel() -> Control:
 	var panel := PanelContainer.new()
 	var content := VBoxContainer.new()
 	content.add_theme_constant_override("separation", 8)
 	panel.add_child(content)
 
 	var heading := Label.new()
-	heading.text = "Simulation"
+	heading.text = "Spieleruebersicht"
 	heading.add_theme_font_size_override("font_size", 20)
 	content.add_child(heading)
 
-	day_label = Label.new()
-	content.add_child(day_label)
+	player_capital_label = Label.new()
+	player_capital_label.add_theme_font_size_override("font_size", 18)
+	content.add_child(player_capital_label)
 
-	clock_label = Label.new()
-	content.add_child(clock_label)
+	player_location_label = Label.new()
+	player_location_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(player_location_label)
 
-	var stats := Label.new()
-	stats.text = "Waren: %d\nFeste Spielstaedte: %d\nSchiffstypen: %d\nPiratenzonen: %d" % [
-		catalog.get("goods", []).size(),
-		catalog.get("cities", []).size(),
-		catalog.get("ship_types", []).size(),
-		catalog.get("pirate_zones", []).size()
-	]
-	content.add_child(stats)
+	player_ship_label = Label.new()
+	player_ship_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(player_ship_label)
+
+	player_cargo_label = RichTextLabel.new()
+	player_cargo_label.bbcode_enabled = true
+	player_cargo_label.fit_content = true
+	player_cargo_label.custom_minimum_size = Vector2(320, 160)
+	content.add_child(player_cargo_label)
 
 	var speed_row := HBoxContainer.new()
 	speed_row.add_theme_constant_override("separation", 8)
@@ -200,97 +218,64 @@ func _build_status_panel() -> Control:
 	for index in range(SPEED_OPTIONS.size()):
 		speed_select.add_item(String(SPEED_OPTIONS[index]["label"]), index)
 	speed_select.selected = current_speed_index
-	speed_select.item_selected.connect(_on_speed_selected)
+	speed_select.item_selected.connect(Callable(self, "_on_speed_selected"))
 	speed_row.add_child(speed_select)
 
 	fast_forward_button = Button.new()
 	fast_forward_button.text = "Bis Ziel vorspulen"
-	fast_forward_button.pressed.connect(_on_fast_forward_to_destination_pressed)
+	fast_forward_button.pressed.connect(Callable(self, "_on_fast_forward_to_destination_pressed"))
 	content.add_child(fast_forward_button)
-
-	travel_label = RichTextLabel.new()
-	travel_label.bbcode_enabled = true
-	travel_label.fit_content = true
-	travel_label.custom_minimum_size = Vector2(320, 148)
-	content.add_child(travel_label)
 
 	var advance := Button.new()
 	advance.text = "Tag +1"
-	advance.pressed.connect(_on_advance_day_pressed)
+	advance.pressed.connect(Callable(self, "_on_advance_day_pressed"))
 	content.add_child(advance)
 
 	return panel
 
-func _build_trade_popup() -> void:
-	trade_popup = PopupPanel.new()
+func _build_trade_popup() -> Control:
+	trade_popup = Control.new()
+	trade_popup.name = "TradeWindowLayer"
+	trade_popup.visible = false
+	trade_popup.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	trade_popup.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(trade_popup)
 
+	var center := CenterContainer.new()
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	trade_popup.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.name = "TradeWindow"
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.custom_minimum_size = Vector2(1500, 820)
+	panel.add_theme_stylebox_override("panel", _trade_texture_style_box(trade_window_frame_texture, 105, 6, _trade_style_box(TRADE_COLOR_WOOD, TRADE_COLOR_GOLD, 3, 6)))
+	trade_window_panel = panel
+	center.add_child(panel)
+
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_top", 14)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_bottom", 14)
-	trade_popup.add_child(margin)
+	margin.add_theme_constant_override("margin_left", 70)
+	margin.add_theme_constant_override("margin_top", 58)
+	margin.add_theme_constant_override("margin_right", 70)
+	margin.add_theme_constant_override("margin_bottom", 60)
+	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.add_child(margin)
 
 	trade_content = VBoxContainer.new()
-	trade_content.add_theme_constant_override("separation", 10)
+	trade_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	trade_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	trade_content.add_theme_constant_override("separation", 8)
 	margin.add_child(trade_content)
-
-func _build_market_panel() -> Control:
-	var panel := PanelContainer.new()
-	var content := VBoxContainer.new()
-	content.add_theme_constant_override("separation", 8)
-	panel.add_child(content)
-
-	var heading := Label.new()
-	heading.text = "Marktpreise"
-	heading.add_theme_font_size_override("font_size", 20)
-	content.add_child(heading)
-
-	market_label = RichTextLabel.new()
-	market_label.bbcode_enabled = true
-	market_label.fit_content = true
-	market_label.custom_minimum_size = Vector2(320, 120)
-	content.add_child(market_label)
-
-	return panel
-
-func _build_combat_panel() -> Control:
-	var panel := PanelContainer.new()
-	var content := VBoxContainer.new()
-	content.add_theme_constant_override("separation", 8)
-	panel.add_child(content)
-
-	var heading := Label.new()
-	heading.text = "Piratenbegegnung"
-	heading.add_theme_font_size_override("font_size", 20)
-	content.add_child(heading)
-
-	combat_label = RichTextLabel.new()
-	combat_label.bbcode_enabled = true
-	combat_label.fit_content = true
-	combat_label.custom_minimum_size = Vector2(320, 120)
-	content.add_child(combat_label)
-
-	var resolve := Button.new()
-	resolve.text = "Begegnung auswerten"
-	resolve.pressed.connect(_on_resolve_combat_pressed)
-	content.add_child(resolve)
-
-	return panel
+	return trade_popup
 
 func _refresh_ui() -> void:
-	day_label.text = "Simulationstag: %d" % simulation.day
-	clock_label.text = "Simulationszeit: Tag %.2f" % simulation_time_days
-	travel_label.text = _travel_preview()
-	market_label.text = _market_preview()
-	combat_label.text = _combat_preview()
+	_refresh_player_overview()
 	if fast_forward_button != null:
 		fast_forward_button.disabled = not bool(player_ship.get("is_travelling", false))
 	map_view.set_simulation_day(simulation.day)
 	map_view.set_route_ships(_map_ship_entries())
-	if trade_popup != null and trade_popup.visible and not trade_city_id.is_empty():
-		_refresh_trade_popup(trade_city_id)
 
 func _market_preview() -> String:
 	var lines: Array[String] = []
@@ -522,93 +507,432 @@ func _interpolate_source_polyline(path_points: Array, progress: float) -> Dictio
 
 func _show_trade_window(city_id: String) -> void:
 	trade_city_id = city_id
+	trade_feedback_text = ""
+	_resize_trade_window()
 	_refresh_trade_popup(city_id)
-	trade_popup.popup_centered(Vector2i(680, 520))
+	trade_popup.visible = true
+	trade_popup.move_to_front()
+
+func _resize_trade_window() -> void:
+	if trade_window_panel == null:
+		return
+	var viewport_size := size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		viewport_size = Vector2(1600, 900)
+	trade_window_panel.custom_minimum_size = Vector2(
+		clampf(viewport_size.x * 0.94, 1280.0, 1560.0),
+		clampf(viewport_size.y * 0.90, 680.0, 820.0)
+	)
 
 func _refresh_trade_popup(city_id: String) -> void:
 	if trade_content == null:
 		return
+	if selected_trade_good_id.is_empty():
+		selected_trade_good_id = _first_good_id()
 
 	for child in trade_content.get_children():
 		trade_content.remove_child(child)
 		child.queue_free()
 
-	var title := Label.new()
-	title.text = "Handel in %s" % _city_name(city_id)
-	title.add_theme_font_size_override("font_size", 22)
-	trade_content.add_child(title)
+	var title_row := HBoxContainer.new()
+	title_row.add_theme_constant_override("separation", 12)
+	trade_content.add_child(title_row)
 
-	var capacity_label := Label.new()
-	capacity_label.text = "Schiff: %s | Ladung: %.1f / %.1f Schiffspfund" % [
-		_ship_type_name(PLAYER_SHIP_TYPE_ID),
-		_player_cargo_load(),
-		_player_cargo_capacity()
-	]
-	trade_content.add_child(capacity_label)
+	var crest := Label.new()
+	crest.text = "[*]"
+	crest.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	crest.custom_minimum_size = Vector2(58, 46)
+	crest.add_theme_color_override("font_color", TRADE_COLOR_GOLD)
+	crest.add_theme_font_size_override("font_size", 26)
+	title_row.add_child(crest)
+
+	var title := Label.new()
+	title.text = _city_name(city_id)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", TRADE_COLOR_TEXT)
+	title.add_theme_font_size_override("font_size", 22)
+	title_row.add_child(title)
+
+	var close_top := Button.new()
+	close_top.text = "X"
+	close_top.custom_minimum_size = Vector2(58, 46)
+	_style_trade_button(close_top, Color(0.34, 0.12, 0.055))
+	close_top.gui_input.connect(_on_trade_close_button_gui_input)
+	title_row.add_child(close_top)
+
+	if not trade_feedback_text.is_empty():
+		var feedback := Label.new()
+		feedback.text = trade_feedback_text
+		feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		feedback.add_theme_color_override("font_color", TRADE_COLOR_GOLD)
+		trade_content.add_child(feedback)
+
+	var body := HBoxContainer.new()
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 8)
+	trade_content.add_child(body)
+
+	body.add_child(_build_trade_city_panel(city_id))
+	body.add_child(_build_trade_goods_panel(city_id))
+	body.add_child(_build_trade_good_details_panel(city_id))
+	trade_content.add_child(_build_trade_footer(city_id))
+
+func _build_trade_city_panel(city_id: String) -> Control:
+	var panel := _trade_panel_container(Vector2(230, 0))
+	var content := _trade_panel_content(panel, 10)
+	content.add_child(_trade_section_header("Stadtdaten"))
+	content.add_child(_trade_stat_row("Einwohner", _format_int(_city_population(city_id))))
+	content.add_child(_trade_stat_row("Wohlstand", _city_wealth_label(city_id)))
+	content.add_child(_trade_stat_row("Ruf", "Angesehen"))
+	content.add_child(_trade_stat_row("Steuersatz", "12%"))
+	content.add_child(_trade_stat_row("Hafenstatus", "Sehr gut"))
+	content.add_child(_trade_stat_row("Versorgung", _city_supply_label(city_id)))
+	return panel
+
+func _build_trade_goods_panel(city_id: String) -> Control:
+	var panel := _trade_panel_container(Vector2(620, 0))
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var content := _trade_panel_content(panel, 0)
+
+	var table_scroll := ScrollContainer.new()
+	table_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	table_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	table_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	table_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content.add_child(table_scroll)
 
 	var grid := GridContainer.new()
-	grid.columns = 6
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 6)
-	trade_content.add_child(grid)
+	grid.columns = 7
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 0)
+	grid.add_theme_constant_override("v_separation", 0)
+	table_scroll.add_child(grid)
 
-	for heading_text in ["Ware", "Bestand", "Preis", "Ladung", "Kaufen", "Verkaufen"]:
-		var heading := Label.new()
-		heading.text = heading_text
-		heading.add_theme_font_size_override("font_size", 14)
-		grid.add_child(heading)
+	for heading_text in ["Ware", "Stadt", "Preis", "Schiff", "Schnitt", "Kauf", "Verkauf"]:
+		grid.add_child(_trade_header_cell(heading_text))
 
 	for good_entry in catalog.get("goods", []):
 		var good: Dictionary = good_entry
 		var good_id := String(good.get("id", ""))
-		grid.add_child(_trade_cell(_good_label(good)))
-		grid.add_child(_trade_cell("%.1f" % simulation.get_stock(city_id, good_id)))
-		grid.add_child(_trade_cell("%d" % simulation.get_price(city_id, good_id)))
-		grid.add_child(_trade_cell("%.1f" % _player_cargo_amount(good_id)))
+		var is_selected := good_id == selected_trade_good_id
+		grid.add_child(_trade_value_cell(_good_label(good), 168.0, HORIZONTAL_ALIGNMENT_LEFT, is_selected))
+		grid.add_child(_trade_value_cell("%d" % simulation.get_stock(city_id, good_id), 64.0, HORIZONTAL_ALIGNMENT_RIGHT, is_selected))
+		grid.add_child(_trade_value_cell("%d" % simulation.get_price(city_id, good_id), 58.0, HORIZONTAL_ALIGNMENT_RIGHT, is_selected))
+		grid.add_child(_trade_value_cell("%d" % _player_cargo_amount(good_id), 58.0, HORIZONTAL_ALIGNMENT_RIGHT, is_selected))
+		grid.add_child(_trade_value_cell(_player_average_price_text(good_id), 72.0, HORIZONTAL_ALIGNMENT_RIGHT, is_selected))
 
 		var buy := Button.new()
-		buy.text = "+1"
-		buy.disabled = _player_cargo_remaining() <= 0.0 or simulation.get_stock(city_id, good_id) <= 0.0
-		buy.pressed.connect(_on_player_buy_good.bind(city_id, good_id))
+		buy.text = "Kaufen"
+		buy.custom_minimum_size = Vector2(76, 32)
+		buy.disabled = _player_max_buyable_amount(city_id, good_id) <= 0
+		buy.set_meta("city_id", city_id)
+		buy.set_meta("good_id", good_id)
+		_style_trade_button(buy, Color(0.13, 0.28, 0.10))
+		buy.gui_input.connect(_on_player_buy_button_gui_input.bind(buy))
 		grid.add_child(buy)
 
 		var sell := Button.new()
-		sell.text = "-1"
-		sell.disabled = _player_cargo_amount(good_id) <= 0.0
-		sell.pressed.connect(_on_player_sell_good.bind(city_id, good_id))
+		sell.text = "Verk."
+		sell.custom_minimum_size = Vector2(76, 32)
+		sell.disabled = _player_cargo_amount(good_id) <= 0
+		sell.set_meta("city_id", city_id)
+		sell.set_meta("good_id", good_id)
+		_style_trade_button(sell, Color(0.34, 0.12, 0.055))
+		sell.gui_input.connect(_on_player_sell_button_gui_input.bind(sell))
 		grid.add_child(sell)
+	return panel
 
-	var close := Button.new()
-	close.text = "Schliessen"
-	close.pressed.connect(func() -> void: trade_popup.hide())
-	trade_content.add_child(close)
+func _build_trade_good_details_panel(city_id: String) -> Control:
+	var panel := _trade_panel_container(Vector2(280, 0))
+	var content := _trade_panel_content(panel, 10)
+	content.add_child(_trade_section_header("Ausgewaehlte Ware"))
 
-func _trade_cell(text: String) -> Label:
+	var good := _good_by_id(selected_trade_good_id)
+	var good_id := String(good.get("id", selected_trade_good_id))
+	var title := Label.new()
+	title.text = String(good.get("name", good_id))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", TRADE_COLOR_TEXT)
+	title.add_theme_font_size_override("font_size", 24)
+	content.add_child(title)
+
+	content.add_child(_trade_stat_row("Einheit", String(good.get("unit", {}).get("abbreviation", ""))))
+	content.add_child(_trade_stat_row("Stadtbestand", "%d" % simulation.get_stock(city_id, good_id)))
+	content.add_child(_trade_stat_row("Eigene Ladung", "%d" % _player_cargo_amount(good_id)))
+	content.add_child(_trade_stat_row("Durchschnitt", _player_average_price_text(good_id)))
+	content.add_child(_trade_stat_row("Aktive Menge", _selected_trade_quantity_text()))
+	content.add_child(_trade_section_header("Menge"))
+	content.add_child(_build_trade_quantity_controls())
+
+	var price_box := HBoxContainer.new()
+	price_box.add_theme_constant_override("separation", 8)
+	content.add_child(price_box)
+	price_box.add_child(_trade_price_card("Einkauf", "%d" % simulation.get_price(city_id, good_id), Color(0.36, 0.12, 0.08)))
+	price_box.add_child(_trade_price_card("Verkauf", "%d" % simulation.get_price(city_id, good_id), Color(0.13, 0.25, 0.12)))
+	return panel
+
+func _build_trade_footer(city_id: String) -> Control:
+	var panel := _trade_panel_container(Vector2(0, 74))
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	panel.add_child(row)
+	row.add_child(_trade_footer_stat("Stadtbestand", "%d Einheiten" % _city_total_stock(city_id)))
+	row.add_child(_trade_footer_stat("Schiffsladung", "%d / %d" % [_player_cargo_load(), _player_cargo_capacity()]))
+	row.add_child(_trade_footer_stat("Bargeld", "%s Silbermark" % _format_money(player_capital)))
+	row.add_child(_trade_footer_stat("Letzte Aktion", trade_feedback_text if not trade_feedback_text.is_empty() else "-"))
+	return panel
+
+func _build_trade_quantity_controls() -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	for option in [1, 5, 10, 0]:
+		var button := Button.new()
+		button.text = "Max" if int(option) == 0 else "%dx" % int(option)
+		button.custom_minimum_size = Vector2(56, 34)
+		button.set_meta("quantity", int(option))
+		var color := Color(0.18, 0.13, 0.055) if int(option) != selected_trade_quantity else Color(0.28, 0.19, 0.06)
+		_style_trade_button(button, color)
+		button.gui_input.connect(_on_trade_quantity_button_gui_input.bind(button))
+		row.add_child(button)
+	return row
+
+func _trade_header_cell(text: String) -> Control:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _trade_style_box(TRADE_COLOR_DARK_GREEN, Color(0.23, 0.18, 0.09), 1, 0))
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 6)
+	margin.add_theme_constant_override("margin_top", 5)
+	margin.add_theme_constant_override("margin_right", 6)
+	margin.add_theme_constant_override("margin_bottom", 5)
+	panel.add_child(margin)
 	var label := Label.new()
 	label.text = text
-	label.custom_minimum_size = Vector2(74, 0)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_color_override("font_color", TRADE_COLOR_GOLD)
+	label.add_theme_font_size_override("font_size", 13)
+	label.custom_minimum_size = Vector2(48, 24)
+	margin.add_child(label)
+	return panel
+
+func _trade_value_cell(text: String, width: float, alignment: HorizontalAlignment, is_selected: bool = false, color: Color = TRADE_COLOR_TEXT) -> Control:
+	var panel := PanelContainer.new()
+	var bg := Color(0.13, 0.11, 0.065) if is_selected else TRADE_COLOR_DARK
+	panel.add_theme_stylebox_override("panel", _trade_style_box(bg, Color(0.22, 0.18, 0.10), 1, 0))
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 7)
+	margin.add_theme_constant_override("margin_top", 4)
+	margin.add_theme_constant_override("margin_right", 7)
+	margin.add_theme_constant_override("margin_bottom", 4)
+	panel.add_child(margin)
+	var label := Label.new()
+	label.text = text
+	label.custom_minimum_size = Vector2(width, 0)
+	label.horizontal_alignment = alignment
+	label.clip_text = true
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_font_size_override("font_size", 14)
+	margin.add_child(label)
+	return panel
+
+func _trade_panel_container(minimum_size: Vector2) -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = minimum_size
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.add_theme_stylebox_override("panel", _trade_style_box(Color(0.075, 0.065, 0.04), Color(0.38, 0.28, 0.12), 2, 4))
+	return panel
+
+func _trade_panel_content(panel: PanelContainer, separation: int) -> VBoxContainer:
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	panel.add_child(margin)
+
+	var content := VBoxContainer.new()
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_theme_constant_override("separation", separation)
+	margin.add_child(content)
+	return content
+
+func _trade_section_header(text: String) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_color_override("font_color", TRADE_COLOR_GOLD)
+	label.add_theme_font_size_override("font_size", 18)
 	return label
 
+func _trade_stat_row(label_text: String, value_text: String, value_color: Color = TRADE_COLOR_TEXT) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	var label := Label.new()
+	label.text = label_text
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.add_theme_color_override("font_color", TRADE_COLOR_TEXT)
+	row.add_child(label)
+
+	var value := Label.new()
+	value.text = value_text
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value.add_theme_color_override("font_color", value_color)
+	row.add_child(value)
+	return row
+
+func _trade_footer_stat(label_text: String, value_text: String) -> Control:
+	var box := VBoxContainer.new()
+	box.custom_minimum_size = Vector2(170, 58)
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var label := Label.new()
+	label.text = label_text
+	label.add_theme_color_override("font_color", TRADE_COLOR_GOLD)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(label)
+	var value := Label.new()
+	value.text = value_text
+	value.add_theme_color_override("font_color", TRADE_COLOR_TEXT)
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(value)
+	return box
+
+func _trade_price_card(label_text: String, value_text: String, bg_color: Color) -> Control:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_theme_stylebox_override("panel", _trade_style_box(bg_color, TRADE_COLOR_GOLD, 1, 3))
+	var content := _trade_panel_content(panel, 3)
+	var label := Label.new()
+	label.text = label_text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_color_override("font_color", TRADE_COLOR_GOLD)
+	content.add_child(label)
+	var value := Label.new()
+	value.text = value_text
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value.add_theme_color_override("font_color", TRADE_COLOR_TEXT)
+	value.add_theme_font_size_override("font_size", 24)
+	content.add_child(value)
+	return panel
+
+func _style_trade_button(button: Button, bg_color: Color) -> void:
+	button.add_theme_color_override("font_color", TRADE_COLOR_TEXT)
+	button.add_theme_color_override("font_disabled_color", TRADE_COLOR_MUTED)
+	button.add_theme_stylebox_override("normal", _trade_style_box(bg_color, TRADE_COLOR_GOLD, 2, 4))
+	button.add_theme_stylebox_override("hover", _trade_style_box(bg_color.lightened(0.12), TRADE_COLOR_GOLD, 2, 4))
+	button.add_theme_stylebox_override("pressed", _trade_style_box(bg_color.darkened(0.16), TRADE_COLOR_GOLD, 2, 4))
+	button.add_theme_stylebox_override("disabled", _trade_style_box(Color(0.08, 0.07, 0.05), Color(0.22, 0.18, 0.10), 1, 4))
+
+func _trade_style_box(bg_color: Color, border_color: Color, border_width: int, radius: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg_color
+	style.border_color = border_color
+	style.set_border_width_all(border_width)
+	style.set_corner_radius_all(radius)
+	style.content_margin_left = 4
+	style.content_margin_top = 4
+	style.content_margin_right = 4
+	style.content_margin_bottom = 4
+	return style
+
+func _load_trade_textures() -> void:
+	trade_window_frame_texture = _load_texture_from_file(TRADE_WINDOW_FRAME_PATH)
+
+func _load_texture_from_file(path: String) -> Texture2D:
+	var texture := ResourceLoader.load(path) as Texture2D
+	if texture == null:
+		push_warning("Could not load UI texture: %s" % path)
+		return null
+	return texture
+
+func _trade_texture_style_box(texture: Texture2D, margin: int, content_margin: int, fallback: StyleBox) -> StyleBox:
+	if texture == null:
+		return fallback
+
+	var style := StyleBoxTexture.new()
+	style.texture = texture
+	style.texture_margin_left = margin
+	style.texture_margin_top = margin
+	style.texture_margin_right = margin
+	style.texture_margin_bottom = margin
+	style.content_margin_left = content_margin
+	style.content_margin_top = content_margin
+	style.content_margin_right = content_margin
+	style.content_margin_bottom = content_margin
+	style.draw_center = true
+	return style
+
+func _on_trade_close_button_gui_input(event: InputEvent) -> void:
+	if _is_left_mouse_release(event):
+		call_deferred("_hide_trade_window")
+
+func _on_trade_quantity_button_gui_input(event: InputEvent, button: Button) -> void:
+	if _is_left_mouse_release(event):
+		selected_trade_quantity = int(button.get_meta("quantity", 1))
+		call_deferred("_refresh_trade_window_after_action")
+
+func _on_player_buy_button_pressed(button: Button) -> void:
+	selected_trade_good_id = String(button.get_meta("good_id", ""))
+	_on_player_buy_good(
+		String(button.get_meta("city_id", "")),
+		String(button.get_meta("good_id", ""))
+	)
+
+func _on_player_buy_button_gui_input(event: InputEvent, button: Button) -> void:
+	if _is_left_mouse_release(event) and not button.disabled:
+		call_deferred("_on_player_buy_button_pressed", button)
+
+func _on_player_sell_button_pressed(button: Button) -> void:
+	selected_trade_good_id = String(button.get_meta("good_id", ""))
+	_on_player_sell_good(
+		String(button.get_meta("city_id", "")),
+		String(button.get_meta("good_id", ""))
+	)
+
+func _on_player_sell_button_gui_input(event: InputEvent, button: Button) -> void:
+	if _is_left_mouse_release(event) and not button.disabled:
+		call_deferred("_on_player_sell_button_pressed", button)
+
+func _is_left_mouse_release(event: InputEvent) -> bool:
+	return event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed
+
+func _hide_trade_window() -> void:
+	if trade_popup != null:
+		trade_popup.hide()
+
 func _on_player_buy_good(city_id: String, good_id: String) -> void:
-	var requested_amount: float = min(PLAYER_TRADE_AMOUNT, _player_cargo_remaining())
-	if requested_amount <= 0.0:
+	var requested_amount: int = _player_buyable_amount(city_id, good_id)
+	if requested_amount <= 0:
+		trade_feedback_text = "Kauf nicht moeglich: zu wenig Kapital, kein Lagerbestand oder kein Frachtraum."
+		_refresh_ui()
 		return
 
 	var purchase: Dictionary = simulation.buy_from_city(city_id, good_id, requested_amount)
-	var amount: float = float(purchase.get("amount", 0.0))
-	if amount <= 0.0:
+	var amount: int = int(purchase.get("amount", 0))
+	if amount <= 0:
 		return
 
 	var cargo: Dictionary = player_ship.get("cargo", {})
-	var entry: Dictionary = cargo.get(good_id, {"amount": 0.0, "avg_price": 0.0})
-	var old_amount: float = float(entry.get("amount", 0.0))
+	var entry: Dictionary = cargo.get(good_id, {"amount": 0, "avg_price": 0.0})
+	var old_amount: int = int(entry.get("amount", 0))
 	var old_avg_price: float = float(entry.get("avg_price", 0.0))
-	var new_amount: float = old_amount + amount
+	var new_amount: int = old_amount + amount
 	entry["amount"] = new_amount
-	entry["avg_price"] = (old_avg_price * old_amount + float(purchase.get("unit_price", 0)) * amount) / max(new_amount, 0.001)
+	entry["avg_price"] = (old_avg_price * float(old_amount) + float(purchase.get("unit_price", 0)) * float(amount)) / max(float(new_amount), 1.0)
 	cargo[good_id] = entry
 	player_ship["cargo"] = cargo
+	player_capital = max(0.0, player_capital - float(purchase.get("total_price", 0.0)))
+	trade_feedback_text = "Gekauft: %d %s fuer %s Silbermark." % [
+		amount,
+		_good_name_by_id(good_id),
+		_format_money(float(purchase.get("total_price", 0.0)))
+	]
 	_refresh_ui()
+	_refresh_trade_window_after_action()
 
 func _on_player_sell_good(city_id: String, good_id: String) -> void:
 	var cargo: Dictionary = player_ship.get("cargo", {})
@@ -616,45 +940,247 @@ func _on_player_sell_good(city_id: String, good_id: String) -> void:
 		return
 
 	var entry: Dictionary = cargo[good_id]
-	var amount: float = min(PLAYER_TRADE_AMOUNT, float(entry.get("amount", 0.0)))
-	if amount <= 0.0:
+	var amount: int = _trade_limited_amount(int(entry.get("amount", 0)))
+	if amount <= 0:
 		return
 
 	var sale: Dictionary = simulation.sell_to_city(city_id, good_id, amount)
-	var sold_amount: float = float(sale.get("amount", 0.0))
-	entry["amount"] = max(0.0, float(entry.get("amount", 0.0)) - sold_amount)
-	if float(entry.get("amount", 0.0)) <= 0.001:
+	var sold_amount: int = int(sale.get("amount", 0))
+	entry["amount"] = maxi(0, int(entry.get("amount", 0)) - sold_amount)
+	if int(entry.get("amount", 0)) <= 0:
 		cargo.erase(good_id)
 	else:
 		cargo[good_id] = entry
 	player_ship["cargo"] = cargo
+	player_capital += float(sale.get("total_price", 0.0))
+	trade_feedback_text = "Verkauft: %d %s fuer %s Silbermark." % [
+		sold_amount,
+		_good_name_by_id(good_id),
+		_format_money(float(sale.get("total_price", 0.0)))
+	]
 	_refresh_ui()
+	_refresh_trade_window_after_action()
 
-func _player_cargo_amount(good_id: String) -> float:
+func _refresh_trade_window_after_action() -> void:
+	if trade_popup != null and trade_popup.visible and not trade_city_id.is_empty():
+		call_deferred("_refresh_trade_popup", trade_city_id)
+
+func _player_cargo_amount(good_id: String) -> int:
 	var cargo: Dictionary = player_ship.get("cargo", {})
 	if not cargo.has(good_id):
-		return 0.0
+		return 0
 	var entry: Dictionary = cargo[good_id]
-	return float(entry.get("amount", 0.0))
+	return int(entry.get("amount", 0))
 
-func _player_cargo_load() -> float:
+func _player_cargo_load() -> int:
 	var cargo: Dictionary = player_ship.get("cargo", {})
-	var amount := 0.0
+	var amount := 0
 	for good_id in cargo.keys():
 		var entry: Dictionary = cargo[good_id]
-		amount += float(entry.get("amount", 0.0))
+		amount += int(entry.get("amount", 0))
 	return amount
 
-func _player_cargo_capacity() -> float:
+func _player_cargo_capacity() -> int:
 	var ship_type: Dictionary = ship_type_by_id.get(PLAYER_SHIP_TYPE_ID, {})
-	return float(ship_type.get("cargo_capacity", 100.0))
+	return int(ship_type.get("cargo_capacity", 100))
 
-func _player_cargo_remaining() -> float:
-	return max(0.0, _player_cargo_capacity() - _player_cargo_load())
+func _player_cargo_remaining() -> int:
+	return maxi(0, _player_cargo_capacity() - _player_cargo_load())
+
+func _player_buyable_amount(city_id: String, good_id: String) -> int:
+	return _trade_limited_amount(_player_max_buyable_amount(city_id, good_id))
+
+func _player_max_buyable_amount(city_id: String, good_id: String) -> int:
+	var unit_price: int = simulation.get_price(city_id, good_id)
+	if unit_price <= 0:
+		return 0
+
+	var affordable_amount: int = floori(player_capital / float(unit_price))
+	return mini(mini(_player_cargo_remaining(), simulation.get_stock(city_id, good_id)), affordable_amount)
+
+func _trade_limited_amount(max_amount: int) -> int:
+	if max_amount <= 0:
+		return 0
+	if selected_trade_quantity <= 0:
+		return max_amount
+	return mini(selected_trade_quantity, max_amount)
+
+func _selected_trade_quantity_text() -> String:
+	if selected_trade_quantity <= 0:
+		return "Max"
+	return "%dx" % selected_trade_quantity
+
+func _player_average_price_text(good_id: String) -> String:
+	var cargo: Dictionary = player_ship.get("cargo", {})
+	if not cargo.has(good_id):
+		return "-"
+
+	var entry: Dictionary = cargo[good_id]
+	var amount: int = int(entry.get("amount", 0))
+	if amount <= 0:
+		return "-"
+
+	return _format_money(float(entry.get("avg_price", 0.0)))
+
+func _trade_window_cargo_summary() -> String:
+	var lines: Array[String] = [
+		"[b]Schiffsbestand[/b] %d / %d Schiffspfund" % [_player_cargo_load(), _player_cargo_capacity()]
+	]
+	var cargo: Dictionary = player_ship.get("cargo", {})
+	if cargo.is_empty():
+		lines.append("Leer")
+		return "\n".join(lines)
+
+	for good_id in cargo.keys():
+		var entry: Dictionary = cargo[good_id]
+		lines.append("%s: %d | Durchschnitt %s" % [
+			_good_name_by_id(String(good_id)),
+			int(entry.get("amount", 0)),
+			_format_money(float(entry.get("avg_price", 0.0)))
+		])
+	return "\n".join(lines)
 
 func _ship_type_name(ship_type_id: String) -> String:
 	var ship_type: Dictionary = ship_type_by_id.get(ship_type_id, {})
 	return String(ship_type.get("name", ship_type_id))
+
+func _refresh_player_overview() -> void:
+	if player_capital_label != null:
+		player_capital_label.text = "Kapital: %s Silbermark" % _format_money(player_capital)
+	if player_location_label != null:
+		player_location_label.text = "Position: %s | Tag %.2f" % [_player_location_text(), simulation_time_days]
+	if player_ship_label != null:
+		player_ship_label.text = "Schiff: %s | Ladung %d / %d Schiffspfund" % [
+			_ship_type_name(PLAYER_SHIP_TYPE_ID),
+			_player_cargo_load(),
+			_player_cargo_capacity()
+		]
+	if player_cargo_label != null:
+		player_cargo_label.text = _player_cargo_preview()
+
+func _player_location_text() -> String:
+	if player_ship.is_empty():
+		return "kein Spielerschiff"
+
+	if bool(player_ship.get("is_travelling", false)):
+		var target_city_id := String(player_ship.get("target_city", ""))
+		var target_label := _city_name(target_city_id) if not target_city_id.is_empty() else "Wasserziel"
+		return "unterwegs nach %s, %.1f Tage Rest" % [target_label, _player_remaining_travel_days()]
+
+	var city_id := String(player_ship.get("current_city", ""))
+	if city_id.is_empty():
+		return "auf See"
+	return _city_name(city_id)
+
+func _player_cargo_preview() -> String:
+	if player_ship.is_empty():
+		return "[b]Ladung[/b]\nKein aktives Schiff."
+
+	var cargo: Dictionary = player_ship.get("cargo", {})
+	if cargo.is_empty():
+		return "[b]Ladung[/b]\nLeer"
+
+	var lines: Array[String] = ["[b]Ladung[/b]"]
+	for good_id in cargo.keys():
+		var entry: Dictionary = cargo[good_id]
+		lines.append("%s: %d | Durchschnitt %s" % [
+			_good_name_by_id(String(good_id)),
+			int(entry.get("amount", 0)),
+			_format_money(float(entry.get("avg_price", 0.0)))
+		])
+	return "\n".join(lines)
+
+func _good_name_by_id(good_id: String) -> String:
+	for good_entry in catalog.get("goods", []):
+		var good: Dictionary = good_entry
+		if String(good.get("id", "")) == good_id:
+			return String(good.get("name", good_id))
+	return good_id
+
+func _good_by_id(good_id: String) -> Dictionary:
+	for good_entry in catalog.get("goods", []):
+		var good: Dictionary = good_entry
+		if String(good.get("id", "")) == good_id:
+			return good
+	return catalog.get("goods", [])[0] if not catalog.get("goods", []).is_empty() else {}
+
+func _first_good_id() -> String:
+	if catalog.get("goods", []).is_empty():
+		return ""
+	var good: Dictionary = catalog.get("goods", [])[0]
+	return String(good.get("id", ""))
+
+func _city_population(city_id: String) -> int:
+	for city_entry in catalog.get("cities", []):
+		var city: Dictionary = city_entry
+		if String(city.get("id", "")) == city_id:
+			return int(city.get("population", 0))
+	return 0
+
+func _city_total_stock(city_id: String) -> int:
+	var total := 0
+	for good_entry in catalog.get("goods", []):
+		var good: Dictionary = good_entry
+		total += simulation.get_stock(city_id, String(good.get("id", "")))
+	return total
+
+func _city_wealth_label(city_id: String) -> String:
+	var total_stock := _city_total_stock(city_id)
+	if total_stock >= 1500:
+		return "Reich"
+	if total_stock >= 950:
+		return "Solide"
+	return "Knapp"
+
+func _city_supply_label(city_id: String) -> String:
+	var low_count := 0
+	for good_entry in catalog.get("goods", []):
+		var good: Dictionary = good_entry
+		var good_id := String(good.get("id", ""))
+		if _stock_ratio(city_id, good_id) < 0.75:
+			low_count += 1
+	if low_count <= 2:
+		return "Gut"
+	if low_count <= 5:
+		return "Angespannt"
+	return "Kritisch"
+
+func _trade_demand_label(city_id: String, good_id: String) -> String:
+	var ratio := _stock_ratio(city_id, good_id)
+	if ratio >= 1.25:
+		return "Ueberschuss"
+	if ratio >= 0.9:
+		return "Ausgeglichen"
+	if ratio >= 0.65:
+		return "Knapp"
+	return "Sehr hoch"
+
+func _trade_demand_color(city_id: String, good_id: String) -> Color:
+	var ratio := _stock_ratio(city_id, good_id)
+	if ratio >= 1.25:
+		return Color(0.48, 0.82, 0.28)
+	if ratio >= 0.9:
+		return TRADE_COLOR_GOLD
+	if ratio >= 0.65:
+		return Color(0.95, 0.48, 0.20)
+	return Color(0.95, 0.24, 0.16)
+
+func _stock_ratio(city_id: String, good_id: String) -> float:
+	return float(simulation.get_stock(city_id, good_id)) / max(1.0, float(simulation.get_target_stock(city_id, good_id)))
+
+func _format_int(value: int) -> String:
+	var text := str(value)
+	var result := ""
+	var counter := 0
+	for index in range(text.length() - 1, -1, -1):
+		if counter > 0 and counter % 3 == 0:
+			result = "." + result
+		result = text.substr(index, 1) + result
+		counter += 1
+	return result
+
+func _format_money(value: float) -> String:
+	return "%d" % roundi(value)
 
 func _initialize_ai_traders() -> void:
 	var city_ids: Array[String] = simulation.city_ids()
@@ -783,7 +1309,7 @@ func _player_status_line() -> String:
 	if bool(player_ship.get("is_travelling", false)):
 		var target_city_id := String(player_ship.get("target_city", ""))
 		var target_label := _city_name(target_city_id) if not target_city_id.is_empty() else "Wasserziel"
-		return "%s: unterwegs nach %s | %.1f Tage Rest | Ladung %.1f / %.1f" % [
+		return "%s: unterwegs nach %s | %.1f Tage Rest | Ladung %d / %d" % [
 			String(player_ship.get("name", "Spieler")),
 			target_label,
 			_player_remaining_travel_days(),
@@ -793,7 +1319,7 @@ func _player_status_line() -> String:
 
 	var city_id := String(player_ship.get("current_city", ""))
 	var location := _city_name(city_id) if not city_id.is_empty() else "auf See"
-	return "%s: %s | Ladung %.1f / %.1f" % [
+	return "%s: %s | Ladung %d / %d" % [
 		String(player_ship.get("name", "Spieler")),
 		location,
 		_player_cargo_load(),
@@ -881,12 +1407,12 @@ func _buy_trader_cargo(trader: Dictionary, from_city_id: String, target_city_id:
 
 	for opportunity in selected:
 		var good_id := String(opportunity["good_id"])
-		var available: float = simulation.get_stock(from_city_id, good_id)
+		var available: int = simulation.get_stock(from_city_id, good_id)
 		var share: float = max(0.1, float(opportunity["score"])) / max(0.1, total_score)
 		var requested: float = min(available, desired_load * share * rng.randf_range(0.65, 1.35))
 		var purchase: Dictionary = simulation.buy_from_city(from_city_id, good_id, requested)
-		var amount: float = float(purchase.get("amount", 0.0))
-		if amount <= 0.0:
+		var amount: int = int(purchase.get("amount", 0))
+		if amount <= 0:
 			continue
 
 		cargo[good_id] = {
@@ -909,8 +1435,8 @@ func _cargo_opportunities(from_city_id: String, target_city_id: String) -> Array
 	for good_entry in catalog.get("goods", []):
 		var good: Dictionary = good_entry
 		var good_id := String(good.get("id", ""))
-		var available: float = simulation.get_stock(from_city_id, good_id)
-		if available <= 0.0:
+		var available: int = simulation.get_stock(from_city_id, good_id)
+		if available <= 0:
 			continue
 
 		var source_price: float = float(simulation.get_price(from_city_id, good_id))
@@ -930,8 +1456,8 @@ func _sell_trader_cargo(trader: Dictionary, city_id: String) -> void:
 	var profile: Dictionary = trader.get("profile", {})
 	for good_id in cargo.keys():
 		var entry: Dictionary = cargo[good_id]
-		var amount: float = float(entry.get("amount", 0.0))
-		if amount <= 0.0:
+		var amount: int = int(entry.get("amount", 0))
+		if amount <= 0:
 			continue
 
 		var avg_price: float = float(entry.get("avg_price", 0.0))
@@ -973,10 +1499,10 @@ func _log_daily_metrics() -> void:
 	for trader_entry in ai_traders:
 		var trader: Dictionary = trader_entry
 		var cargo: Dictionary = trader.get("cargo", {})
-		var cargo_amount: float = 0.0
+		var cargo_amount: int = 0
 		for good_id in cargo.keys():
 			var entry: Dictionary = cargo[good_id]
-			cargo_amount += float(entry.get("amount", 0.0))
+			cargo_amount += int(entry.get("amount", 0))
 
 		_log_trader_event("trader_daily", trader, {
 			"from": _ship_from_city(trader),
