@@ -5,7 +5,13 @@
     "category": "food",
     "volume": 1,
     "base_price": 55,
-    "perishable_days": 120
+    "perishable_days": 120,
+    "unit": {
+      "name": "Last Getreide",
+      "abbreviation": "Last",
+      "approx_kg": 2000,
+      "basis": "Grosse nord- und ostseeische Schuettgut-Einheit; im Spiel als rund zwei Tonnen Getreide normalisiert."
+    }
   },
   {
     "id": "salt",
@@ -13,7 +19,13 @@
     "category": "preservation",
     "volume": 1,
     "base_price": 95,
-    "perishable_days": 0
+    "perishable_days": 0,
+    "unit": {
+      "name": "Salzfass",
+      "abbreviation": "Fass",
+      "approx_liters": 201.5,
+      "basis": "An Lueneburger Salzfass-/Kalkfass-Fundmassen angelehnt; im Spiel als Fassvolumen normalisiert."
+    }
   },
   {
     "id": "herring",
@@ -21,7 +33,13 @@
     "category": "food",
     "volume": 1,
     "base_price": 74,
-    "perishable_days": 45
+    "perishable_days": 45,
+    "unit": {
+      "name": "Heringsfass",
+      "abbreviation": "Fass",
+      "approx_count": 1000,
+      "basis": "An Heringsfass-Ueberlieferungen mit rund 1000 Heringen je Fass angelehnt."
+    }
   },
   {
     "id": "stockfish",
@@ -29,7 +47,13 @@
     "category": "food",
     "volume": 1,
     "base_price": 88,
-    "perishable_days": 180
+    "perishable_days": 180,
+    "unit": {
+      "name": "Schiffspfund Stockfisch",
+      "abbreviation": "Schiffspfd",
+      "approx_kg": 150,
+      "basis": "Stockfisch wurde im Fernhandel als haltbare Massenware gewogen; im Spiel auf ein norddeutsches Schiffspfund gerundet."
+    }
   },
   {
     "id": "beer",
@@ -37,7 +61,13 @@
     "category": "food",
     "volume": 1,
     "base_price": 62,
-    "perishable_days": 90
+    "perishable_days": 90,
+    "unit": {
+      "name": "Bierfass",
+      "abbreviation": "Fass",
+      "approx_liters": 120,
+      "basis": "Fass als typische Transport- und Lagereinheit; Volumen fuer Spielzwecke gerundet."
+    }
   },
   {
     "id": "timber",
@@ -45,7 +75,13 @@
     "category": "construction",
     "volume": 2,
     "base_price": 42,
-    "perishable_days": 0
+    "perishable_days": 0,
+    "unit": {
+      "name": "Fuder Bauholz",
+      "abbreviation": "Fuder",
+      "approx_kg": 1000,
+      "basis": "Fuder als grobe Wagen-/Ladungseinheit fuer sperrige Bau- und Schiffbauware."
+    }
   },
   {
     "id": "pitch_tar",
@@ -53,7 +89,13 @@
     "category": "shipbuilding",
     "volume": 1,
     "base_price": 82,
-    "perishable_days": 0
+    "perishable_days": 0,
+    "unit": {
+      "name": "Teerfass",
+      "abbreviation": "Fass",
+      "approx_liters": 120,
+      "basis": "Pech und Teer wurden als Schiffbau- und Abdichtungsware in Faessern gehandelt; Volumen gerundet."
+    }
   },
   {
     "id": "flax",
@@ -61,7 +103,13 @@
     "category": "raw_material",
     "volume": 1,
     "base_price": 72,
-    "perishable_days": 0
+    "perishable_days": 0,
+    "unit": {
+      "name": "Schiffspfund Flachs",
+      "abbreviation": "Schiffspfd",
+      "approx_kg": 150,
+      "basis": "Faserrohstoff als gewogene Schiffsfracht; auf ein regional schwankendes Schiffspfund normalisiert."
+    }
   },
   {
     "id": "wool",
@@ -69,7 +117,13 @@
     "category": "raw_material",
     "volume": 1,
     "base_price": 118,
-    "perishable_days": 0
+    "perishable_days": 0,
+    "unit": {
+      "name": "Wollballen",
+      "abbreviation": "Ballen",
+      "approx_kg": 150,
+      "basis": "Wollfracht als Ballen-/Gewichtseinheit; fuer Spielwerte auf Schiffspfund-Groesse gerundet."
+    }
   },
   {
     "id": "iron",
@@ -77,7 +131,13 @@
     "category": "metal",
     "volume": 2,
     "base_price": 155,
-    "perishable_days": 0
+    "perishable_days": 0,
+    "unit": {
+      "name": "Schiffspfund Eisen",
+      "abbreviation": "Schiffspfd",
+      "approx_kg": 150,
+      "basis": "Eisen als schwere gewogene Schiffsfracht; auf norddeutsches Schiffspfund normalisiert."
+    }
   },
   {
     "id": "wax",
@@ -85,7 +145,13 @@
     "category": "raw_material",
     "volume": 1,
     "base_price": 132,
-    "perishable_days": 0
+    "perishable_days": 0,
+    "unit": {
+      "name": "Schiffspfund Wachs",
+      "abbreviation": "Schiffspfd",
+      "approx_kg": 150,
+      "basis": "Wachs aus dem Osthandel als gewogene Ware; auf Schiffspfund-Groesse normalisiert."
+    }
   },
   {
     "id": "furs",
@@ -93,7 +159,13 @@
     "category": "luxury",
     "volume": 1,
     "base_price": 225,
-    "perishable_days": 0
+    "perishable_days": 0,
+    "unit": {
+      "name": "Timmer Pelze",
+      "abbreviation": "Timmer",
+      "approx_count": 40,
+      "basis": "Timmer/Tymer als Pelzzaehlmass mit 40 Fellen."
+    }
   },
   {
     "id": "cloth",
@@ -101,7 +173,13 @@
     "category": "luxury",
     "volume": 1,
     "base_price": 180,
-    "perishable_days": 0
+    "perishable_days": 0,
+    "unit": {
+      "name": "Tuchballen",
+      "abbreviation": "Ballen",
+      "approx_kg": 100,
+      "basis": "Tuch wurde als Stueck- und Ballenware gehandelt; fuer Spielwerte als Ballen normalisiert."
+    }
   },
   {
     "id": "wine",
@@ -109,7 +187,13 @@
     "category": "luxury",
     "volume": 1,
     "base_price": 245,
-    "perishable_days": 0
+    "perishable_days": 0,
+    "unit": {
+      "name": "Weinfass",
+      "abbreviation": "Fass",
+      "approx_liters": 120,
+      "basis": "Wein als Fassware im Fernhandel; Volumen fuer Spielzwecke gerundet."
+    }
   },
   {
     "id": "spices",
@@ -117,6 +201,12 @@
     "category": "luxury",
     "volume": 1,
     "base_price": 430,
-    "perishable_days": 0
+    "perishable_days": 0,
+    "unit": {
+      "name": "Gewuerzkiste",
+      "abbreviation": "Kiste",
+      "approx_kg": 25,
+      "basis": "Kleine hochwertige Fernhandelsware; als kompakte Kiste statt Massengut normalisiert."
+    }
   }
 ]

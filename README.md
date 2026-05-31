@@ -4,7 +4,7 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.24-map-editor-population-groups`
+Version: `0.2.26-historical-units-production-balancing`
 
 Das Projektfundament enthaelt:
 
@@ -18,9 +18,10 @@ Das Projektfundament enthaelt:
 - Stadtnamen werden auf der Karte per Mouseover angezeigt
 - Stadtpunkte koennen direkt auf der Karte angeklickt und ausgewaehlt werden
 - Stadtmarker historischer Wasserhandelsorte sitzen auf sichtbaren Wasserpixeln an Hafen-, Fluss- oder Kuestenzugangspunkten
-- zusaetzliche wichtige Kuesten- und Seehandelsorte wie Malmoe, Skanor-Falsterbo, Kalmar, Abo, Viborg, Narva, Elbing, Memel und Aalborg
+- zusaetzliche wichtige Kuesten- und Seehandelsorte wie Malmoe, Skanor-Falsterbo, Kalmar, Abo, Viborg, Narva, Elbing, Memel, Aalborg sowie primaere Nordsee-Standorte wie Hull, Boston, King's Lynn, Great Yarmouth, Kampen und Stade
 - sinnvolle Defaultwerte fuer Einwohner, Erzeugung und Verbrauch je Hanseort
 - erweiterte Hanse-Handelswaren inklusive Stockfisch, Bier, Pech/Teer, Flachs, Wolle, Eisen, Wachs, Pelzen, Wein und Gewuerzen
+- historische Spiel-Einheiten je Ware, z.B. Last, Fass, Schiffspfund, Ballen, Timmer und Kiste
 - Einwohnergruppen fuer Arme, Handwerker, Buerger und Patrizier mit eigenen Bedarfen und Tagesverbrauch
 - sichtbare Einwohnergruppen-Verteilung im Map Editor; Verbrauchswerte werden daraus abgeleitet
 - recherchierte, breiter lesbare Wasserwege ohne Laendergrenzen fuer historisch per Fluss, Muendung oder Lagune angelaufene Handelsstaedte

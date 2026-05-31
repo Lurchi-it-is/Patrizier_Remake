@@ -1,6 +1,6 @@
 # Architektur
 
-Version: 0.2.24-map-editor-population-groups
+Version: 0.2.26-historical-units-production-balancing
 
 ## Leitidee
 
@@ -36,6 +36,7 @@ Die Wirtschaftssimulation soll datengetrieben und testbar bleiben. Godot rendert
 - Ein Simulations-Tag ist der kleinste regulare Wirtschaftstick.
 - Preise werden aus Basispreis, Stadtbestand und Zielbestand berechnet.
 - Stadtverbrauch besteht aus explizitem Stadt-/Gewerbeverbrauch plus Bedarfen der Einwohnergruppen; diese Logik gilt fuer feste Staedte und exportierte Map-Editor-Staedte.
+- Produktions- und Verbrauchswerte laufen pro Tag in der jeweiligen Wareneinheit aus `data/goods.json`.
 - Piratenrisiko wird pro Seezone modelliert.
 - Seeschlachten starten mit einem Auto-Resolver und koennen spaeter um einen manuellen taktischen Modus erweitert werden.
 

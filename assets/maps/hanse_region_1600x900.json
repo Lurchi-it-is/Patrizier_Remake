@@ -30,6 +30,48 @@
       ]
     },
     {
+      "id": "humber_hull",
+      "name": "Humber and River Hull access to Hull",
+      "kind": "estuary_port",
+      "cities": [
+        "hull"
+      ],
+      "basis": "Hull exported wool, grain and lead and imported timber, oil seed and other Baltic goods through its Humber port.",
+      "source_names": [
+        "Humber"
+      ]
+    },
+    {
+      "id": "witham_boston",
+      "name": "Witham and Wash access to Boston",
+      "kind": "river_wash_port",
+      "cities": [
+        "boston"
+      ],
+      "basis": "Boston was a Hanse network port on England's east coast with river access inland and a major wool export trade.",
+      "source_names": []
+    },
+    {
+      "id": "great_ouse_kings_lynn",
+      "name": "Great Ouse and Wash access to King's Lynn",
+      "kind": "river_wash_port",
+      "cities": [
+        "kings_lynn"
+      ],
+      "basis": "King's Lynn preserved a late medieval Hanseatic Warehouse running down to the river, reflecting its Hanse trade role.",
+      "source_names": []
+    },
+    {
+      "id": "yare_great_yarmouth",
+      "name": "Yare estuary access to Great Yarmouth",
+      "kind": "estuary_port",
+      "cities": [
+        "great_yarmouth"
+      ],
+      "basis": "Great Yarmouth became a Hanse trading post after its role as a herring and wool export port on England's east coast.",
+      "source_names": []
+    },
+    {
       "id": "zwin_bruegge",
       "name": "Zwin, Damme and Reie access to Bruegge",
       "kind": "tidal_inlet",
@@ -52,6 +94,18 @@
       ]
     },
     {
+      "id": "ijssel_kampen",
+      "name": "IJssel and Zuiderzee access to Kampen",
+      "kind": "river_sea_port",
+      "cities": [
+        "kampen"
+      ],
+      "basis": "Kampen was a Hanseatic League member and leading commercial centre near the IJssel outflow into the Zuiderzee/IJsselmeer route.",
+      "source_names": [
+        "IJssel"
+      ]
+    },
+    {
       "id": "weser_bremen",
       "name": "Weser to Bremen",
       "kind": "river",
@@ -61,6 +115,18 @@
       "basis": "Bremen's maritime access followed the Weser; the medieval quay lay on the riverside.",
       "source_names": [
         "Weser"
+      ]
+    },
+    {
+      "id": "schwinge_elbe_stade",
+      "name": "Schwinge and lower Elbe access to Stade",
+      "kind": "river_elbe_port",
+      "cities": [
+        "stade"
+      ],
+      "basis": "Stade was a Hanseatic League member and the leading port of the lower Elbe before Hamburg dominated that trade.",
+      "source_names": [
+        "Elbe"
       ]
     },
     {
@@ -260,6 +326,54 @@
       },
       "kind": "kontor"
     },
+    "hull": {
+      "name": "Hull",
+      "lon": -0.3274,
+      "lat": 53.7676,
+      "marker_lon": -0.31599999999999895,
+      "marker_lat": 53.76577777777778,
+      "position": {
+        "x": 224,
+        "y": 586
+      },
+      "kind": "trade"
+    },
+    "boston": {
+      "name": "Boston",
+      "lon": -0.0266,
+      "lat": 52.9789,
+      "marker_lon": -0.036874999999999325,
+      "marker_lat": 52.983555555555554,
+      "position": {
+        "x": 235,
+        "y": 641
+      },
+      "kind": "trade"
+    },
+    "kings_lynn": {
+      "name": "King's Lynn",
+      "lon": 0.3976,
+      "lat": 52.7543,
+      "marker_lon": 0.39449999999999985,
+      "marker_lat": 52.770222222222216,
+      "position": {
+        "x": 252,
+        "y": 656
+      },
+      "kind": "trade"
+    },
+    "great_yarmouth": {
+      "name": "Great Yarmouth",
+      "lon": 1.7305,
+      "lat": 52.6072,
+      "marker_lon": 1.7140000000000004,
+      "marker_lat": 52.628,
+      "position": {
+        "x": 304,
+        "y": 666
+      },
+      "kind": "trade"
+    },
     "bruegge": {
       "name": "Bruegge",
       "lon": 3.2247,
@@ -284,6 +398,18 @@
       },
       "kind": "member"
     },
+    "kampen": {
+      "name": "Kampen",
+      "lon": 5.9113,
+      "lat": 52.555,
+      "marker_lon": 5.900875000000001,
+      "marker_lat": 52.556888888888885,
+      "position": {
+        "x": 469,
+        "y": 671
+      },
+      "kind": "member"
+    },
     "bremen": {
       "name": "Bremen",
       "lon": 8.8017,
@@ -293,6 +419,18 @@
       "position": {
         "x": 584,
         "y": 634
+      },
+      "kind": "member"
+    },
+    "stade": {
+      "name": "Stade",
+      "lon": 9.4763,
+      "lat": 53.5934,
+      "marker_lon": 9.478750000000002,
+      "marker_lat": 53.59511111111111,
+      "position": {
+        "x": 610,
+        "y": 598
       },
       "kind": "member"
     },

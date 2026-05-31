@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.26-historical-units-production-balancing - 2026-05-31
+
+- Warenkatalog um historische Spiel-Einheiten wie Last, Fass, Schiffspfund, Fuder, Ballen, Timmer und Kiste erweitert.
+- Produktion der festen Spielstaedte und Map-Editor-Defaults auf diese groesseren Einheiten neu balanciert.
+- Map Editor und Hauptspiel zeigen Warenpreise bzw. Produktionswerte mit Einheitshinweisen an.
+- Validierung prueft, dass jede Ware Einheiten-Metadaten besitzt.
+
+## 0.2.25-north-sea-trade-sites - 2026-05-31
+
+- Primaere Nordsee-Handelsstandorte Hull, Boston, King's Lynn, Great Yarmouth, Kampen und Stade in den Hanseorte-Katalog aufgenommen.
+- Hafen-/Gewaessermarker, historische Wasserwegsreferenzen und Routen fuer die neuen Nordsee-Standorte ergaenzt.
+- Defaultwerte fuer Einwohner, Erzeugung und Verbrauch der neuen Standorte im Map Editor hinterlegt.
+
 ## 0.2.24-map-editor-population-groups - 2026-05-31
 
 - Map Editor zeigt je Stadt die Verteilung auf Arme/Tageloehner, Handwerker/Gesellen, Buerger/Kaufleute und Patrizier/Reiche.

@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.24-map-editor-population-groups
+Version: 0.2.26-historical-units-production-balancing
 
 ## Branch- und Worktree-Regel
 
@@ -27,6 +27,7 @@ Der Check prueft:
 
 - JSON-Syntax der Datenkataloge
 - Warenreferenzen in Stadtwirtschaft und Einwohnergruppen
+- Einheiten-Metadaten je Ware
 - Einwohnergruppensummen je Stadt
 - Versionskonsistenz zwischen `VERSION`, `project.godot`, `README.md`, `CHANGELOG.md` und Dokumentation
 - Existenz der Godot-Startszene, der getrennten Hauptspiel-/Map-Editor-Szenen und der Windows-Export-Presets

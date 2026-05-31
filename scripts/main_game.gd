@@ -194,10 +194,18 @@ func _market_goods_preview(city_id: String) -> String:
 		var good: Dictionary = good_entry
 		var good_id := String(good.get("id", ""))
 		entries.append("%s %d" % [
-			String(good.get("name", good_id)),
+			_good_label(good),
 			simulation.get_price(city_id, good_id)
 		])
 	return " | ".join(entries)
+
+func _good_label(good: Dictionary) -> String:
+	var good_id := String(good.get("id", ""))
+	var unit: Dictionary = good.get("unit", {})
+	var abbreviation := String(unit.get("abbreviation", ""))
+	if abbreviation.is_empty():
+		return String(good.get("name", good_id))
+	return "%s/%s" % [String(good.get("name", good_id)), abbreviation]
 
 func _combat_preview() -> String:
 	return "Route: Bremen -> Hamburg -> Luebeck -> Visby -> Danzig\nStatus: %s\nSchaden: %.1f\nFrachtverlust: %.1f%%\nKopfgeld: %d" % [

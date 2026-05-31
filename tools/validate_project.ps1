@@ -35,6 +35,17 @@ foreach ($good in $goods) {
     if ($goodIds.ContainsKey($good.id)) {
         throw "Duplicate good id '$($good.id)'"
     }
+
+    if ($null -eq $good.unit) {
+        throw "Good '$($good.id)' is missing historical unit metadata"
+    }
+
+    foreach ($field in @("name", "abbreviation", "basis")) {
+        if ([string]::IsNullOrWhiteSpace([string]$good.unit.$field)) {
+            throw "Good '$($good.id)' unit is missing '$field'"
+        }
+    }
+
     $goodIds[$good.id] = $true
 }
 

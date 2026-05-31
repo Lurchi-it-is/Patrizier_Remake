@@ -9,6 +9,42 @@
     "position": { "x": 231, "y": 744 }
   },
   {
+    "id": "hull",
+    "name": "Hull",
+    "region": "England",
+    "kind": "trade",
+    "lon": -0.3274,
+    "lat": 53.7676,
+    "position": { "x": 224, "y": 586 }
+  },
+  {
+    "id": "boston",
+    "name": "Boston",
+    "region": "England",
+    "kind": "trade",
+    "lon": -0.0266,
+    "lat": 52.9789,
+    "position": { "x": 235, "y": 641 }
+  },
+  {
+    "id": "kings_lynn",
+    "name": "King's Lynn",
+    "region": "England",
+    "kind": "trade",
+    "lon": 0.3976,
+    "lat": 52.7543,
+    "position": { "x": 252, "y": 656 }
+  },
+  {
+    "id": "great_yarmouth",
+    "name": "Great Yarmouth",
+    "region": "England",
+    "kind": "trade",
+    "lon": 1.7305,
+    "lat": 52.6072,
+    "position": { "x": 304, "y": 666 }
+  },
+  {
     "id": "bruegge",
     "name": "Bruegge",
     "region": "Kontor",
@@ -27,6 +63,15 @@
     "position": { "x": 511, "y": 785 }
   },
   {
+    "id": "kampen",
+    "name": "Kampen",
+    "region": "Niederlande",
+    "kind": "member",
+    "lon": 5.9113,
+    "lat": 52.555,
+    "position": { "x": 469, "y": 671 }
+  },
+  {
     "id": "bremen",
     "name": "Bremen",
     "region": "Nordsee",
@@ -34,6 +79,15 @@
     "lon": 8.8017,
     "lat": 53.0793,
     "position": { "x": 584, "y": 634 }
+  },
+  {
+    "id": "stade",
+    "name": "Stade",
+    "region": "Niederelbe",
+    "kind": "member",
+    "lon": 9.4763,
+    "lat": 53.5934,
+    "position": { "x": 610, "y": 598 }
   },
   {
     "id": "hamburg",
