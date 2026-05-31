@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.6-foundation
+Version: 0.2.8-separated-executables
 
 ## Branch- und Worktree-Regel
 
@@ -27,4 +27,15 @@ Der Check prueft:
 
 - JSON-Syntax der Datenkataloge
 - Versionskonsistenz zwischen `VERSION`, `project.godot`, `README.md`, `CHANGELOG.md` und Dokumentation
-- Existenz der Godot-Startszene
+- Existenz der Godot-Startszene, der getrennten Hauptspiel-/Map-Editor-Szenen und der Windows-Export-Presets
+
+## Windows-Exports
+
+Die zwei Exe-Dateien werden ueber getrennte Godot-Export-Presets erzeugt:
+
+```powershell
+godot --headless --path . --export-release "Windows Main Game" builds\HanseMainGame.exe
+godot --headless --path . --export-release "Windows Map Editor" builds\HanseMapEditor.exe
+```
+
+Die Presets setzen unterschiedliche Feature-Tags. Der Launcher laedt dadurch beim Hauptspiel `res://scenes/main_game.tscn` und beim Map Editor `res://scenes/map_editor.tscn`.

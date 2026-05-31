@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.8-separated-executables - 2026-05-31
+
+- Hauptspiel und Map Editor technisch in getrennte Szenen und Startskripte aufgeteilt.
+- Launcher ergaenzt, der anhand der Export-Feature-Tags `main_game` und `map_editor` die passende Einstiegsszene laedt.
+- Windows-Export-Presets fuer `HanseMainGame.exe` und `HanseMapEditor.exe` ergaenzt.
+- Validierung prueft getrennte Startpunkte, Launcher und Export-Preset-Eintraege.
+
+## 0.2.7-main-game-prototype - 2026-05-31
+
+- Hauptgame-Prototyp startet mit fuenf festen Spielstaedten auf der Hanseregion-Karte.
+- Simulationsdaten um Bremen und Danzig inklusive Produktion, Verbrauch, Bestaenden und Zielbestaenden ergaenzt.
+- Kartenansicht zeichnet feste Spielstaedte und eine erste Hauptroute standardmaessig, unabhaengig vom Karteneditor.
+- Architekturvorgabe dokumentiert: Hauptspiel und Map Editor werden als getrennte Exe-Dateien ausgeliefert.
+
 ## 0.2.6-foundation - 2026-05-31
 
 - Karteneditor von Dropdown-Auswahl auf eine scrollbare Checkbox-Liste fuer alle historischen Hanseorte umgestellt.

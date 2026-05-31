@@ -48,9 +48,16 @@ foreach ($city in $cities) {
 }
 
 $requiredPaths = @(
+    "export_presets.cfg",
     "project.godot",
     "scenes\main.tscn",
+    "scenes\launcher.tscn",
+    "scenes\main_game.tscn",
+    "scenes\map_editor.tscn",
     "scripts\main.gd",
+    "scripts\launcher.gd",
+    "scripts\main_game.gd",
+    "scripts\map_editor.gd",
     "scripts\data\catalog_loader.gd",
     "scripts\simulation\simulation_state.gd",
     "scripts\simulation\trade_price.gd",
@@ -61,6 +68,25 @@ $requiredPaths = @(
 foreach ($path in $requiredPaths) {
     if (-not (Test-Path $path)) {
         throw "Required path missing: $path"
+    }
+}
+
+$projectSettings = Get-Content -Raw "project.godot"
+if (-not $projectSettings.Contains('run/main_scene="res://scenes/launcher.tscn"')) {
+    throw "Project main scene must be the launcher scene"
+}
+
+$exportPresets = Get-Content -Raw "export_presets.cfg"
+foreach ($requiredPresetText in @(
+    'name="Windows Main Game"',
+    'custom_features="main_game"',
+    'export_path="builds/HanseMainGame.exe"',
+    'name="Windows Map Editor"',
+    'custom_features="map_editor"',
+    'export_path="builds/HanseMapEditor.exe"'
+)) {
+    if (-not $exportPresets.Contains($requiredPresetText)) {
+        throw "Export preset missing required entry: $requiredPresetText"
     }
 }
 
