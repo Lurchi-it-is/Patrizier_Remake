@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0-foundation - 2026-05-31
+
+- Godot-4-Projektfundament mit Startszene angelegt.
+- Datenkataloge fuer Waren, Staedte, Schiffstypen und Piratenzonen erstellt.
+- Erste Simulationsbausteine fuer Tages-Tick, Preisbildung und Seeschlacht-Auto-Resolver hinzugefuegt.
+- Entwicklerdokumentation und lokales Validierungsskript ergaenzt.
+
 ## 0.1.1-planning - 2026-05-31
 
 - Seeschlachten und Piraterie als Kernfeature im Projektplan verankert.

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "western_baltic",
+    "name": "Westliche Ostsee",
+    "risk": 0.18,
+    "weather_risk": 0.12,
+    "known_hideouts": ["gotland_coast"]
+  },
+  {
+    "id": "oresund",
+    "name": "Oeresund",
+    "risk": 0.14,
+    "weather_risk": 0.1,
+    "known_hideouts": []
+  },
+  {
+    "id": "gotland_coast",
+    "name": "Kuesten vor Gotland",
+    "risk": 0.28,
+    "weather_risk": 0.18,
+    "known_hideouts": ["victual_brothers_camp"]
+  }
+]

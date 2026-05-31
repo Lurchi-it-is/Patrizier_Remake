@@ -1,0 +1,17 @@
+# Godot
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+
+# Builds
+builds/
+dist/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+.vscode/
+.idea/

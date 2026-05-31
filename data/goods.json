@@ -1,0 +1,42 @@
+[
+  {
+    "id": "grain",
+    "name": "Getreide",
+    "category": "basic",
+    "volume": 1,
+    "base_price": 55,
+    "perishable_days": 120
+  },
+  {
+    "id": "salt",
+    "name": "Salz",
+    "category": "basic",
+    "volume": 1,
+    "base_price": 95,
+    "perishable_days": 0
+  },
+  {
+    "id": "herring",
+    "name": "Hering",
+    "category": "food",
+    "volume": 1,
+    "base_price": 74,
+    "perishable_days": 45
+  },
+  {
+    "id": "timber",
+    "name": "Holz",
+    "category": "construction",
+    "volume": 2,
+    "base_price": 42,
+    "perishable_days": 0
+  },
+  {
+    "id": "cloth",
+    "name": "Tuch",
+    "category": "luxury",
+    "volume": 1,
+    "base_price": 180,
+    "perishable_days": 0
+  }
+]

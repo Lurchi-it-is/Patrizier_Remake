@@ -1,0 +1,35 @@
+[
+  {
+    "id": "luebeck",
+    "name": "Luebeck",
+    "region": "Wendische Staedte",
+    "population": 18000,
+    "position": { "x": 760, "y": 540 },
+    "production": { "salt": 8, "cloth": 2 },
+    "consumption": { "grain": 10, "herring": 5, "timber": 2 },
+    "stock": { "grain": 220, "salt": 360, "herring": 120, "timber": 90, "cloth": 80 },
+    "target_stock": { "grain": 300, "salt": 220, "herring": 160, "timber": 130, "cloth": 70 }
+  },
+  {
+    "id": "hamburg",
+    "name": "Hamburg",
+    "region": "Nordsee",
+    "population": 14000,
+    "position": { "x": 650, "y": 565 },
+    "production": { "grain": 7 },
+    "consumption": { "salt": 4, "herring": 4, "cloth": 1 },
+    "stock": { "grain": 340, "salt": 110, "herring": 130, "timber": 100, "cloth": 45 },
+    "target_stock": { "grain": 260, "salt": 180, "herring": 150, "timber": 120, "cloth": 70 }
+  },
+  {
+    "id": "visby",
+    "name": "Visby",
+    "region": "Gotland",
+    "population": 9000,
+    "position": { "x": 1050, "y": 430 },
+    "production": { "herring": 7, "timber": 3 },
+    "consumption": { "grain": 5, "salt": 5, "cloth": 1 },
+    "stock": { "grain": 95, "salt": 90, "herring": 260, "timber": 170, "cloth": 25 },
+    "target_stock": { "grain": 160, "salt": 150, "herring": 150, "timber": 120, "cloth": 45 }
+  }
+]

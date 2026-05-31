@@ -1,0 +1,22 @@
+; Engine configuration file.
+; Edit with Godot 4.x for full project settings support.
+
+config_version=5
+
+[application]
+
+config/name="Hanseatische Warenwirtschaftssimulation"
+config/description="Datengetriebene Hanse-Handels- und Seeschlacht-Simulation."
+config/version="0.2.0-foundation"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.3")
+
+[display]
+
+window/size/viewport_width=1600
+window/size/viewport_height=900
+window/size/mode=2
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
