@@ -1,12 +1,12 @@
 # Entwicklung
 
-Version: 0.2.1-foundation
+Version: 0.2.6-foundation
 
 ## Branch- und Worktree-Regel
 
-Feature-Arbeit findet in einem eigenen Worktree statt. Der aktuelle Phase-0-Worktree ist:
+Feature-Arbeit findet in einem eigenen Worktree statt. Aktuelle Feature-Branches folgen dem Praefix:
 
-`codex/phase-0-foundation`
+`codex/`
 
 ## Versionierung
 

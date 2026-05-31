@@ -16,5 +16,5 @@ Es muss immer in diesem Repository gearbeitet werden.
 - Es darf nicht mehr als ein Worktree gleichzeitig betrieben werden.
 - Zusammenhaengende Features duerfen im selben Worktree entwickelt werden.
 - Bei Aenderungen am Projekt muss die Versionsnummer immer dokumentiert und gepflegt werden.
-
+- Nach jedem abgeschlossenen Implementierungsschritt muss eine kurze Testanleitung bereitgestellt werden, inklusive konkret ausfuehrbarer Befehle und erwarteter Pruefpunkte.
 

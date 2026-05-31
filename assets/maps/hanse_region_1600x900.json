@@ -1,0 +1,230 @@
+{
+  "image": "hanse_region_1600x900.png",
+  "source_size": {
+    "x": 1600,
+    "y": 900
+  },
+  "projection": "equirectangular adjusted by cosine of center latitude",
+  "bounds": {
+    "lon_min": -6.0,
+    "lon_max": 34.6,
+    "lat_min": 49.3,
+    "lat_max": 62.1
+  },
+  "data_sources": [
+    "Natural Earth 1:50m Admin 0 countries",
+    "Natural Earth 1:50m rivers and lake centerlines"
+  ],
+  "city_pixels": {
+    "london": {
+      "name": "London",
+      "lon": -0.1276,
+      "lat": 51.5072,
+      "position": {
+        "x": 231,
+        "y": 745
+      },
+      "kind": "kontor"
+    },
+    "bruegge": {
+      "name": "Bruegge",
+      "lon": 3.2247,
+      "lat": 51.2093,
+      "position": {
+        "x": 364,
+        "y": 766
+      },
+      "kind": "kontor"
+    },
+    "koeln": {
+      "name": "Koeln",
+      "lon": 6.9603,
+      "lat": 50.9375,
+      "position": {
+        "x": 511,
+        "y": 785
+      },
+      "kind": "member"
+    },
+    "bremen": {
+      "name": "Bremen",
+      "lon": 8.8017,
+      "lat": 53.0793,
+      "position": {
+        "x": 583,
+        "y": 634
+      },
+      "kind": "member"
+    },
+    "hamburg": {
+      "name": "Hamburg",
+      "lon": 9.9937,
+      "lat": 53.5511,
+      "position": {
+        "x": 630,
+        "y": 601
+      },
+      "kind": "core"
+    },
+    "luebeck": {
+      "name": "Luebeck",
+      "lon": 10.6866,
+      "lat": 53.8655,
+      "position": {
+        "x": 658,
+        "y": 579
+      },
+      "kind": "core"
+    },
+    "wismar": {
+      "name": "Wismar",
+      "lon": 11.4629,
+      "lat": 53.8931,
+      "position": {
+        "x": 688,
+        "y": 577
+      },
+      "kind": "member"
+    },
+    "rostock": {
+      "name": "Rostock",
+      "lon": 12.0991,
+      "lat": 54.0924,
+      "position": {
+        "x": 713,
+        "y": 563
+      },
+      "kind": "member"
+    },
+    "stralsund": {
+      "name": "Stralsund",
+      "lon": 13.077,
+      "lat": 54.3091,
+      "position": {
+        "x": 752,
+        "y": 548
+      },
+      "kind": "member"
+    },
+    "greifswald": {
+      "name": "Greifswald",
+      "lon": 13.3815,
+      "lat": 54.0958,
+      "position": {
+        "x": 764,
+        "y": 563
+      },
+      "kind": "member"
+    },
+    "stettin": {
+      "name": "Stettin",
+      "lon": 14.5528,
+      "lat": 53.4285,
+      "position": {
+        "x": 810,
+        "y": 610
+      },
+      "kind": "member"
+    },
+    "kopenhagen": {
+      "name": "Kopenhagen",
+      "lon": 12.5683,
+      "lat": 55.6761,
+      "position": {
+        "x": 732,
+        "y": 452
+      },
+      "kind": "trade"
+    },
+    "oslo": {
+      "name": "Oslo",
+      "lon": 10.7522,
+      "lat": 59.9139,
+      "position": {
+        "x": 660,
+        "y": 154
+      },
+      "kind": "trade"
+    },
+    "bergen": {
+      "name": "Bergen",
+      "lon": 5.3221,
+      "lat": 60.3929,
+      "position": {
+        "x": 446,
+        "y": 120
+      },
+      "kind": "kontor"
+    },
+    "stockholm": {
+      "name": "Stockholm",
+      "lon": 18.0686,
+      "lat": 59.3293,
+      "position": {
+        "x": 949,
+        "y": 195
+      },
+      "kind": "trade"
+    },
+    "visby": {
+      "name": "Visby",
+      "lon": 18.2948,
+      "lat": 57.6348,
+      "position": {
+        "x": 957,
+        "y": 314
+      },
+      "kind": "core"
+    },
+    "danzig": {
+      "name": "Danzig",
+      "lon": 18.6466,
+      "lat": 54.352,
+      "position": {
+        "x": 971,
+        "y": 545
+      },
+      "kind": "member"
+    },
+    "koenigsberg": {
+      "name": "Koenigsberg",
+      "lon": 20.5106,
+      "lat": 54.7104,
+      "position": {
+        "x": 1045,
+        "y": 520
+      },
+      "kind": "member"
+    },
+    "riga": {
+      "name": "Riga",
+      "lon": 24.1052,
+      "lat": 56.9496,
+      "position": {
+        "x": 1186,
+        "y": 362
+      },
+      "kind": "kontor"
+    },
+    "reval": {
+      "name": "Reval",
+      "lon": 24.7536,
+      "lat": 59.437,
+      "position": {
+        "x": 1212,
+        "y": 187
+      },
+      "kind": "member"
+    },
+    "nowgorod": {
+      "name": "Nowgorod",
+      "lon": 31.2755,
+      "lat": 58.5228,
+      "position": {
+        "x": 1469,
+        "y": 252
+      },
+      "kind": "kontor"
+    }
+  }
+}

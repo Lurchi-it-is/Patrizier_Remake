@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.2.6-foundation - 2026-05-31
+
+- Karteneditor von Dropdown-Auswahl auf eine scrollbare Checkbox-Liste fuer alle historischen Hanseorte umgestellt.
+- Auswahlsteuerung um kompakte Aktionen fuer alle/keine Orte ergaenzt.
+- Kartenmarker kleiner und dezenter gestaltet, inklusive feinerem Ring und reduzierter Beschriftung.
+
+## 0.2.5-foundation - 2026-05-31
+
+- Karteneditor-Panel mit Selektor fuer historische Hanseorte hinzugefuegt.
+- Separaten Hanseorte-Katalog mit Kartenpixeln aus dem aktuellen Hanseregion-Asset ergaenzt.
+- Kartenansicht zeichnet ausgewaehlte Editor-Orte als skalierte Punkte und hebt die aktuelle Auswahl hervor.
+
+## 0.2.4-foundation - 2026-05-31
+
+- Arbeitsregel ergaenzt: Nach jedem abgeschlossenen Implementierungsschritt wird eine kurze Testanleitung mit Befehlen und erwarteten Pruefpunkten bereitgestellt.
+
+## 0.2.3-foundation - 2026-05-31
+
+- Hanseregion-Karte vorerst als neutralen geografischen Hintergrund ohne Stadtmarker, Stadtnamen und Handelsrouten ausgegeben.
+- Godot-Kartenansicht so angepasst, dass Staedte und Handelsroute vorerst nicht ueber die Karte gezeichnet werden.
+
+## 0.2.2-foundation - 2026-05-31
+
+- Realitaetsnahes 1600x900-Karten-Asset der ehemaligen Hanseregion auf Basis von Natural-Earth-Geodaten hinzugefuegt.
+- Kartengenerator mit reproduzierbaren Stadtpositionen, Handelsachsen und Metadaten ergaenzt.
+- Godot-Kartenansicht auf das neue Karten-Asset umgestellt und Stadt-/Piratenzonenpositionen angepasst.
+
 ## 0.2.1-foundation - 2026-05-31
 
 - Startszene von reiner Textausgabe zu einer sichtbaren Prototyp-Oberflaeche ausgebaut.

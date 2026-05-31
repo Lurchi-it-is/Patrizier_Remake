@@ -1,0 +1,191 @@
+[
+  {
+    "id": "london",
+    "name": "London",
+    "region": "Kontor",
+    "kind": "kontor",
+    "lon": -0.1276,
+    "lat": 51.5072,
+    "position": { "x": 231, "y": 745 }
+  },
+  {
+    "id": "bruegge",
+    "name": "Bruegge",
+    "region": "Kontor",
+    "kind": "kontor",
+    "lon": 3.2247,
+    "lat": 51.2093,
+    "position": { "x": 364, "y": 766 }
+  },
+  {
+    "id": "koeln",
+    "name": "Koeln",
+    "region": "Rhein",
+    "kind": "member",
+    "lon": 6.9603,
+    "lat": 50.9375,
+    "position": { "x": 511, "y": 785 }
+  },
+  {
+    "id": "bremen",
+    "name": "Bremen",
+    "region": "Nordsee",
+    "kind": "member",
+    "lon": 8.8017,
+    "lat": 53.0793,
+    "position": { "x": 583, "y": 634 }
+  },
+  {
+    "id": "hamburg",
+    "name": "Hamburg",
+    "region": "Nordsee",
+    "kind": "core",
+    "lon": 9.9937,
+    "lat": 53.5511,
+    "position": { "x": 630, "y": 601 }
+  },
+  {
+    "id": "luebeck",
+    "name": "Luebeck",
+    "region": "Wendische Staedte",
+    "kind": "core",
+    "lon": 10.6866,
+    "lat": 53.8655,
+    "position": { "x": 658, "y": 579 }
+  },
+  {
+    "id": "wismar",
+    "name": "Wismar",
+    "region": "Wendische Staedte",
+    "kind": "member",
+    "lon": 11.4629,
+    "lat": 53.8931,
+    "position": { "x": 688, "y": 577 }
+  },
+  {
+    "id": "rostock",
+    "name": "Rostock",
+    "region": "Wendische Staedte",
+    "kind": "member",
+    "lon": 12.0991,
+    "lat": 54.0924,
+    "position": { "x": 713, "y": 563 }
+  },
+  {
+    "id": "stralsund",
+    "name": "Stralsund",
+    "region": "Wendische Staedte",
+    "kind": "member",
+    "lon": 13.077,
+    "lat": 54.3091,
+    "position": { "x": 752, "y": 548 }
+  },
+  {
+    "id": "greifswald",
+    "name": "Greifswald",
+    "region": "Wendische Staedte",
+    "kind": "member",
+    "lon": 13.3815,
+    "lat": 54.0958,
+    "position": { "x": 764, "y": 563 }
+  },
+  {
+    "id": "stettin",
+    "name": "Stettin",
+    "region": "Ostsee",
+    "kind": "member",
+    "lon": 14.5528,
+    "lat": 53.4285,
+    "position": { "x": 810, "y": 610 }
+  },
+  {
+    "id": "kopenhagen",
+    "name": "Kopenhagen",
+    "region": "Daenemark",
+    "kind": "trade",
+    "lon": 12.5683,
+    "lat": 55.6761,
+    "position": { "x": 732, "y": 452 }
+  },
+  {
+    "id": "oslo",
+    "name": "Oslo",
+    "region": "Norwegen",
+    "kind": "trade",
+    "lon": 10.7522,
+    "lat": 59.9139,
+    "position": { "x": 660, "y": 154 }
+  },
+  {
+    "id": "bergen",
+    "name": "Bergen",
+    "region": "Kontor",
+    "kind": "kontor",
+    "lon": 5.3221,
+    "lat": 60.3929,
+    "position": { "x": 446, "y": 120 }
+  },
+  {
+    "id": "stockholm",
+    "name": "Stockholm",
+    "region": "Schweden",
+    "kind": "trade",
+    "lon": 18.0686,
+    "lat": 59.3293,
+    "position": { "x": 949, "y": 195 }
+  },
+  {
+    "id": "visby",
+    "name": "Visby",
+    "region": "Gotland",
+    "kind": "core",
+    "lon": 18.2948,
+    "lat": 57.6348,
+    "position": { "x": 957, "y": 314 }
+  },
+  {
+    "id": "danzig",
+    "name": "Danzig",
+    "region": "Preussen",
+    "kind": "member",
+    "lon": 18.6466,
+    "lat": 54.352,
+    "position": { "x": 971, "y": 545 }
+  },
+  {
+    "id": "koenigsberg",
+    "name": "Koenigsberg",
+    "region": "Preussen",
+    "kind": "member",
+    "lon": 20.5106,
+    "lat": 54.7104,
+    "position": { "x": 1045, "y": 520 }
+  },
+  {
+    "id": "riga",
+    "name": "Riga",
+    "region": "Livland",
+    "kind": "kontor",
+    "lon": 24.1052,
+    "lat": 56.9496,
+    "position": { "x": 1186, "y": 362 }
+  },
+  {
+    "id": "reval",
+    "name": "Reval",
+    "region": "Livland",
+    "kind": "member",
+    "lon": 24.7536,
+    "lat": 59.437,
+    "position": { "x": 1212, "y": 187 }
+  },
+  {
+    "id": "nowgorod",
+    "name": "Nowgorod",
+    "region": "Kontor",
+    "kind": "kontor",
+    "lon": 31.2755,
+    "lat": 58.5228,
+    "position": { "x": 1469, "y": 252 }
+  }
+]

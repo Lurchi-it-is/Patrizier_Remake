@@ -4,6 +4,8 @@
     "name": "Westliche Ostsee",
     "risk": 0.18,
     "weather_risk": 0.12,
+    "position": { "x": 700, "y": 525 },
+    "radius": 95,
     "known_hideouts": ["gotland_coast"]
   },
   {
@@ -11,6 +13,8 @@
     "name": "Oeresund",
     "risk": 0.14,
     "weather_risk": 0.1,
+    "position": { "x": 732, "y": 452 },
+    "radius": 75,
     "known_hideouts": []
   },
   {
@@ -18,6 +22,8 @@
     "name": "Kuesten vor Gotland",
     "risk": 0.28,
     "weather_risk": 0.18,
+    "position": { "x": 980, "y": 340 },
+    "radius": 125,
     "known_hideouts": ["victual_brothers_camp"]
   }
 ]

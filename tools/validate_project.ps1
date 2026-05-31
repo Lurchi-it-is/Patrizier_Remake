@@ -85,6 +85,12 @@ foreach ($candidate in $godotCandidates) {
 }
 
 if ($null -ne $godotCommand) {
+    $importOutput = & $godotCommand --headless --editor --path . --quit 2>&1
+    if ($LASTEXITCODE -ne 0 -or ($importOutput -match "SCRIPT ERROR|ERROR:|Parse Error|Compile Error")) {
+        $importOutput | Write-Output
+        throw "Godot asset import failed"
+    }
+
     $godotOutput = & $godotCommand --headless --path . --quit 2>&1
     if ($LASTEXITCODE -ne 0 -or ($godotOutput -match "SCRIPT ERROR|ERROR:|Parse Error|Compile Error")) {
         $godotOutput | Write-Output

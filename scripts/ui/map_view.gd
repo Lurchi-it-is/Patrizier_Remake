@@ -1,8 +1,12 @@
 extends Control
 
 const SOURCE_MAP_SIZE := Vector2(1600.0, 900.0)
+const HANSE_REGION_MAP: Texture2D = preload("res://assets/maps/hanse_region_1600x900.png")
 
 var cities: Array = []
+var editor_cities: Array = []
+var placed_editor_city_ids: Array[String] = []
+var selected_editor_city_id: String = ""
 var pirate_zones: Array = []
 var simulation_day: int = 1
 
@@ -13,7 +17,13 @@ func _ready() -> void:
 
 func set_catalog(catalog: Dictionary) -> void:
 	cities = catalog.get("cities", [])
+	editor_cities = catalog.get("hanse_cities", [])
 	pirate_zones = catalog.get("pirate_zones", [])
+	queue_redraw()
+
+func set_map_editor_selection(city_id: String, placed_city_ids: Array[String]) -> void:
+	selected_editor_city_id = city_id
+	placed_editor_city_ids = placed_city_ids.duplicate()
 	queue_redraw()
 
 func set_simulation_day(day: int) -> void:
@@ -21,44 +31,14 @@ func set_simulation_day(day: int) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0.08, 0.18, 0.23), true)
-	_draw_sea_grid()
-	_draw_land_mass()
+	_draw_map_background()
 	_draw_pirate_zones()
-	_draw_routes()
-	_draw_cities()
+	_draw_editor_cities()
 	_draw_legend()
 
-func _draw_sea_grid() -> void:
-	var grid_color := Color(0.22, 0.38, 0.43, 0.24)
-	for x in range(80, int(size.x), 80):
-		draw_line(Vector2(x, 0), Vector2(x, size.y), grid_color, 1.0)
-	for y in range(80, int(size.y), 80):
-		draw_line(Vector2(0, y), Vector2(size.x, y), grid_color, 1.0)
-
-func _draw_land_mass() -> void:
-	var land := Color(0.23, 0.29, 0.20)
-	var coast := Color(0.46, 0.58, 0.38)
-	var north := PackedVector2Array([
-		Vector2(0, size.y * 0.12),
-		Vector2(size.x * 0.26, size.y * 0.08),
-		Vector2(size.x * 0.42, size.y * 0.18),
-		Vector2(size.x * 0.36, size.y * 0.34),
-		Vector2(size.x * 0.12, size.y * 0.30),
-		Vector2(0, size.y * 0.38)
-	])
-	var south := PackedVector2Array([
-		Vector2(0, size.y * 0.78),
-		Vector2(size.x * 0.34, size.y * 0.70),
-		Vector2(size.x * 0.56, size.y * 0.76),
-		Vector2(size.x, size.y * 0.64),
-		Vector2(size.x, size.y),
-		Vector2(0, size.y)
-	])
-	draw_colored_polygon(north, land)
-	draw_polyline(north, coast, 3.0, true)
-	draw_colored_polygon(south, land)
-	draw_polyline(south, coast, 3.0, true)
+func _draw_map_background() -> void:
+	draw_texture_rect(HANSE_REGION_MAP, Rect2(Vector2.ZERO, size), false)
+	draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.03, 0.10), true)
 
 func _draw_pirate_zones() -> void:
 	var zone_points := [
@@ -67,10 +47,14 @@ func _draw_pirate_zones() -> void:
 		Vector2(size.x * 0.76, size.y * 0.30)
 	]
 	for index in range(min(pirate_zones.size(), zone_points.size())):
-		var risk: float = float(pirate_zones[index].get("risk", 0.0))
-		var radius: float = 46.0 + risk * 90.0
-		draw_circle(zone_points[index], radius, Color(0.64, 0.12, 0.08, 0.18))
-		draw_arc(zone_points[index], radius, 0.0, TAU, 48, Color(0.90, 0.25, 0.16, 0.70), 2.0)
+		var zone: Dictionary = pirate_zones[index]
+		var risk: float = float(zone.get("risk", 0.0))
+		var center: Vector2 = zone_points[index]
+		if zone.has("position"):
+			center = _scale_position(zone.get("position", {}))
+		var radius: float = float(zone.get("radius", 46.0 + risk * 90.0)) * min(size.x / SOURCE_MAP_SIZE.x, size.y / SOURCE_MAP_SIZE.y)
+		draw_circle(center, radius, Color(0.64, 0.12, 0.08, 0.18))
+		draw_arc(center, radius, 0.0, TAU, 48, Color(0.90, 0.25, 0.16, 0.70), 2.0)
 
 func _draw_routes() -> void:
 	var route := ["hamburg", "luebeck", "visby"]
@@ -93,10 +77,44 @@ func _draw_cities() -> void:
 		draw_circle(pos, 7.0, Color(0.18, 0.12, 0.05))
 		draw_string(font, pos + Vector2(18, 6), String(city.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, -1.0, 16, Color(0.95, 0.95, 0.90))
 
+func _draw_editor_cities() -> void:
+	var font := get_theme_default_font()
+	for city_entry in editor_cities:
+		var city: Dictionary = city_entry
+		var city_id := String(city.get("id", ""))
+		if not placed_editor_city_ids.has(city_id):
+			continue
+
+		var pos := _scale_position(city.get("position", {}))
+		var is_selected := city_id == selected_editor_city_id
+		var radius := 5.5 if is_selected else 4.0
+		var color := _editor_city_color(String(city.get("kind", "")))
+
+		draw_circle(pos + Vector2(1.4, 1.6), radius + 1.2, Color(0.02, 0.02, 0.02, 0.42))
+		draw_circle(pos, radius + 1.0, Color(0.97, 0.94, 0.82, 0.90))
+		draw_circle(pos, radius, color)
+		draw_arc(pos, radius + 2.5, 0.0, TAU, 48, Color(0.98, 0.96, 0.86, 0.72 if is_selected else 0.24), 1.2)
+
+		if is_selected:
+			draw_string(font, pos + Vector2(11, -8), String(city.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, -1.0, 14, Color(0.98, 0.96, 0.86, 0.92))
+
+func _editor_city_color(kind: String) -> Color:
+	match kind:
+		"core":
+			return Color(0.98, 0.78, 0.25)
+		"kontor":
+			return Color(0.94, 0.48, 0.22)
+		"member":
+			return Color(0.84, 0.74, 0.48)
+		"trade":
+			return Color(0.68, 0.80, 0.58)
+		_:
+			return Color(0.92, 0.90, 0.78)
+
 func _draw_legend() -> void:
 	var font := get_theme_default_font()
-	var text := "Nord- und Ostsee-Prototyp | Tag %d | Gelb: Handelsroute | Rot: Piratenrisiko" % simulation_day
-	draw_rect(Rect2(Vector2(18, 18), Vector2(560, 34)), Color(0.02, 0.03, 0.04, 0.55), true)
+	var text := "Historische Hanseregion | Tag %d | Editorpunkte: %d | Rot: Piratenrisiko" % [simulation_day, placed_editor_city_ids.size()]
+	draw_rect(Rect2(Vector2(18, 18), Vector2(610, 34)), Color(0.02, 0.03, 0.04, 0.55), true)
 	draw_string(font, Vector2(30, 41), text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 15, Color(0.93, 0.94, 0.90))
 
 func _city_position(city_id: String) -> Vector2:
