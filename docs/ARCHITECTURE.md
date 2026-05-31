@@ -1,6 +1,6 @@
 # Architektur
 
-Version: 0.2.47-trade-window-fit
+Version: 0.2.48-illustrated-hanse-map
 
 ## Leitidee
 

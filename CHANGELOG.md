@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.48-illustrated-hanse-map - 2026-05-31
+
+- Hanseregion-Weltkarte durch eine handgemalte, spieltaugliche Kartenillustration ersetzt.
+- Kuestenlayout und sparsame Hauptwasserwege bleiben am bisherigen Kartenasset orientiert; neue Darstellung ergaenzt Waelder, Gebirge, Huegel, Marsch- und Kuestenbereiche.
+- Topographie korrigiert: Norddeutsche Tiefebene, Daenemark und suedliche Ostseekueste bleiben flach; groessere Gebirge liegen nur in plausiblen Hochlandregionen wie Norwegen, Schottland und dem suedlichen Kartenrand.
+
 ## 0.2.47-trade-window-fit - 2026-05-31
 
 - Handelsfenster gestrafft: Nachfrage-Anzeigen, Informationstext und unterer Abschlussbutton entfernt.

@@ -17,8 +17,8 @@
     "Researched historical waterway references for selected Hanse cities"
   ],
   "visual_style": {
-    "name": "detailed_historical_landcover_view",
-    "basis": "Top-down Hanse-era world view with satellite-inspired regional terrain: cultivated lowlands, denser northern/eastern forests, wetlands and rough highlands, without modern roads or cities."
+    "name": "illustrated_hanse_strategy_map",
+    "basis": "Hand-painted Hanse-era strategy map background with accurate coastline-first composition, restrained historical waterway visibility, readable forests, wetlands, coastal lowlands and plausible highland regions. North German Plain, Denmark and the southern Baltic coast remain flat; larger mountains are limited to Norway, Scotland and the southern map edge."
   },
   "historical_waterways": [
     {

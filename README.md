@@ -4,13 +4,13 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.47-trade-window-fit`
+Version: `0.2.48-illustrated-hanse-map`
 
 Das Projektfundament enthaelt:
 
 - Godot-4-Projektdatei und Startszene
 - sichtbare Hauptgame-Prototyp-Oberflaeche mit realitaetsnaher Hanseregion-Karte und Dashboard
-- modernisierte Hanseregion-Weltkarte als natuerlichere Draufsicht mit satelliteninspirierten, historisch abstrahierten Feld-, Wald-, Feuchtland- und Hochlandstrukturen
+- handgemalte Hanseregion-Weltkarte mit spielklarer Kuestenlinie, sparsamen Hauptwasserwegen, Waeldern, plausiblen Hochlandzonen und flacher Norddeutscher Tiefebene
 - feste Startkarte mit fuenf geladenen Spielstaedten: Bremen, Hamburg, Luebeck, Visby und Danzig
 - getrennte Startpunkte und Windows-Export-Presets fuer Hauptspiel und Map Editor
 - Karteneditor-Auswahl fuer historische Hanseorte mit scrollbarer Checkbox-Liste und punktgenauer Platzierung auf dem Kartenasset
