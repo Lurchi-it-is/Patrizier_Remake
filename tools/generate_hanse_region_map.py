@@ -38,6 +38,19 @@ LAT_MIN = 49.3
 LAT_MAX = 62.1
 CENTER_LAT = (LAT_MIN + LAT_MAX) * 0.5
 COS_CENTER = math.cos(math.radians(CENTER_LAT))
+SEA_DEEP = "#15323a"
+SEA_MID = "#2a6169"
+SEA_SHALLOW = "#6f988c"
+LAND_BASE = "#566743"
+LAND_FIELD = "#83754f"
+LAND_FOREST = "#304b32"
+LAND_HIGHLAND = "#817760"
+LAND_SHADOW = "#263421"
+RIVER_DARK = "#1f4c56"
+RIVER_LIGHT = "#79aebb"
+CHART_LINE = "#dbc68d"
+TITLE_TEXT = "#f4e6bf"
+BRASS = "#c69a4f"
 
 HANSE_CITIES = [
     {"id": "london", "name": "London", "lon": -0.1276, "lat": 51.5072, "marker_lon": -0.102203, "marker_lat": 51.50906, "kind": "kontor"},
@@ -545,7 +558,91 @@ def projected_ring(ring: list[list[float]]) -> np.ndarray:
     return np.array([project(float(lon), float(lat)) for lon, lat in ring])
 
 
-def add_polygon(ax, polygon: list, face: str) -> None:
+def hex_rgb(color: str) -> np.ndarray:
+    value = color.lstrip("#")
+    return np.array([int(value[index : index + 2], 16) / 255.0 for index in (0, 2, 4)])
+
+
+def softened_noise(rows: int, cols: int, seed: int, passes: int) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    noise = rng.random((rows, cols))
+    for _index in range(passes):
+        noise = (
+            noise
+            + np.roll(noise, 1, axis=0)
+            + np.roll(noise, -1, axis=0)
+            + np.roll(noise, 1, axis=1)
+            + np.roll(noise, -1, axis=1)
+        ) / 5.0
+    return noise
+
+
+def world_extent() -> tuple[float, float, float, float]:
+    x_min, y_min = project(LON_MIN, LAT_MIN)
+    x_max, y_max = project(LON_MAX, LAT_MAX)
+    return x_min, x_max, y_min, y_max
+
+
+def build_sea_texture(rows: int, cols: int) -> np.ndarray:
+    fine = softened_noise(rows, cols, 11, 2)
+    broad = softened_noise(rows, cols, 12, 24)
+    y_grad = np.linspace(0.20, 0.82, rows)[:, None]
+    x_wave = np.sin(np.linspace(0.0, math.pi * 4.0, cols))[None, :] * 0.045
+    depth = np.clip(y_grad + x_wave + broad * 0.26 + fine * 0.055 - 0.14, 0.0, 1.0)
+
+    deep = hex_rgb(SEA_DEEP)
+    mid = hex_rgb(SEA_MID)
+    shallow = hex_rgb(SEA_SHALLOW)
+    sea = np.empty((rows, cols, 3))
+    lower = depth < 0.62
+    lower_depth = depth[lower][:, None]
+    sea[lower] = deep * (1.0 - lower_depth / 0.62) + mid * (lower_depth / 0.62)
+    upper_depth = np.clip((depth - 0.62) / 0.38, 0.0, 1.0)
+    upper_selected_depth = upper_depth[~lower][:, None]
+    sea[~lower] = mid * (1.0 - upper_selected_depth) + shallow * upper_selected_depth
+
+    wave = np.sin(np.linspace(0.0, math.pi * 22.0, cols))[None, :] * 0.010
+    sea += wave[:, :, None] + (fine[:, :, None] - 0.5) * 0.035
+    return np.clip(sea, 0.0, 1.0)
+
+
+def build_land_texture(rows: int, cols: int) -> np.ndarray:
+    broad = softened_noise(rows, cols, 21, 28)
+    medium = softened_noise(rows, cols, 22, 9)
+    fine = softened_noise(rows, cols, 23, 2)
+    north = np.linspace(0.0, 1.0, rows)[:, None]
+    west_east = np.linspace(0.0, 1.0, cols)[None, :]
+
+    fields = np.clip(0.42 + medium * 0.52 - north * 0.18, 0.0, 1.0)
+    forest = np.clip((broad - 0.42) * 2.3 + north * 0.24, 0.0, 1.0)
+    highland = np.clip(
+        np.exp(-((west_east - 0.13) / 0.10) ** 2) * north * 0.55
+        + np.exp(-((west_east - 0.42) / 0.13) ** 2) * north * 0.35
+        + (broad - 0.55) * 0.70,
+        0.0,
+        1.0,
+    )
+
+    low = hex_rgb(LAND_BASE)
+    field = hex_rgb(LAND_FIELD)
+    forest_color = hex_rgb(LAND_FOREST)
+    highland_color = hex_rgb(LAND_HIGHLAND)
+    land = low * (1.0 - fields[:, :, None] * 0.45) + field * (fields[:, :, None] * 0.45)
+    land = land * (1.0 - forest[:, :, None] * 0.46) + forest_color * (forest[:, :, None] * 0.46)
+    land = land * (1.0 - highland[:, :, None] * 0.32) + highland_color * (highland[:, :, None] * 0.32)
+    land += (fine[:, :, None] - 0.5) * 0.040
+    return np.clip(land, 0.0, 1.0)
+
+
+def add_polygon(
+    ax,
+    polygon: list,
+    face: str,
+    edge: str = "none",
+    linewidth: float = 0.0,
+    alpha: float = 1.0,
+    zorder: int = 3,
+) -> None:
     if not intersects_map(polygon):
         return
 
@@ -556,16 +653,51 @@ def add_polygon(ax, polygon: list, face: str) -> None:
     vertices = exterior.tolist()
     codes = [MplPath.MOVETO] + [MplPath.LINETO] * (len(exterior) - 2) + [MplPath.CLOSEPOLY]
     path = MplPath(vertices, codes)
-    ax.add_patch(PathPatch(path, facecolor=face, edgecolor="none", linewidth=0.0, zorder=3))
+    ax.add_patch(
+        PathPatch(
+            path,
+            facecolor=face,
+            edgecolor=edge,
+            linewidth=linewidth,
+            alpha=alpha,
+            zorder=zorder,
+        )
+    )
 
 
-def draw_geography(ax) -> None:
-    country_data = load_country_data()
+def build_visual_land_mask(country_data: dict, rows: int, cols: int) -> np.ndarray:
+    x_min, x_max, y_min, y_max = world_extent()
+    xs = np.linspace(x_min, x_max, cols)
+    ys = np.linspace(y_min, y_max, rows)
+    grid_x, grid_y = np.meshgrid(xs, ys)
+    points = np.column_stack([grid_x.ravel(), grid_y.ravel()])
+    land = np.zeros(rows * cols, dtype=bool)
+
     for feature in country_data["features"]:
         geometry = feature["geometry"]
         polygons = geometry["coordinates"] if geometry["type"] == "MultiPolygon" else [geometry["coordinates"]]
         for polygon in polygons:
-            add_polygon(ax, polygon, "#526345")
+            if not intersects_map(polygon):
+                continue
+
+            exterior = projected_ring(polygon[0])
+            if len(exterior) < 3:
+                continue
+
+            land |= MplPath(exterior).contains_points(points)
+
+    return land.reshape((rows, cols))
+
+
+def draw_geography(ax) -> None:
+    country_data = load_country_data()
+    x_min, x_max, y_min, y_max = world_extent()
+    rows, cols = 360, 640
+    terrain = build_land_texture(rows, cols)
+    land_mask = build_visual_land_mask(country_data, rows, cols)
+    land_rgba = np.dstack([terrain, np.where(land_mask, 1.0, 0.0)])
+    extent = (x_min, x_max, y_min, y_max)
+    ax.imshow(land_rgba, extent=extent, origin="lower", interpolation="bicubic", zorder=3)
 
     river_data = load_river_data()
     for feature in river_data["features"]:
@@ -575,34 +707,21 @@ def draw_geography(ax) -> None:
         lines = coords if feature["geometry"]["type"] == "MultiLineString" else [coords]
         for line in lines:
             points = np.array([project(float(lon), float(lat)) for lon, lat in line])
-            ax.plot(points[:, 0], points[:, 1], color="#47717d", linewidth=2.2, alpha=0.34, solid_capstyle="round", zorder=4)
-            ax.plot(points[:, 0], points[:, 1], color="#83b7c2", linewidth=1.25, alpha=0.62, solid_capstyle="round", zorder=5)
+            ax.plot(points[:, 0], points[:, 1], color=RIVER_DARK, linewidth=2.8, alpha=0.28, solid_capstyle="round", zorder=5)
+            ax.plot(points[:, 0], points[:, 1], color=RIVER_LIGHT, linewidth=1.2, alpha=0.56, solid_capstyle="round", zorder=6)
 
 
 def draw_background(ax) -> None:
-    x_min, y_min = project(LON_MIN, LAT_MIN)
-    x_max, y_max = project(LON_MAX, LAT_MAX)
-    rng = np.random.default_rng(8)
-    sea_noise = rng.normal(0.0, 0.04, (220, 390))
-    y_grad = np.linspace(0.78, 1.0, sea_noise.shape[0])[:, None]
-    sea = np.clip(y_grad + sea_noise, 0.68, 1.0)
+    x_min, x_max, y_min, y_max = world_extent()
+    sea = build_sea_texture(280, 500)
     ax.imshow(
         sea,
         extent=(x_min, x_max, y_min, y_max),
         origin="lower",
-        cmap="GnBu",
-        alpha=0.72,
         interpolation="bicubic",
         zorder=0,
     )
-    ax.add_patch(Rectangle((x_min, y_min), x_max - x_min, y_max - y_min, color="#385d6b", alpha=0.18, zorder=1))
-
-    for lat in range(50, 63, 2):
-        _, y = project(LON_MIN, lat)
-        ax.plot([x_min, x_max], [y, y], color="#d8e0d2", alpha=0.08, linewidth=0.8, zorder=2)
-    for lon in range(-5, 35, 5):
-        x, _ = project(lon, LAT_MIN)
-        ax.plot([x, x], [y_min, y_max], color="#d8e0d2", alpha=0.08, linewidth=0.8, zorder=2)
+    ax.add_patch(Rectangle((x_min, y_min), x_max - x_min, y_max - y_min, color="#061216", alpha=0.08, zorder=1))
 
 
 def city_by_id(city_id: str) -> dict:
@@ -668,35 +787,38 @@ def draw_cities(ax) -> None:
 
 
 def draw_annotations(ax) -> None:
-    title_x, title_y = project(-5.25, 61.55)
-    title_effect = [pe.withStroke(linewidth=3.0, foreground="#18303a")]
-    ax.text(
-        title_x,
-        title_y,
-        "Ehemalige Hanseregion",
-        fontsize=25,
-        color="#fbf0cf",
-        weight="bold",
-        path_effects=title_effect,
-        zorder=11,
-    )
-    ax.text(
-        title_x,
-        title_y - 0.42,
-        "Nordsee- und Ostseeraum, ca. 13.-15. Jh.",
-        fontsize=11,
-        color="#e5d9b9",
-        path_effects=title_effect,
-        zorder=11,
-    )
+    return
 
-    for label, lon, lat, size in [
-        ("Nordsee", 3.1, 56.0, 16),
-        ("Ostsee", 18.5, 56.2, 16),
-        ("Skagerrak", 8.6, 58.1, 10),
+
+def draw_compass_rose(ax) -> None:
+    x, y = project(-4.75, 50.15)
+    radius = 0.42
+    ax.add_patch(Circle((x, y), radius, fill=False, edgecolor=BRASS, linewidth=1.2, alpha=0.62, zorder=11))
+    for angle, length, linewidth in [
+        (math.pi / 2.0, radius * 1.55, 1.8),
+        (0.0, radius * 1.05, 1.0),
+        (math.pi, radius * 1.05, 1.0),
+        (math.pi * 1.5, radius * 1.05, 1.0),
     ]:
-        x, y = project(lon, lat)
-        ax.text(x, y, label, fontsize=size, color="#d9e8e5", alpha=0.52, style="italic", zorder=5)
+        ax.plot(
+            [x, x + math.cos(angle) * length],
+            [y, y + math.sin(angle) * length],
+            color=BRASS,
+            alpha=0.72,
+            linewidth=linewidth,
+            zorder=11,
+        )
+    ax.text(
+        x,
+        y + radius * 1.78,
+        "N",
+        fontsize=8,
+        color=TITLE_TEXT,
+        ha="center",
+        va="center",
+        path_effects=[pe.withStroke(linewidth=1.5, foreground="#18303a")],
+        zorder=11,
+    )
 
 
 def write_metadata() -> None:
@@ -723,6 +845,10 @@ def write_metadata() -> None:
             "Natural Earth 1:10m rivers and lake centerlines",
             "Researched historical waterway references for selected Hanse cities",
         ],
+        "visual_style": {
+            "name": "modern_hanse_sea_chart",
+            "basis": "Historically inspired Hanse sea chart with modern readability, muted land colors, brass accents and a teal North/Baltic Sea palette.",
+        },
         "historical_waterways": [
             {
                 "id": reference["id"],
@@ -1150,7 +1276,7 @@ def main() -> None:
     draw_geography(ax)
     draw_annotations(ax)
 
-    fig.savefig(OUTPUT_IMAGE, dpi=100, facecolor="#385d6b")
+    fig.savefig(OUTPUT_IMAGE, dpi=100, facecolor=SEA_DEEP)
     plt.close(fig)
     write_metadata()
     write_navigation_data()

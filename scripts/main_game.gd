@@ -5,11 +5,28 @@ const SimulationState = preload("res://scripts/simulation/simulation_state.gd")
 const CombatResolver = preload("res://scripts/simulation/combat_resolver.gd")
 const MapView = preload("res://scripts/ui/map_view.gd")
 
+const DEMO_ROUTE: Array[String] = ["bremen", "hamburg", "luebeck", "visby", "danzig"]
+const BASE_SHIP_PIXELS_PER_DAY := 80.0
+const SPEED_OPTIONS := [
+	{"label": "Stop", "days_per_second": 0.0},
+	{"label": "1x", "days_per_second": 0.18},
+	{"label": "5x", "days_per_second": 0.90},
+	{"label": "20x", "days_per_second": 3.60},
+	{"label": "Fast Forward", "days_per_second": 10.0},
+]
+
 var catalog: Dictionary = {}
 var simulation
 var combat_preview: Dictionary = {}
+var simulation_time_days: float = 0.0
+var current_speed_index: int = 1
+var demo_ships: Array = []
+var ship_type_by_id: Dictionary = {}
 
 var day_label: Label
+var clock_label: Label
+var speed_select: OptionButton
+var travel_label: RichTextLabel
 var market_label: RichTextLabel
 var combat_label: RichTextLabel
 var map_view
@@ -17,11 +34,28 @@ var map_view
 func _ready() -> void:
 	var loader := CatalogLoader.new()
 	catalog = loader.load_all()
+	_index_ship_types()
 	simulation = SimulationState.new(catalog)
-	simulation.advance_days(1)
+	_initialize_demo_ships()
 	combat_preview = _resolve_demo_combat()
 
 	_build_layout()
+	_refresh_ui()
+	set_process(true)
+
+func _process(delta: float) -> void:
+	var days_delta: float = float(SPEED_OPTIONS[current_speed_index]["days_per_second"]) * delta
+	if days_delta <= 0.0:
+		return
+
+	simulation_time_days += days_delta
+	_advance_demo_ships(days_delta)
+
+	var full_days: int = int(floor(simulation_time_days)) - simulation.day
+	if full_days > 0:
+		simulation.advance_days(full_days)
+		combat_preview = _resolve_demo_combat()
+
 	_refresh_ui()
 
 func _build_layout() -> void:
@@ -113,6 +147,9 @@ func _build_status_panel() -> Control:
 	day_label = Label.new()
 	content.add_child(day_label)
 
+	clock_label = Label.new()
+	content.add_child(clock_label)
+
 	var stats := Label.new()
 	stats.text = "Waren: %d\nFeste Spielstaedte: %d\nSchiffstypen: %d\nPiratenzonen: %d" % [
 		catalog.get("goods", []).size(),
@@ -122,8 +159,30 @@ func _build_status_panel() -> Control:
 	]
 	content.add_child(stats)
 
+	var speed_row := HBoxContainer.new()
+	speed_row.add_theme_constant_override("separation", 8)
+	content.add_child(speed_row)
+
+	var speed_label := Label.new()
+	speed_label.text = "Geschwindigkeit"
+	speed_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	speed_row.add_child(speed_label)
+
+	speed_select = OptionButton.new()
+	for index in range(SPEED_OPTIONS.size()):
+		speed_select.add_item(String(SPEED_OPTIONS[index]["label"]), index)
+	speed_select.selected = current_speed_index
+	speed_select.item_selected.connect(_on_speed_selected)
+	speed_row.add_child(speed_select)
+
+	travel_label = RichTextLabel.new()
+	travel_label.bbcode_enabled = true
+	travel_label.fit_content = true
+	travel_label.custom_minimum_size = Vector2(320, 92)
+	content.add_child(travel_label)
+
 	var advance := Button.new()
-	advance.text = "Naechster Tag"
+	advance.text = "Tag +1"
 	advance.pressed.connect(_on_advance_day_pressed)
 	content.add_child(advance)
 
@@ -174,9 +233,12 @@ func _build_combat_panel() -> Control:
 
 func _refresh_ui() -> void:
 	day_label.text = "Simulationstag: %d" % simulation.day
+	clock_label.text = "Simulationszeit: Tag %.2f" % simulation_time_days
+	travel_label.text = _travel_preview()
 	market_label.text = _market_preview()
 	combat_label.text = _combat_preview()
 	map_view.set_simulation_day(simulation.day)
+	map_view.set_route_ships(_map_ship_entries())
 
 func _market_preview() -> String:
 	var lines: Array[String] = []
@@ -229,9 +291,117 @@ func _resolve_demo_combat() -> Dictionary:
 	})
 
 func _on_advance_day_pressed() -> void:
+	simulation_time_days = max(simulation_time_days, float(simulation.day)) + 1.0
+	_advance_demo_ships(1.0)
 	simulation.advance_days(1)
+	combat_preview = _resolve_demo_combat()
 	_refresh_ui()
 
 func _on_resolve_combat_pressed() -> void:
 	combat_preview = _resolve_demo_combat()
 	_refresh_ui()
+
+func _on_speed_selected(index: int) -> void:
+	current_speed_index = clampi(index, 0, SPEED_OPTIONS.size() - 1)
+	_refresh_ui()
+
+func _index_ship_types() -> void:
+	ship_type_by_id.clear()
+	for ship_type_entry in catalog.get("ship_types", []):
+		var ship_type: Dictionary = ship_type_entry
+		ship_type_by_id[String(ship_type.get("id", ""))] = ship_type
+
+func _initialize_demo_ships() -> void:
+	demo_ships = [
+		{"name": "Hanse 1", "ship_type": "kogge", "route_index": 0, "elapsed_days": 0.0},
+		{"name": "Hanse 2", "ship_type": "kogge", "route_index": 2, "elapsed_days": 0.0},
+		{"name": "Hanse 3", "ship_type": "kogge", "route_index": 3, "elapsed_days": 0.0},
+	]
+
+func _advance_demo_ships(days_delta: float) -> void:
+	for ship_entry in demo_ships:
+		var ship: Dictionary = ship_entry
+		var remaining_days: float = days_delta
+		while remaining_days > 0.0:
+			var travel_days: float = _ship_segment_travel_days(ship)
+			if travel_days <= 0.0:
+				_advance_ship_segment(ship)
+				break
+
+			var elapsed: float = float(ship.get("elapsed_days", 0.0))
+			var segment_remaining: float = travel_days - elapsed
+			if remaining_days < segment_remaining:
+				ship["elapsed_days"] = elapsed + remaining_days
+				break
+
+			remaining_days -= segment_remaining
+			ship["elapsed_days"] = 0.0
+			_advance_ship_segment(ship)
+
+func _advance_ship_segment(ship: Dictionary) -> void:
+	var route_index: int = int(ship.get("route_index", 0))
+	route_index = (route_index + 1) % (DEMO_ROUTE.size() - 1)
+	ship["route_index"] = route_index
+
+func _ship_segment_travel_days(ship: Dictionary) -> float:
+	var from_city_id: String = _ship_from_city(ship)
+	var to_city_id: String = _ship_to_city(ship)
+	var distance_px: float = map_view.get_route_distance_px(from_city_id, to_city_id) if map_view != null else 0.0
+	var speed: float = _ship_speed(ship)
+	if speed <= 0.0:
+		return 0.0
+	return max(0.1, distance_px / (BASE_SHIP_PIXELS_PER_DAY * speed))
+
+func _ship_speed(ship: Dictionary) -> float:
+	var ship_type_id: String = String(ship.get("ship_type", "kogge"))
+	var ship_type: Dictionary = ship_type_by_id.get(ship_type_id, {})
+	return float(ship_type.get("speed", 1.0))
+
+func _ship_from_city(ship: Dictionary) -> String:
+	var route_index: int = clampi(int(ship.get("route_index", 0)), 0, DEMO_ROUTE.size() - 2)
+	return DEMO_ROUTE[route_index]
+
+func _ship_to_city(ship: Dictionary) -> String:
+	var route_index: int = clampi(int(ship.get("route_index", 0)), 0, DEMO_ROUTE.size() - 2)
+	return DEMO_ROUTE[route_index + 1]
+
+func _ship_progress(ship: Dictionary) -> float:
+	var travel_days: float = _ship_segment_travel_days(ship)
+	if travel_days <= 0.0:
+		return 1.0
+	return clampf(float(ship.get("elapsed_days", 0.0)) / travel_days, 0.0, 1.0)
+
+func _map_ship_entries() -> Array:
+	var ships: Array = []
+	for ship_entry in demo_ships:
+		var ship: Dictionary = ship_entry
+		ships.append({
+			"name": String(ship.get("name", "")),
+			"from": _ship_from_city(ship),
+			"to": _ship_to_city(ship),
+			"progress": _ship_progress(ship),
+		})
+	return ships
+
+func _travel_preview() -> String:
+	var lines: Array[String] = ["[b]Schiffsreisen[/b]"]
+	for ship_entry in demo_ships:
+		var ship: Dictionary = ship_entry
+		var from_city_id: String = _ship_from_city(ship)
+		var to_city_id: String = _ship_to_city(ship)
+		var travel_days: float = _ship_segment_travel_days(ship)
+		var remaining_days: float = max(0.0, travel_days - float(ship.get("elapsed_days", 0.0)))
+		lines.append("%s: %s -> %s | %.1f Tage Rest" % [
+			String(ship.get("name", "")),
+			_city_name(from_city_id),
+			_city_name(to_city_id),
+			remaining_days
+		])
+	return "\n".join(lines)
+
+func _city_name(city_id: String) -> String:
+	for city_entry in catalog.get("cities", []):
+		var city: Dictionary = city_entry
+		if String(city.get("id", "")) == city_id:
+			return String(city.get("name", city_id))
+	return city_id

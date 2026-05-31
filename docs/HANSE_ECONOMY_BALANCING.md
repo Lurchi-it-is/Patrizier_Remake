@@ -1,6 +1,6 @@
 # Hanse-Wirtschaftsbalancing
 
-Version: 0.2.30-ai-trader-design
+Version: 0.2.32-continuous-ship-travel
 
 ## Recherchebasis
 

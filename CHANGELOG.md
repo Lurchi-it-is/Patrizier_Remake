@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.32-continuous-ship-travel - 2026-05-31
+
+- Hauptspiel um einstellbare Simulationsgeschwindigkeit von Stop bis Fast Forward erweitert.
+- Demo-Schiffe bewegen sich kontinuierlich entlang der Wasserpfade; Reisezeit entsteht aus Routenlaenge und Schiffsgeschwindigkeit.
+- Wirtschaftstage laufen automatisch bei voller Simulationszeit weiter, wodurch Lagerbestaende und Marktpreise fortlaufend aktualisiert werden.
+
+## 0.2.31-modern-hanse-map-style - 2026-05-31
+
+- Hanseregion-Weltkarte visuell an den neuen Design Guide angelehnt: moderner Seekartenlook mit hanseatisch gedeckter Farbpalette.
+- Kartengenerator um zentrale Stilfarben, ruhigeres Meer, waermere Landflaechen, dezente Kartenlinien und Kompassakzent erweitert.
+- Kartenmetadaten dokumentieren den neuen visuellen Stil.
+
 ## 0.2.30-ai-trader-design - 2026-05-31
 
 - KI-Haendlerkonzept fuer stabilisierenden, glaubwuerdigen Warenfluss dokumentiert.

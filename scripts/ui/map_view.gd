@@ -12,6 +12,7 @@ const ZOOM_STEP := 1.18
 var cities: Array = []
 var navigation_routes: Dictionary = {}
 var navigation_city_harbors: Dictionary = {}
+var route_ships: Array = []
 var editor_cities: Array = []
 var placed_editor_city_ids: Array[String] = []
 var selected_editor_city_id: String = ""
@@ -90,6 +91,10 @@ func set_simulation_day(day: int) -> void:
 	simulation_day = day
 	queue_redraw()
 
+func set_route_ships(ships: Array) -> void:
+	route_ships = ships.duplicate(true)
+	queue_redraw()
+
 func set_layers(is_game_layer_visible: bool, is_editor_layer_visible: bool) -> void:
 	show_game_layer = is_game_layer_visible
 	show_editor_layer = is_editor_layer_visible
@@ -101,6 +106,7 @@ func _draw() -> void:
 	_draw_pirate_zones()
 	if show_game_layer:
 		_draw_routes()
+		_draw_route_ships()
 		_draw_cities()
 	if show_editor_layer:
 		_draw_editor_cities()
@@ -141,9 +147,32 @@ func _draw_routes() -> void:
 			draw_line(route_points[point_index], route_points[point_index + 1], Color(0.08, 0.06, 0.03, 0.58), 5.5)
 			draw_line(route_points[point_index], route_points[point_index + 1], Color(0.95, 0.78, 0.36, 0.86), 3.0)
 
-	var ship_position := _interpolate_route(route)
+	if not route_ships.is_empty():
+		return
+
+	var ship_position := _interpolate_demo_route(route)
 	draw_circle(ship_position, 9.0, Color(0.96, 0.96, 0.88))
 	draw_line(ship_position + Vector2(-10, 8), ship_position + Vector2(12, 8), Color(0.96, 0.96, 0.88), 3.0)
+
+func _draw_route_ships() -> void:
+	var font := get_theme_default_font()
+	for ship_entry in route_ships:
+		var ship: Dictionary = ship_entry
+		var from_city_id := String(ship.get("from", ""))
+		var to_city_id := String(ship.get("to", ""))
+		var progress := clampf(float(ship.get("progress", 0.0)), 0.0, 1.0)
+		var route_points := _navigation_points_between(from_city_id, to_city_id)
+		if route_points.size() < 2:
+			route_points = [_city_position(from_city_id), _city_position(to_city_id)]
+
+		var ship_position := _interpolate_polyline(route_points, progress)
+		draw_circle(ship_position + Vector2(1.5, 2.0), 8.0, Color(0.02, 0.02, 0.02, 0.42))
+		draw_circle(ship_position, 7.0, Color(0.96, 0.96, 0.88))
+		draw_line(ship_position + Vector2(-9, 7), ship_position + Vector2(11, 7), Color(0.96, 0.96, 0.88), 2.5)
+
+		var ship_name := String(ship.get("name", ""))
+		if not ship_name.is_empty():
+			draw_string(font, ship_position + Vector2(12, -9), ship_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 12, Color(0.96, 0.96, 0.88, 0.86))
 
 func _draw_cities() -> void:
 	var font := get_theme_default_font()
@@ -355,13 +384,26 @@ func _navigation_points_between(from_city_id: String, to_city_id: String) -> Arr
 		points.append(_scale_position(point))
 	return points
 
+func get_route_distance_px(from_city_id: String, to_city_id: String) -> float:
+	var key := "%s__%s" % [from_city_id, to_city_id]
+	if navigation_routes.has(key):
+		var route: Dictionary = navigation_routes[key]
+		return float(route.get("distance_px", 0.0))
+
+	key = "%s__%s" % [to_city_id, from_city_id]
+	if navigation_routes.has(key):
+		var route: Dictionary = navigation_routes[key]
+		return float(route.get("distance_px", 0.0))
+
+	return _city_position(from_city_id).distance_to(_city_position(to_city_id))
+
 func _scale_position(position: Dictionary) -> Vector2:
 	return Vector2(
 		float(position.get("x", 0.0)) / SOURCE_MAP_SIZE.x * size.x,
 		float(position.get("y", 0.0)) / SOURCE_MAP_SIZE.y * size.y
 	)
 
-func _interpolate_route(route: Array) -> Vector2:
+func _interpolate_demo_route(route: Array) -> Vector2:
 	if route.size() < 2:
 		return size * 0.5
 

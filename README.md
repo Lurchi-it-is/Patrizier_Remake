@@ -4,12 +4,13 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.30-ai-trader-design`
+Version: `0.2.32-continuous-ship-travel`
 
 Das Projektfundament enthaelt:
 
 - Godot-4-Projektdatei und Startszene
 - sichtbare Hauptgame-Prototyp-Oberflaeche mit realitaetsnaher Hanseregion-Karte und Dashboard
+- modernisierte Hanseregion-Weltkarte im hanseatischen Seekartenstil mit gedeckten Landfarben, Blaugruen-Meer und Messingakzenten
 - feste Startkarte mit fuenf geladenen Spielstaedten: Bremen, Hamburg, Luebeck, Visby und Danzig
 - getrennte Startpunkte und Windows-Export-Presets fuer Hauptspiel und Map Editor
 - Karteneditor-Auswahl fuer historische Hanseorte mit scrollbarer Checkbox-Liste und punktgenauer Platzierung auf dem Kartenasset
@@ -27,6 +28,7 @@ Das Projektfundament enthaelt:
 - sichtbare Einwohnergruppen-Verteilung im Map Editor; Verbrauchswerte werden daraus abgeleitet
 - recherchierte, breiter lesbare Wasserwege ohne Laendergrenzen fuer historisch per Fluss, Muendung oder Lagune angelaufene Handelsstaedte
 - automatisch erzeugte Navigationsdaten mit Wasser-Raster, Hafenankern und vorberechneten Wasserpfaden fuer sichtbare Schiffsrouten
+- kontinuierliche Schiffbewegung mit Reisezeit aus Wasserpfadlaenge und einstellbarer Simulationsgeschwindigkeit
 - dokumentiertes KI-Haendlerkonzept fuer stabilisierenden Warenfluss, Haendlerprofile, Settings und MVP-Umsetzung
 - datengetriebene Beispielkataloge fuer Waren, Staedte, Schiffstypen und Piratenzonen
 - erste Simulationsbausteine fuer Preisbildung, Tages-Tick und Seeschlacht-Auto-Resolver
