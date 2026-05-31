@@ -10,6 +10,8 @@ $requiredVersionFiles = @(
     "docs\PROJECT_PLAN.md",
     "docs\ARCHITECTURE.md",
     "docs\DEVELOPMENT.md",
+    "docs\HANSE_ECONOMY_BALANCING.md",
+    "docs\AI_TRADER_DESIGN.md",
     "project.godot"
 )
 
@@ -162,13 +164,61 @@ $requiredPaths = @(
     "scripts\simulation\simulation_state.gd",
     "scripts\simulation\trade_price.gd",
     "scripts\simulation\combat_resolver.gd",
-    "scripts\ui\map_view.gd"
+    "scripts\ui\map_view.gd",
+    "assets\maps\hanse_navigation_1600x900.json",
+    "assets\maps\hanse_navigation_debug_1600x900.png"
 )
 
 foreach ($path in $requiredPaths) {
     if (-not (Test-Path $path)) {
         throw "Required path missing: $path"
     }
+}
+
+$navigation = Get-Content -Raw "assets\maps\hanse_navigation_1600x900.json" | ConvertFrom-Json
+if ($navigation.grid.width -le 0 -or $navigation.grid.height -le 0 -or $navigation.grid.cell_size -le 0) {
+    throw "Navigation grid metadata is incomplete"
+}
+
+if ($navigation.grid.rows.Count -ne $navigation.grid.height) {
+    throw "Navigation grid row count does not match height"
+}
+
+if ($navigation.grid.sea_rows.Count -ne $navigation.grid.height) {
+    throw "Navigation sea grid row count does not match height"
+}
+
+foreach ($row in $navigation.grid.rows) {
+    if ([string]$row -notmatch "^[01]+$" -or ([string]$row).Length -ne $navigation.grid.width) {
+        throw "Navigation grid row has invalid width or characters"
+    }
+}
+
+foreach ($row in $navigation.grid.sea_rows) {
+    if ([string]$row -notmatch "^[01]+$" -or ([string]$row).Length -ne $navigation.grid.width) {
+        throw "Navigation sea grid row has invalid width or characters"
+    }
+}
+
+$hanseCities = Get-Content -Raw "data\hanse_cities.json" | ConvertFrom-Json
+foreach ($city in $hanseCities) {
+    if ($null -eq $navigation.city_harbors.$($city.id)) {
+        throw "Navigation data has no harbor anchor for Hanse city '$($city.id)'"
+    }
+
+    if ($null -eq $navigation.city_harbors.$($city.id).sea_gate) {
+        throw "Navigation data has no sea gate for Hanse city '$($city.id)'"
+    }
+}
+
+$routeCount = ($navigation.routes.PSObject.Properties | Measure-Object).Count
+$expectedRouteCount = $hanseCities.Count * ($hanseCities.Count - 1)
+if ($routeCount -lt $expectedRouteCount) {
+    throw "Navigation data contains too few sea routes: $routeCount < $expectedRouteCount"
+}
+
+if (@($navigation.unreachable_routes).Count -gt 0) {
+    throw "Navigation data contains unreachable routes"
 }
 
 $projectSettings = Get-Content -Raw "project.godot"

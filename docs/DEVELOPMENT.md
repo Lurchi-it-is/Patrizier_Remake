@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.28-city-supply-visible
+Version: 0.2.30-ai-trader-design
 
 ## Branch- und Worktree-Regel
 

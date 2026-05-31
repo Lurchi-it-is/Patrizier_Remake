@@ -4,11 +4,14 @@ signal editor_city_clicked(city_id: String)
 
 const SOURCE_MAP_SIZE := Vector2(1600.0, 900.0)
 const HANSE_REGION_MAP: Texture2D = preload("res://assets/maps/hanse_region_1600x900.png")
+const HANSE_NAVIGATION_DATA := "res://assets/maps/hanse_navigation_1600x900.json"
 const MIN_ZOOM := 1.0
 const MAX_ZOOM := 5.0
 const ZOOM_STEP := 1.18
 
 var cities: Array = []
+var navigation_routes: Dictionary = {}
+var navigation_city_harbors: Dictionary = {}
 var editor_cities: Array = []
 var placed_editor_city_ids: Array[String] = []
 var selected_editor_city_id: String = ""
@@ -28,6 +31,7 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(760, 520)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	clip_contents = true
+	_load_navigation_data()
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -130,10 +134,12 @@ func _draw_routes() -> void:
 		return
 
 	for index in range(route.size() - 1):
-		var from_pos := _city_position(route[index])
-		var to_pos := _city_position(route[index + 1])
-		draw_line(from_pos, to_pos, Color(0.08, 0.06, 0.03, 0.58), 5.5)
-		draw_line(from_pos, to_pos, Color(0.95, 0.78, 0.36, 0.86), 3.0)
+		var route_points := _navigation_points_between(route[index], route[index + 1])
+		if route_points.size() < 2:
+			route_points = [_city_position(route[index]), _city_position(route[index + 1])]
+		for point_index in range(route_points.size() - 1):
+			draw_line(route_points[point_index], route_points[point_index + 1], Color(0.08, 0.06, 0.03, 0.58), 5.5)
+			draw_line(route_points[point_index], route_points[point_index + 1], Color(0.95, 0.78, 0.36, 0.86), 3.0)
 
 	var ship_position := _interpolate_route(route)
 	draw_circle(ship_position, 9.0, Color(0.96, 0.96, 0.88))
@@ -294,6 +300,21 @@ func _editor_city_id_at_screen_position(screen_position: Vector2) -> String:
 func _screen_position_from_map(map_position: Vector2) -> Vector2:
 	return map_position * map_zoom + map_offset
 
+func _load_navigation_data() -> void:
+	var text := FileAccess.get_file_as_string(HANSE_NAVIGATION_DATA)
+	if text.is_empty():
+		push_warning("Navigation data not found: %s" % HANSE_NAVIGATION_DATA)
+		return
+
+	var parsed: Variant = JSON.parse_string(text)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		push_warning("Navigation data must contain a JSON object: %s" % HANSE_NAVIGATION_DATA)
+		return
+
+	var data: Dictionary = parsed
+	navigation_routes = data.get("routes", {})
+	navigation_city_harbors = data.get("city_harbors", {})
+
 func _main_route() -> Array[String]:
 	var preferred_route: Array[String] = ["bremen", "hamburg", "luebeck", "visby", "danzig"]
 	var loaded_city_ids: Dictionary = {}
@@ -314,6 +335,26 @@ func _city_position(city_id: String) -> Vector2:
 			return _scale_position(city.get("position", {}))
 	return size * 0.5
 
+func _navigation_points_between(from_city_id: String, to_city_id: String) -> Array[Vector2]:
+	var key := "%s__%s" % [from_city_id, to_city_id]
+	var is_reversed := false
+	if not navigation_routes.has(key):
+		key = "%s__%s" % [to_city_id, from_city_id]
+		is_reversed = true
+	if not navigation_routes.has(key):
+		return []
+
+	var route: Dictionary = navigation_routes[key]
+	var source_points: Array = route.get("points", []).duplicate(true)
+	if is_reversed:
+		source_points.reverse()
+
+	var points: Array[Vector2] = []
+	for point_entry in source_points:
+		var point: Dictionary = point_entry
+		points.append(_scale_position(point))
+	return points
+
 func _scale_position(position: Dictionary) -> Vector2:
 	return Vector2(
 		float(position.get("x", 0.0)) / SOURCE_MAP_SIZE.x * size.x,
@@ -326,4 +367,28 @@ func _interpolate_route(route: Array) -> Vector2:
 
 	var segment_index: int = simulation_day % (route.size() - 1)
 	var progress: float = float(simulation_day % 5) / 4.0
-	return _city_position(route[segment_index]).lerp(_city_position(route[segment_index + 1]), progress)
+	var route_points := _navigation_points_between(route[segment_index], route[segment_index + 1])
+	if route_points.size() < 2:
+		return _city_position(route[segment_index]).lerp(_city_position(route[segment_index + 1]), progress)
+	return _interpolate_polyline(route_points, progress)
+
+func _interpolate_polyline(points: Array[Vector2], progress: float) -> Vector2:
+	if points.size() < 2:
+		return points[0] if not points.is_empty() else size * 0.5
+
+	var total_length := 0.0
+	for index in range(points.size() - 1):
+		total_length += points[index].distance_to(points[index + 1])
+	if total_length <= 0.0:
+		return points[0]
+
+	var target_length := clampf(progress, 0.0, 1.0) * total_length
+	var traversed := 0.0
+	for index in range(points.size() - 1):
+		var segment_length := points[index].distance_to(points[index + 1])
+		if traversed + segment_length >= target_length:
+			var local_progress: float = (target_length - traversed) / max(segment_length, 0.001)
+			return points[index].lerp(points[index + 1], local_progress)
+		traversed += segment_length
+
+	return points[points.size() - 1]

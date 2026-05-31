@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.30-ai-trader-design - 2026-05-31
+
+- KI-Haendlerkonzept fuer stabilisierenden, glaubwuerdigen Warenfluss dokumentiert.
+- Globale Startsettings, unsichtbare Haendlerprofile, Zielwahl, Beladung, Verkauf und Marktinformationen der KI festgelegt.
+- Stadt-, Preis-, Produktions-, Verbrauchs- und Bevoelkerungsannahmen fuer den ersten KI-Warenfluss zusammengefasst.
+
+## 0.2.29-sea-navigation-data - 2026-05-31
+
+- Kartengenerator erzeugt automatisch Navigationsdaten aus Landpolygonen, Flusslinien und Hafenmarkern.
+- Navigationsdaten enthalten ein grobes Wasser-Raster, Hafenanker je Hanseort und vorberechnete Wasserpfade zwischen Hanseorten.
+- Fernrouten laufen ueber offene Seezellen; Fluss- und Hafenzellen dienen nur noch als lokaler Zugang zum naechsten See-Gate.
+- Kartenansicht zeichnet die Hauptspielroute und den Schiffsmarker ueber Wasserpfade statt ueber direkte Linien, mit Fallback bei fehlenden Routen.
+- Validierung prueft, dass Navigationsdaten, Debug-Maske, Hafenanker und Routendaten vorhanden sind.
+
 ## 0.2.28-city-supply-visible - 2026-05-31
 
 - Map Editor benennt die Versorgungsspalte als `Erzeugung/Zufluss`, damit Hinterland- und Handelszufluss nicht als lokale Produktion missverstanden wird.

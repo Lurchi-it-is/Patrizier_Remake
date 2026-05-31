@@ -3,7 +3,7 @@ extends Control
 const CatalogLoader = preload("res://scripts/data/catalog_loader.gd")
 const MapView = preload("res://scripts/ui/map_view.gd")
 const CITY_VALUES_EXPORT_PATH := "user://custom_map_city_values.json"
-const EDITOR_VERSION := "0.2.28-city-supply-visible"
+const EDITOR_VERSION := "0.2.30-ai-trader-design"
 const POPULATION_GROUP_DISTRIBUTION_BY_KIND := {
 	"core": {"poor": 0.40, "craftsmen": 0.35, "burghers": 0.20, "patricians": 0.05},
 	"kontor": {"poor": 0.35, "craftsmen": 0.25, "burghers": 0.30, "patricians": 0.10},

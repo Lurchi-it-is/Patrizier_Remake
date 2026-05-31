@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import heapq
 import math
 import urllib.request
 from pathlib import Path
@@ -17,12 +18,20 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSET_DIR = ROOT / "assets" / "maps"
 OUTPUT_IMAGE = ASSET_DIR / "hanse_region_1600x900.png"
 OUTPUT_META = ASSET_DIR / "hanse_region_1600x900.json"
+OUTPUT_NAVIGATION = ASSET_DIR / "hanse_navigation_1600x900.json"
+OUTPUT_NAVIGATION_DEBUG = ASSET_DIR / "hanse_navigation_debug_1600x900.png"
 CACHE_DIR = ROOT / ".cache" / "map_data"
 COUNTRIES_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson"
 RIVERS_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_rivers_lake_centerlines.geojson"
 
 WIDTH = 1600
 HEIGHT = 900
+NAV_GRID_CELL_SIZE = 4
+NAV_GRID_WIDTH = WIDTH // NAV_GRID_CELL_SIZE
+NAV_GRID_HEIGHT = HEIGHT // NAV_GRID_CELL_SIZE
+NAV_RIVER_RADIUS_CELLS = 4
+NAV_HARBOR_RADIUS_CELLS = 2
+NAV_SEA_GATE_RADIUS_CELLS = 3
 LON_MIN = -6.0
 LON_MAX = 34.6
 LAT_MIN = 49.3
@@ -108,6 +117,69 @@ WATER_ALIGNED_MARKER_PIXELS = {
     "viborg": {"x": 1363, "y": 104},
     "narva": {"x": 1346, "y": 191},
     "nowgorod": {"x": 1470, "y": 251},
+}
+
+SEA_GATE_PIXELS = {
+    "bruegge": {"x": 369, "y": 759},
+    "koeln": {"x": 396, "y": 712},
+    "kampen": {"x": 430, "y": 675},
+    "bremen": {"x": 562, "y": 589},
+    "stade": {"x": 579, "y": 578},
+    "hamburg": {"x": 579, "y": 578},
+    "stettin": {"x": 795, "y": 578},
+    "riga": {"x": 1184, "y": 355},
+    "nowgorod": {"x": 1415, "y": 152},
+}
+
+SEA_ACCESS_PATH_PIXELS = {
+    "bruegge": [
+        {"x": 366, "y": 752},
+        {"x": 369, "y": 759},
+    ],
+    "koeln": [
+        {"x": 510, "y": 786},
+        {"x": 486, "y": 766},
+        {"x": 456, "y": 742},
+        {"x": 426, "y": 724},
+        {"x": 398, "y": 710},
+    ],
+    "kampen": [
+        {"x": 470, "y": 670},
+        {"x": 452, "y": 674},
+        {"x": 430, "y": 675},
+    ],
+    "bremen": [
+        {"x": 586, "y": 634},
+        {"x": 574, "y": 616},
+        {"x": 566, "y": 600},
+        {"x": 562, "y": 589},
+    ],
+    "stade": [
+        {"x": 610, "y": 598},
+        {"x": 594, "y": 586},
+        {"x": 579, "y": 578},
+    ],
+    "hamburg": [
+        {"x": 630, "y": 602},
+        {"x": 610, "y": 594},
+        {"x": 594, "y": 586},
+        {"x": 579, "y": 578},
+    ],
+    "stettin": [
+        {"x": 810, "y": 610},
+        {"x": 804, "y": 594},
+        {"x": 795, "y": 578},
+    ],
+    "riga": [
+        {"x": 1186, "y": 362},
+        {"x": 1184, "y": 355},
+    ],
+    "nowgorod": [
+        {"x": 1470, "y": 250},
+        {"x": 1448, "y": 222},
+        {"x": 1430, "y": 184},
+        {"x": 1415, "y": 152},
+    ],
 }
 
 TRADE_ROUTES = [
@@ -398,6 +470,14 @@ def download(url: str, filename: str) -> Path:
     return path
 
 
+def load_country_data() -> dict:
+    return json.loads(download(COUNTRIES_URL, "ne_50m_admin_0_countries.geojson").read_text(encoding="utf-8"))
+
+
+def load_river_data() -> dict:
+    return json.loads(download(RIVERS_URL, "ne_10m_rivers_lake_centerlines.geojson").read_text(encoding="utf-8"))
+
+
 def project(lon: float, lat: float) -> tuple[float, float]:
     x = (lon - LON_MIN) * COS_CENTER
     y = lat
@@ -422,6 +502,20 @@ def lon_lat_from_pixel(x: int, y: int) -> tuple[float, float]:
     lat = y_max - float(y) / HEIGHT * (y_max - y_min)
     lon = projected_x / COS_CENTER + LON_MIN
     return lon, lat
+
+
+def grid_cell_from_pixel(position: dict[str, int]) -> tuple[int, int]:
+    return (
+        max(0, min(NAV_GRID_WIDTH - 1, int(position["x"]) // NAV_GRID_CELL_SIZE)),
+        max(0, min(NAV_GRID_HEIGHT - 1, int(position["y"]) // NAV_GRID_CELL_SIZE)),
+    )
+
+
+def pixel_from_grid_cell(cell: tuple[int, int]) -> dict[str, int]:
+    return {
+        "x": int(cell[0] * NAV_GRID_CELL_SIZE + NAV_GRID_CELL_SIZE * 0.5),
+        "y": int(cell[1] * NAV_GRID_CELL_SIZE + NAV_GRID_CELL_SIZE * 0.5),
+    }
 
 
 def geometry_bounds(coords: list) -> tuple[float, float, float, float]:
@@ -466,14 +560,14 @@ def add_polygon(ax, polygon: list, face: str) -> None:
 
 
 def draw_geography(ax) -> None:
-    country_data = json.loads(download(COUNTRIES_URL, "ne_50m_admin_0_countries.geojson").read_text(encoding="utf-8"))
+    country_data = load_country_data()
     for feature in country_data["features"]:
         geometry = feature["geometry"]
         polygons = geometry["coordinates"] if geometry["type"] == "MultiPolygon" else [geometry["coordinates"]]
         for polygon in polygons:
             add_polygon(ax, polygon, "#526345")
 
-    river_data = json.loads(download(RIVERS_URL, "ne_10m_rivers_lake_centerlines.geojson").read_text(encoding="utf-8"))
+    river_data = load_river_data()
     for feature in river_data["features"]:
         coords = feature["geometry"].get("coordinates", [])
         if not coords or not intersects_map(coords):
@@ -645,6 +739,402 @@ def write_metadata() -> None:
     OUTPUT_META.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
+def land_polygons(country_data: dict) -> list:
+    polygons: list = []
+    for feature in country_data["features"]:
+        geometry = feature["geometry"]
+        feature_polygons = geometry["coordinates"] if geometry["type"] == "MultiPolygon" else [geometry["coordinates"]]
+        for polygon in feature_polygons:
+            if intersects_map(polygon):
+                polygons.append(polygon)
+    return polygons
+
+
+def build_land_mask(country_data: dict) -> np.ndarray:
+    grid_points: list[tuple[float, float]] = []
+    for gy in range(NAV_GRID_HEIGHT):
+        for gx in range(NAV_GRID_WIDTH):
+            pixel_x = int(gx * NAV_GRID_CELL_SIZE + NAV_GRID_CELL_SIZE * 0.5)
+            pixel_y = int(gy * NAV_GRID_CELL_SIZE + NAV_GRID_CELL_SIZE * 0.5)
+            grid_points.append(project(*lon_lat_from_pixel(pixel_x, pixel_y)))
+
+    points = np.array(grid_points)
+    land = np.zeros(NAV_GRID_WIDTH * NAV_GRID_HEIGHT, dtype=bool)
+    for polygon in land_polygons(country_data):
+        exterior = projected_ring(polygon[0])
+        if len(exterior) < 3:
+            continue
+
+        land |= MplPath(exterior).contains_points(points)
+
+    return land.reshape((NAV_GRID_HEIGHT, NAV_GRID_WIDTH))
+
+
+def line_pixel_points(line: list) -> list[tuple[float, float]]:
+    points: list[tuple[float, float]] = []
+    for lon, lat in line:
+        pixel_position = pixel(float(lon), float(lat))
+        points.append((float(pixel_position["x"]), float(pixel_position["y"])))
+    return points
+
+
+def mark_water_circle(water: np.ndarray, gx: int, gy: int, radius_cells: int) -> None:
+    for y in range(max(0, gy - radius_cells), min(NAV_GRID_HEIGHT, gy + radius_cells + 1)):
+        for x in range(max(0, gx - radius_cells), min(NAV_GRID_WIDTH, gx + radius_cells + 1)):
+            if (x - gx) * (x - gx) + (y - gy) * (y - gy) <= radius_cells * radius_cells:
+                water[y, x] = True
+
+
+def flood_connected_from_edges(water: np.ndarray) -> np.ndarray:
+    connected = np.zeros((NAV_GRID_HEIGHT, NAV_GRID_WIDTH), dtype=bool)
+    queue: list[tuple[int, int]] = []
+
+    for x in range(NAV_GRID_WIDTH):
+        for y in (0, NAV_GRID_HEIGHT - 1):
+            if water[y, x] and not connected[y, x]:
+                connected[y, x] = True
+                queue.append((x, y))
+
+    for y in range(NAV_GRID_HEIGHT):
+        for x in (0, NAV_GRID_WIDTH - 1):
+            if water[y, x] and not connected[y, x]:
+                connected[y, x] = True
+                queue.append((x, y))
+
+    head = 0
+    while head < len(queue):
+        x, y = queue[head]
+        head += 1
+        for neighbor, _cost in route_neighbors(water, (x, y)):
+            nx, ny = neighbor
+            if connected[ny, nx]:
+                continue
+            connected[ny, nx] = True
+            queue.append((nx, ny))
+
+    return connected
+
+
+def add_river_waterways(water: np.ndarray, river_data: dict) -> None:
+    for feature in river_data["features"]:
+        coords = feature["geometry"].get("coordinates", [])
+        if not coords or not intersects_map(coords):
+            continue
+
+        lines = coords if feature["geometry"]["type"] == "MultiLineString" else [coords]
+        for line in lines:
+            points = line_pixel_points(line)
+            for index in range(len(points) - 1):
+                start = points[index]
+                end = points[index + 1]
+                dx = end[0] - start[0]
+                dy = end[1] - start[1]
+                steps = max(1, int(max(abs(dx), abs(dy)) / NAV_GRID_CELL_SIZE * 2))
+                for step in range(steps + 1):
+                    t = float(step) / float(steps)
+                    px = start[0] + dx * t
+                    py = start[1] + dy * t
+                    gx = max(0, min(NAV_GRID_WIDTH - 1, int(px) // NAV_GRID_CELL_SIZE))
+                    gy = max(0, min(NAV_GRID_HEIGHT - 1, int(py) // NAV_GRID_CELL_SIZE))
+                    mark_water_circle(water, gx, gy, NAV_RIVER_RADIUS_CELLS)
+
+
+def add_harbor_access_cells(water: np.ndarray) -> None:
+    for city in HANSE_CITIES:
+        gx, gy = grid_cell_from_pixel(city_marker_pixel(city))
+        mark_water_circle(water, gx, gy, NAV_HARBOR_RADIUS_CELLS)
+
+
+def nearest_water_cell(water: np.ndarray, position: dict[str, int]) -> tuple[int, int]:
+    start_x, start_y = grid_cell_from_pixel(position)
+    if water[start_y, start_x]:
+        return start_x, start_y
+
+    best_cell = (start_x, start_y)
+    best_distance = float("inf")
+    max_radius = max(NAV_GRID_WIDTH, NAV_GRID_HEIGHT)
+    for radius in range(1, max_radius):
+        found = False
+        for y in range(max(0, start_y - radius), min(NAV_GRID_HEIGHT, start_y + radius + 1)):
+            for x in range(max(0, start_x - radius), min(NAV_GRID_WIDTH, start_x + radius + 1)):
+                if not water[y, x]:
+                    continue
+                distance = (x - start_x) * (x - start_x) + (y - start_y) * (y - start_y)
+                if distance < best_distance:
+                    best_distance = distance
+                    best_cell = (x, y)
+                    found = True
+        if found:
+            return best_cell
+
+    return best_cell
+
+
+def city_sea_gate_cell(city: dict, sea_water: np.ndarray, harbor_cell: tuple[int, int]) -> tuple[int, int]:
+    if city["id"] in SEA_GATE_PIXELS:
+        return nearest_water_cell(sea_water, SEA_GATE_PIXELS[city["id"]])
+
+    direct_path = shortest_path_to_nearest(sea_water, harbor_cell, sea_water)
+    if direct_path:
+        return direct_path[-1]
+
+    return nearest_water_cell(sea_water, city_marker_pixel(city))
+
+
+def manual_access_path(city: dict, harbor_cell: tuple[int, int], sea_gate_cell: tuple[int, int]) -> list[tuple[int, int]]:
+    if city["id"] not in SEA_ACCESS_PATH_PIXELS:
+        return []
+
+    cells: list[tuple[int, int]] = [harbor_cell]
+    for point in SEA_ACCESS_PATH_PIXELS[city["id"]]:
+        cell = grid_cell_from_pixel(point)
+        if cell != cells[-1]:
+            cells.append(cell)
+    if cells[-1] != sea_gate_cell:
+        cells.append(sea_gate_cell)
+    return cells
+
+
+def shortest_path_to_nearest(allowed: np.ndarray, start: tuple[int, int], target_mask: np.ndarray) -> list[tuple[int, int]]:
+    start_id = encoded(start)
+    distances: dict[int, float] = {start_id: 0.0}
+    previous: dict[int, int] = {}
+    queue: list[tuple[float, int]] = [(0.0, start_id)]
+
+    while queue:
+        distance, current_id = heapq.heappop(queue)
+        if distance > distances[current_id]:
+            continue
+
+        current = decoded(current_id)
+        if target_mask[current[1], current[0]]:
+            return reconstruct_path(previous, start, current)
+
+        for neighbor, step_cost in route_neighbors(allowed, current):
+            neighbor_id = encoded(neighbor)
+            next_distance = distance + step_cost
+            if next_distance >= distances.get(neighbor_id, float("inf")):
+                continue
+
+            distances[neighbor_id] = next_distance
+            previous[neighbor_id] = current_id
+            heapq.heappush(queue, (next_distance, neighbor_id))
+
+    return []
+
+
+def route_neighbors(water: np.ndarray, cell: tuple[int, int]) -> list[tuple[tuple[int, int], float]]:
+    neighbors: list[tuple[tuple[int, int], float]] = []
+    x, y = cell
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            if dx == 0 and dy == 0:
+                continue
+
+            nx = x + dx
+            ny = y + dy
+            if nx < 0 or ny < 0 or nx >= NAV_GRID_WIDTH or ny >= NAV_GRID_HEIGHT:
+                continue
+            if not water[ny, nx]:
+                continue
+            if dx != 0 and dy != 0 and (not water[y, nx] or not water[ny, x]):
+                continue
+
+            neighbors.append(((nx, ny), 1.41421356237 if dx != 0 and dy != 0 else 1.0))
+    return neighbors
+
+
+def encoded(cell: tuple[int, int]) -> int:
+    return cell[1] * NAV_GRID_WIDTH + cell[0]
+
+
+def decoded(value: int) -> tuple[int, int]:
+    return value % NAV_GRID_WIDTH, value // NAV_GRID_WIDTH
+
+
+def shortest_paths_from(water: np.ndarray, start: tuple[int, int], targets: set[tuple[int, int]]) -> tuple[dict[int, float], dict[int, int]]:
+    start_id = encoded(start)
+    target_ids = {encoded(target) for target in targets}
+    found_targets: set[int] = set()
+    distances: dict[int, float] = {start_id: 0.0}
+    previous: dict[int, int] = {}
+    queue: list[tuple[float, int]] = [(0.0, start_id)]
+
+    while queue and found_targets != target_ids:
+        distance, current_id = heapq.heappop(queue)
+        if distance > distances[current_id]:
+            continue
+
+        if current_id in target_ids:
+            found_targets.add(current_id)
+
+        current = decoded(current_id)
+        for neighbor, step_cost in route_neighbors(water, current):
+            neighbor_id = encoded(neighbor)
+            next_distance = distance + step_cost
+            if next_distance >= distances.get(neighbor_id, float("inf")):
+                continue
+
+            distances[neighbor_id] = next_distance
+            previous[neighbor_id] = current_id
+            heapq.heappush(queue, (next_distance, neighbor_id))
+
+    return distances, previous
+
+
+def reconstruct_path(previous: dict[int, int], start: tuple[int, int], target: tuple[int, int]) -> list[tuple[int, int]]:
+    start_id = encoded(start)
+    current_id = encoded(target)
+    if current_id == start_id:
+        return [start]
+    if current_id not in previous:
+        return []
+
+    path = [decoded(current_id)]
+    while current_id != start_id:
+        current_id = previous[current_id]
+        path.append(decoded(current_id))
+    path.reverse()
+    return path
+
+
+def simplify_grid_path(path: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    if len(path) <= 2:
+        return path
+
+    simplified = [path[0]]
+    last_direction = (path[1][0] - path[0][0], path[1][1] - path[0][1])
+    for index in range(1, len(path) - 1):
+        next_direction = (path[index + 1][0] - path[index][0], path[index + 1][1] - path[index][1])
+        if next_direction != last_direction:
+            simplified.append(path[index])
+            last_direction = next_direction
+    simplified.append(path[-1])
+    return simplified
+
+
+def route_distance_pixels(path: list[tuple[int, int]]) -> float:
+    distance = 0.0
+    for index in range(len(path) - 1):
+        dx = path[index + 1][0] - path[index][0]
+        dy = path[index + 1][1] - path[index][1]
+        distance += math.sqrt(dx * dx + dy * dy) * NAV_GRID_CELL_SIZE
+    return distance
+
+
+def build_navigation_data() -> dict:
+    country_data = load_country_data()
+    river_data = load_river_data()
+    land = build_land_mask(country_data)
+    sea_water = flood_connected_from_edges(np.logical_not(land))
+    access_water = np.zeros((NAV_GRID_HEIGHT, NAV_GRID_WIDTH), dtype=bool)
+    add_river_waterways(access_water, river_data)
+    add_harbor_access_cells(access_water)
+    water = np.logical_or(sea_water, access_water)
+
+    city_harbors: dict[str, dict] = {}
+    harbor_cells: dict[str, tuple[int, int]] = {}
+    sea_gate_cells: dict[str, tuple[int, int]] = {}
+    sea_access_paths: dict[str, list[tuple[int, int]]] = {}
+    for city in HANSE_CITIES:
+        city_position = city_marker_pixel(city)
+        harbor_cell = nearest_water_cell(water, city_position)
+        sea_gate_cell = city_sea_gate_cell(city, sea_water, harbor_cell)
+        access_path = manual_access_path(city, harbor_cell, sea_gate_cell)
+        if not access_path:
+            access_path = reconstruct_path(shortest_paths_from(water, harbor_cell, {sea_gate_cell})[1], harbor_cell, sea_gate_cell)
+        if not access_path:
+            access_path = shortest_path_to_nearest(water, harbor_cell, sea_water)
+        if not access_path:
+            access_path = [harbor_cell, sea_gate_cell] if harbor_cell != sea_gate_cell else [harbor_cell]
+        sea_gate_cell = access_path[-1]
+        mark_water_circle(sea_water, sea_gate_cell[0], sea_gate_cell[1], NAV_SEA_GATE_RADIUS_CELLS)
+        harbor_position = pixel_from_grid_cell(harbor_cell)
+        sea_gate_position = pixel_from_grid_cell(sea_gate_cell)
+        harbor_cells[city["id"]] = harbor_cell
+        sea_gate_cells[city["id"]] = sea_gate_cell
+        sea_access_paths[city["id"]] = access_path
+        city_harbors[city["id"]] = {
+            "name": city["name"],
+            "city_position": city_position,
+            "harbor_anchor": harbor_position,
+            "sea_gate": sea_gate_position,
+            "grid": {"x": harbor_cell[0], "y": harbor_cell[1]},
+            "sea_grid": {"x": sea_gate_cell[0], "y": sea_gate_cell[1]},
+            "anchor_distance_px": round(
+                math.dist((city_position["x"], city_position["y"]), (harbor_position["x"], harbor_position["y"])),
+                2,
+            ),
+            "sea_access_distance_px": round(route_distance_pixels(access_path), 2),
+            "sea_access_points": [pixel_from_grid_cell(cell) for cell in simplify_grid_path(access_path)],
+        }
+
+    routes: dict[str, dict] = {}
+    unreachable_routes: list[dict[str, str]] = []
+    city_ids = [city["id"] for city in HANSE_CITIES]
+    for source_id in city_ids:
+        targets = {sea_gate_cells[target_id] for target_id in city_ids if target_id != source_id}
+        distances, previous = shortest_paths_from(sea_water, sea_gate_cells[source_id], targets)
+        for target_id in city_ids:
+            if source_id == target_id:
+                continue
+
+            target_cell = sea_gate_cells[target_id]
+            target_key = encoded(target_cell)
+            if target_key not in distances:
+                unreachable_routes.append({"from": source_id, "to": target_id})
+                continue
+
+            sea_path = reconstruct_path(previous, sea_gate_cells[source_id], target_cell)
+            if not sea_path:
+                unreachable_routes.append({"from": source_id, "to": target_id})
+                continue
+
+            target_access_path = sea_access_paths[target_id].copy()
+            target_access_path.reverse()
+            path = sea_access_paths[source_id] + sea_path[1:] + target_access_path[1:]
+            simplified_path = simplify_grid_path(path)
+            routes[f"{source_id}__{target_id}"] = {
+                "from": source_id,
+                "to": target_id,
+                "distance_px": round(route_distance_pixels(path), 2),
+                "sea_distance_px": round(route_distance_pixels(sea_path), 2),
+                "points": [pixel_from_grid_cell(cell) for cell in simplified_path],
+            }
+
+    water_rows = ["".join("1" if bool(value) else "0" for value in row) for row in water]
+    sea_rows = ["".join("1" if bool(value) else "0" for value in row) for row in sea_water]
+    return {
+        "source_size": {"x": WIDTH, "y": HEIGHT},
+        "grid": {
+            "cell_size": NAV_GRID_CELL_SIZE,
+            "width": NAV_GRID_WIDTH,
+            "height": NAV_GRID_HEIGHT,
+            "rows": water_rows,
+            "sea_rows": sea_rows,
+        },
+        "city_harbors": city_harbors,
+        "routes": routes,
+        "unreachable_routes": unreachable_routes,
+    }
+
+
+def write_navigation_data() -> None:
+    navigation_data = build_navigation_data()
+    OUTPUT_NAVIGATION.write_text(json.dumps(navigation_data, indent=2) + "\n", encoding="utf-8")
+
+    water = np.array([[char == "1" for char in row] for row in navigation_data["grid"]["rows"]], dtype=bool)
+    sea = np.array([[char == "1" for char in row] for row in navigation_data["grid"]["sea_rows"]], dtype=bool)
+    access = np.logical_and(water, np.logical_not(sea))
+    debug = np.zeros((NAV_GRID_HEIGHT, NAV_GRID_WIDTH, 3), dtype=float)
+    debug[:, :, 0] = np.where(sea, 0.08, np.where(access, 0.18, 0.28))
+    debug[:, :, 1] = np.where(sea, 0.36, np.where(access, 0.58, 0.34))
+    debug[:, :, 2] = np.where(sea, 0.48, np.where(access, 0.72, 0.24))
+    plt.imsave(OUTPUT_NAVIGATION_DEBUG, debug)
+    print(f"Wrote {OUTPUT_NAVIGATION}")
+    print(f"Wrote {OUTPUT_NAVIGATION_DEBUG}")
+
+
 def main() -> None:
     ASSET_DIR.mkdir(parents=True, exist_ok=True)
     x_min, y_min = project(LON_MIN, LAT_MIN)
@@ -663,6 +1153,7 @@ def main() -> None:
     fig.savefig(OUTPUT_IMAGE, dpi=100, facecolor="#385d6b")
     plt.close(fig)
     write_metadata()
+    write_navigation_data()
     print(f"Wrote {OUTPUT_IMAGE}")
     print(f"Wrote {OUTPUT_META}")
 

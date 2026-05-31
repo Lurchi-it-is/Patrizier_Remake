@@ -1,6 +1,6 @@
 # Projektplan: Hanseatische Warenwirtschaftssimulation
 
-Version: 0.2.28-city-supply-visible
+Version: 0.2.30-ai-trader-design
 Datum: 2026-05-31  
 Repo: https://github.com/Lurchi-it-is/Patrizier_Remake.git
 

@@ -4,7 +4,7 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.28-city-supply-visible`
+Version: `0.2.30-ai-trader-design`
 
 Das Projektfundament enthaelt:
 
@@ -26,6 +26,8 @@ Das Projektfundament enthaelt:
 - Einwohnergruppen fuer Arme, Handwerker, Buerger und Patrizier mit eigenen Bedarfen und Tagesverbrauch
 - sichtbare Einwohnergruppen-Verteilung im Map Editor; Verbrauchswerte werden daraus abgeleitet
 - recherchierte, breiter lesbare Wasserwege ohne Laendergrenzen fuer historisch per Fluss, Muendung oder Lagune angelaufene Handelsstaedte
+- automatisch erzeugte Navigationsdaten mit Wasser-Raster, Hafenankern und vorberechneten Wasserpfaden fuer sichtbare Schiffsrouten
+- dokumentiertes KI-Haendlerkonzept fuer stabilisierenden Warenfluss, Haendlerprofile, Settings und MVP-Umsetzung
 - datengetriebene Beispielkataloge fuer Waren, Staedte, Schiffstypen und Piratenzonen
 - erste Simulationsbausteine fuer Preisbildung, Tages-Tick und Seeschlacht-Auto-Resolver
 - lokale Validierung fuer JSON-Daten und Versionskonsistenz
