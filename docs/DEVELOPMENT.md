@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.0-foundation
+Version: 0.2.1-foundation
 
 ## Branch- und Worktree-Regel
 

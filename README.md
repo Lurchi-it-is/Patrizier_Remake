@@ -4,11 +4,12 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.0-foundation`
+Version: `0.2.1-foundation`
 
 Das Projektfundament enthaelt:
 
 - Godot-4-Projektdatei und Startszene
+- sichtbare Prototyp-Oberflaeche mit Karte, Route und Dashboard
 - datengetriebene Beispielkataloge fuer Waren, Staedte, Schiffstypen und Piratenzonen
 - erste Simulationsbausteine fuer Preisbildung, Tages-Tick und Seeschlacht-Auto-Resolver
 - lokale Validierung fuer JSON-Daten und Versionskonsistenz

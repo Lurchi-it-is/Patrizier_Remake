@@ -54,7 +54,8 @@ $requiredPaths = @(
     "scripts\data\catalog_loader.gd",
     "scripts\simulation\simulation_state.gd",
     "scripts\simulation\trade_price.gd",
-    "scripts\simulation\combat_resolver.gd"
+    "scripts\simulation\combat_resolver.gd",
+    "scripts\ui\map_view.gd"
 )
 
 foreach ($path in $requiredPaths) {

@@ -1,6 +1,6 @@
 # Architektur
 
-Version: 0.2.0-foundation
+Version: 0.2.1-foundation
 
 ## Leitidee
 
@@ -11,6 +11,7 @@ Die Wirtschaftssimulation soll datengetrieben und testbar bleiben. Godot rendert
 - `data/`: JSON-Kataloge fuer Balancing und historische Spielwerte.
 - `scripts/data/`: Laden und Validieren der Kataloge zur Laufzeit.
 - `scripts/simulation/`: Engine-nahe, aber UI-unabhaengige Simulationslogik.
+- `scripts/ui/`: einfache Prototyp-Visualisierung fuer Karte, Routen und Status.
 - `scenes/`: Godot-Szenen fuer Einstieg, Karte und spaetere UI.
 - `tools/`: lokale Validierung und Projektpflege.
 

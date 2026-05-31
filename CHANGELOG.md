@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1-foundation - 2026-05-31
+
+- Startszene von reiner Textausgabe zu einer sichtbaren Prototyp-Oberflaeche ausgebaut.
+- Einfache Seekarte mit Staedten, Handelsroute, Schiffmarker und Piratenrisiko-Zonen hinzugefuegt.
+- Dashboard mit Simulationstag, Marktpreisen und interaktivem Seeschlacht-Resolver ergaenzt.
+
 ## 0.2.0-foundation - 2026-05-31
 
 - Godot-4-Projektfundament mit Startszene angelegt.
