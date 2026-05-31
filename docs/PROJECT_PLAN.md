@@ -1,6 +1,6 @@
 # Projektplan: Hanseatische Warenwirtschaftssimulation
 
-Version: 0.2.27-production-consumption-coverage
+Version: 0.2.28-city-supply-visible
 Datum: 2026-05-31  
 Repo: https://github.com/Lurchi-it-is/Patrizier_Remake.git
 

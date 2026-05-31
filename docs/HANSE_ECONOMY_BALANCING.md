@@ -1,6 +1,6 @@
 # Hanse-Wirtschaftsbalancing
 
-Version: 0.2.27-production-consumption-coverage
+Version: 0.2.28-city-supply-visible
 
 ## Recherchebasis
 
@@ -26,7 +26,7 @@ Alle Produktions-, Verbrauchs-, Lager- und Zielbestandswerte sind Tageswerte in 
 
 Die groesseren Einheiten machen kleine Dezimalwerte bei hochwertigen oder schweren Waren plausibler: Eine Produktion von `0.5` Wachs bedeutet kein halbes Stueck, sondern etwa ein halbes Schiffspfund pro Tag.
 
-`production` wird im Balancing als lokale Erzeugung plus gesicherter Tageszufluss aus direktem Hinterland oder Kontorhandel verstanden. Dadurch koennen reine Importwaren wie Wein, Gewuerze, Stockfisch oder Pelze in Hafenstaedten als Zufluss erscheinen, ohne dass sie dort lokal angebaut oder gefangen werden.
+`production` wird im Balancing als lokale Erzeugung plus gesicherter Tageszufluss aus direktem Hinterland oder Kontorhandel verstanden. Im Map Editor wird das deshalb als `Erzeugung/Zufluss` angezeigt. Dadurch koennen Getreide in Luebeck oder reine Importwaren wie Wein, Gewuerze, Stockfisch oder Pelze in Hafenstaedten als Zufluss erscheinen, ohne dass sie dort lokal angebaut oder gefangen werden.
 
 Quellen:
 

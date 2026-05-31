@@ -3,7 +3,7 @@ extends Control
 const CatalogLoader = preload("res://scripts/data/catalog_loader.gd")
 const MapView = preload("res://scripts/ui/map_view.gd")
 const CITY_VALUES_EXPORT_PATH := "user://custom_map_city_values.json"
-const EDITOR_VERSION := "0.2.27-production-consumption-coverage"
+const EDITOR_VERSION := "0.2.28-city-supply-visible"
 const POPULATION_GROUP_DISTRIBUTION_BY_KIND := {
 	"core": {"poor": 0.40, "craftsmen": 0.35, "burghers": 0.20, "patricians": 0.05},
 	"kontor": {"poor": 0.35, "craftsmen": 0.25, "burghers": 0.30, "patricians": 0.10},
@@ -245,7 +245,7 @@ func _build_city_values_panel() -> Control:
 	goods_grid.add_child(goods_heading)
 
 	var production_heading := Label.new()
-	production_heading.text = "Erzeugung"
+	production_heading.text = "Erzeugung/Zufluss"
 	goods_grid.add_child(production_heading)
 
 	var consumption_heading := Label.new()
@@ -396,7 +396,7 @@ func _refresh_map_editor() -> void:
 
 	var position: Dictionary = city.get("position", {})
 	var values := _city_base_values_for(selected_editor_city_id)
-	editor_info_label.text = "[b]%s[/b]\n%s | %.4f, %.4f\nKartenpunkt: %d / %d\nEinwohner: %d\nEinwohnergruppen: %s\nErzeugung: %s\nVerbrauch/Tag: %s\nAusgewaehlt: %d / %d" % [
+	editor_info_label.text = "[b]%s[/b]\n%s | %.4f, %.4f\nKartenpunkt: %d / %d\nEinwohner: %d\nEinwohnergruppen: %s\nErzeugung/Zufluss: %s\nVerbrauch/Tag: %s\nAusgewaehlt: %d / %d" % [
 		city.get("name", ""),
 		city.get("region", ""),
 		float(city.get("lat", 0.0)),

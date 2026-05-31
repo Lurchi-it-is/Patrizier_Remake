@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.28-city-supply-visible - 2026-05-31
+
+- Map Editor benennt die Versorgungsspalte als `Erzeugung/Zufluss`, damit Hinterland- und Handelszufluss nicht als lokale Produktion missverstanden wird.
+- Luebeck erhaelt sichtbare Zuflusswerte fuer Getreide und weitere verbrauchte Waren, statt dort `0` anzuzeigen.
+
 ## 0.2.27-production-consumption-coverage - 2026-05-31
 
 - Produktion und Handelszufluss der festen Startstaedte so angepasst, dass jede verbrauchte Ware regional mindestens gedeckt ist.

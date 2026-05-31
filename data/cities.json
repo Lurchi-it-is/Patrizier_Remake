@@ -6,7 +6,7 @@
     "population": 18000,
     "position": { "x": 658, "y": 579 },
     "population_groups": { "poor": 7200, "craftsmen": 6300, "burghers": 3600, "patricians": 900 },
-    "production": { "salt": 11, "beer": 4, "stockfish": 0.8, "cloth": 1.2, "pitch_tar": 0.4, "furs": 0.15, "wine": 0.6, "spices": 0.15 },
+    "production": { "grain": 10, "salt": 11, "herring": 4, "stockfish": 0.8, "beer": 4, "timber": 1.5, "pitch_tar": 0.4, "flax": 1, "wool": 0.5, "iron": 0.8, "wax": 0.4, "furs": 0.25, "cloth": 1.2, "wine": 0.6, "spices": 0.15 },
     "consumption": { "grain": 2, "herring": 1, "stockfish": 0.5, "timber": 1, "pitch_tar": 0.4, "flax": 0.8, "wool": 0.4, "iron": 0.6, "wax": 0.3, "furs": 0.2, "wine": 0.2, "spices": 0.05 },
     "stock": { "grain": 260, "salt": 420, "herring": 150, "stockfish": 80, "beer": 140, "timber": 130, "pitch_tar": 70, "flax": 90, "wool": 55, "iron": 70, "wax": 75, "furs": 40, "cloth": 95, "wine": 45, "spices": 12 },
     "target_stock": { "grain": 320, "salt": 260, "herring": 170, "stockfish": 90, "beer": 160, "timber": 150, "pitch_tar": 80, "flax": 100, "wool": 70, "iron": 85, "wax": 80, "furs": 45, "cloth": 90, "wine": 55, "spices": 15 }

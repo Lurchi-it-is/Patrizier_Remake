@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.27-production-consumption-coverage
+Version: 0.2.28-city-supply-visible
 
 ## Branch- und Worktree-Regel
 
