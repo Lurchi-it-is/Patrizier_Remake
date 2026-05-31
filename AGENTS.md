@@ -8,6 +8,10 @@ https://github.com/Lurchi-it-is/Patrizier_Remake.git
 
 Es muss immer in diesem Repository gearbeitet werden.
 
+## Projektkontext
+
+- Der Map Editor ist nur ein Feature des Spiels, um Custom-Karten zu erzeugen.
+
 ## Arbeitsregeln
 
 - Wenn eine neue Feature-Entwicklung angefragt wird, muss dafuer ein eigener Worktree erstellt werden.
@@ -17,4 +21,3 @@ Es muss immer in diesem Repository gearbeitet werden.
 - Zusammenhaengende Features duerfen im selben Worktree entwickelt werden.
 - Bei Aenderungen am Projekt muss die Versionsnummer immer dokumentiert und gepflegt werden.
 - Nach jedem abgeschlossenen Implementierungsschritt muss eine kurze Testanleitung bereitgestellt werden, inklusive konkret ausfuehrbarer Befehle und erwarteter Pruefpunkte.
-
