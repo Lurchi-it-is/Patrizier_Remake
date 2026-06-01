@@ -487,11 +487,7 @@ func _main_route() -> Array[String]:
 	return route
 
 func _city_position(city_id: String) -> Vector2:
-	for city_entry in cities:
-		var city: Dictionary = city_entry
-		if city.get("id", "") == city_id:
-			return _scale_position(city.get("position", {}))
-	return size * 0.5
+	return _scale_position(_city_source_position(city_id))
 
 func _navigation_points_between(from_city_id: String, to_city_id: String) -> Array[Vector2]:
 	var key := "%s__%s" % [from_city_id, to_city_id]
@@ -506,6 +502,7 @@ func _navigation_points_between(from_city_id: String, to_city_id: String) -> Arr
 	var source_points: Array = route.get("points", []).duplicate(true)
 	if is_reversed:
 		source_points.reverse()
+	source_points = _route_points_with_current_endpoints(source_points, from_city_id, to_city_id)
 
 	var points: Array[Vector2] = []
 	for point_entry in source_points:
@@ -514,16 +511,47 @@ func _navigation_points_between(from_city_id: String, to_city_id: String) -> Arr
 	return points
 
 func get_city_harbor_position(city_id: String) -> Dictionary:
-	if navigation_city_harbors.has(city_id):
-		var harbor: Dictionary = navigation_city_harbors[city_id]
-		return harbor.get("harbor_anchor", harbor.get("sea_gate", {}))
+	return _city_source_position(city_id)
 
+func _city_source_position(city_id: String) -> Dictionary:
 	for city_entry in cities:
 		var city: Dictionary = city_entry
 		if String(city.get("id", "")) == city_id:
-			return city.get("position", {})
+			return _normalized_source_position(city.get("position", {}))
 
-	return {"x": SOURCE_MAP_SIZE.x * 0.5, "y": SOURCE_MAP_SIZE.y * 0.5}
+	for city_entry in editor_cities:
+		var city: Dictionary = city_entry
+		if String(city.get("id", "")) == city_id:
+			return _normalized_source_position(city.get("position", {}))
+
+	if navigation_city_harbors.has(city_id):
+		var harbor: Dictionary = navigation_city_harbors[city_id]
+		return _normalized_source_position(harbor.get("harbor_anchor", harbor.get("sea_gate", {})))
+
+	return {
+		"x": SOURCE_MAP_SIZE.x * 0.5,
+		"y": SOURCE_MAP_SIZE.y * 0.5
+	}
+
+func _normalized_source_position(position: Dictionary) -> Dictionary:
+	return {
+		"x": clampf(float(position.get("x", SOURCE_MAP_SIZE.x * 0.5)), 0.0, SOURCE_MAP_SIZE.x),
+		"y": clampf(float(position.get("y", SOURCE_MAP_SIZE.y * 0.5)), 0.0, SOURCE_MAP_SIZE.y)
+	}
+
+func _route_points_with_current_endpoints(source_points: Array, from_city_id: String, to_city_id: String) -> Array:
+	var points := source_points.duplicate(true)
+	var start_position := get_city_harbor_position(from_city_id)
+	var target_position := get_city_harbor_position(to_city_id)
+	if points.is_empty():
+		return [start_position, target_position]
+
+	points[0] = start_position
+	if points.size() == 1:
+		points.append(target_position)
+	else:
+		points[points.size() - 1] = target_position
+	return points
 
 func get_city_route_source_points(from_city_id: String, to_city_id: String) -> Array:
 	var key := "%s__%s" % [from_city_id, to_city_id]
@@ -538,7 +566,7 @@ func get_city_route_source_points(from_city_id: String, to_city_id: String) -> A
 	var source_points: Array = route.get("points", []).duplicate(true)
 	if is_reversed:
 		source_points.reverse()
-	return source_points
+	return _route_points_with_current_endpoints(source_points, from_city_id, to_city_id)
 
 func get_navigation_path_between_source_points(from_position: Dictionary, to_position: Dictionary) -> Array:
 	if navigation_grid_rows.is_empty():

@@ -4,7 +4,7 @@ const CatalogLoader = preload("res://scripts/data/catalog_loader.gd")
 const MapView = preload("res://scripts/ui/map_view.gd")
 const CITY_VALUES_EXPORT_PATH := "user://custom_map_city_values.json"
 const CITY_POSITIONS_EXPORT_PATH := "user://hanse_city_positions.json"
-const EDITOR_VERSION := "0.2.58-merged-map-assets"
+const EDITOR_VERSION := "0.2.59-route-target-position-overrides"
 const POPULATION_GROUP_DISTRIBUTION_BY_KIND := {
 	"core": {"poor": 0.40, "craftsmen": 0.35, "burghers": 0.20, "patricians": 0.05},
 	"kontor": {"poor": 0.35, "craftsmen": 0.25, "burghers": 0.30, "patricians": 0.10},

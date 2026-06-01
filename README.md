@@ -4,7 +4,7 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.58-merged-map-assets`
+Version: `0.2.59-route-target-position-overrides`
 
 Das Projektfundament enthaelt:
 

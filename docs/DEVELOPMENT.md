@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.58-merged-map-assets
+Version: 0.2.59-route-target-position-overrides
 
 ## Branch- und Worktree-Regel
 

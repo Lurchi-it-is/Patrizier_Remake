@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.59-route-target-position-overrides - 2026-06-01
+
+- Schiffsziele und vorgerenderte Routen-Endpunkte nutzen jetzt die aktuell geladenen Stadtpositionen aus Katalog bzw. `user://hanse_city_positions.json`.
+- Manuell verschobene Stadtmarker werden damit auch im Hauptspiel als tatsaechliche Hafen-/Zielpunkte verwendet.
+- Navigationsdaten bleiben als Wasserpfad-Grundlage erhalten, ihre alten Endpunkte werden zur Laufzeit durch die aktuellen Markerpositionen ersetzt.
+
 ## 0.2.58-merged-map-assets - 2026-06-01
 
 - Parallele Karten-/Stadtmarker-Arbeit aus `origin/main` mit den neuen Schiffs-, Design- und Richtungs-Sprite-Aenderungen zusammengefuehrt.

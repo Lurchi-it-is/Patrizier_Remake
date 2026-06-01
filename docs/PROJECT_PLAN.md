@@ -1,6 +1,6 @@
 # Projektplan: Hanseatische Warenwirtschaftssimulation
 
-Version: 0.2.58-merged-map-assets
+Version: 0.2.59-route-target-position-overrides
 Datum: 2026-06-01  
 Repo: https://github.com/Lurchi-it-is/Patrizier_Remake.git
 
