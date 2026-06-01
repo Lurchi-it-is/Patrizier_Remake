@@ -4,7 +4,7 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.61-ship-horizontal-direction-flip`
+Version: `0.2.73-crisp-map-city-labels`
 
 Das Projektfundament enthaelt:
 
@@ -14,6 +14,17 @@ Das Projektfundament enthaelt:
 - feste Startkarte mit fuenf geladenen Spielstaedten: Bremen, Hamburg, Luebeck, Visby und Danzig
 - getrennte Startpunkte und Windows-Export-Presets fuer Hauptspiel und Map Editor
 - Karteneditor-Auswahl fuer historische Hanseorte mit scrollbarer Checkbox-Liste und punktgenauer Platzierung auf dem Kartenasset
+- Karteneditor-Staedte koennen aus der aktuellen Custom-Karte komplett entfernt werden
+- gespeicherte Map-Editor-Karten ueberschreiben die Hauptspielkarte inklusive aktiver Staedte und geloeschter Orte
+- verschobene Karteneditor-Stadtpositionen werden automatisch gespeichert und fuer Schiffsrouten/Pathing genutzt
+- Stadtpositionen fuer Schiffe werden auf befahrbare Wasserpunkte geschnappt, damit Haendler nicht ueber Land fahren
+- Debugmodus im Map Editor zeigt Wasserwege und Routen zur ausgewaehlten Stadt; pro Stadt bleibt nur der bewegliche Wasser-Stadtmarker sichtbar
+- Stadt-zu-Stadt-Routen werden zwischen den aktuellen Wasser-Stadtmarkern berechnet, nicht mehr ueber alte Hafen-Zwischenpunkte
+- kleinere Stadtmarker mit konstanter Bildschirmgroesse und ein Designrichtlinien-konformer Hafen-/Ankermarker fuer angedockte Schiffe
+- scharf bleibende Stadtnamen als unskalierte Karten-Overlay-Schrift
+- Runtime-Pathing nutzt eine engere Wasser-Maske aus Seezellen und expliziten Hafen-/Flusszugaengen statt der breiten Generator-Rohmaske
+- Wasserwege koennen im Map Editor manuell eingezeichnet oder entfernt und als Navigations-Override gespeichert werden
+- Kartenbild kann im Map Editor als Custom-Hintergrund geladen oder auf die Standardkarte zurueckgesetzt werden
 - Karteneditor-Grundwerte pro Stadt fuer Einwohner, Erzeugung und Verbrauch inklusive JSON-Export
 - zoombare und verschiebbare Kartenansicht im Map Editor
 - Stadtnamen werden auf der Karte per Mouseover angezeigt
