@@ -6,7 +6,7 @@ const CITY_VALUES_EXPORT_PATH := "user://custom_map_city_values.json"
 const CITY_POSITIONS_EXPORT_PATH := "user://hanse_city_positions.json"
 const MAP_BACKGROUND_OVERRIDE_PATH := "user://custom_map_background.png"
 const NAVIGATION_WATERWAYS_OVERRIDE_PATH := "user://custom_navigation_waterways.json"
-const EDITOR_VERSION := "0.2.73-crisp-map-city-labels"
+const EDITOR_VERSION := "0.2.83-smaller-ship-icons"
 const POPULATION_GROUP_DISTRIBUTION_BY_KIND := {
 	"core": {"poor": 0.40, "craftsmen": 0.35, "burghers": 0.20, "patricians": 0.05},
 	"kontor": {"poor": 0.35, "craftsmen": 0.25, "burghers": 0.30, "patricians": 0.10},
@@ -55,6 +55,7 @@ var editor_info_label: RichTextLabel
 var city_values_panel: VBoxContainer
 var selected_city_values_label: Label
 var position_edit_toggle: CheckButton
+var departure_edit_toggle: CheckButton
 var position_status_label: Label
 var population_spinbox: SpinBox
 var population_group_total_label: Label
@@ -63,6 +64,7 @@ var debug_status_label: Label
 var map_background_status_label: Label
 var map_file_dialog: FileDialog
 var navigation_debug_toggle: CheckButton
+var navigable_highlight_toggle: CheckButton
 var waterway_edit_toggle: CheckButton
 var waterway_mode_option: OptionButton
 var waterway_brush_spinbox: SpinBox
@@ -129,6 +131,7 @@ func _build_layout() -> void:
 	map_view.set_layers(false, true)
 	map_view.editor_city_clicked.connect(_on_map_editor_city_clicked)
 	map_view.editor_city_position_changed.connect(_on_map_editor_city_position_changed)
+	map_view.editor_city_departure_changed.connect(_on_map_editor_city_departure_changed)
 	map_view.navigation_waterway_changed.connect(_on_navigation_waterway_changed)
 	map_panel.add_child(map_view)
 
@@ -245,8 +248,13 @@ func _build_debug_map_controls() -> Control:
 	navigation_debug_toggle.toggled.connect(_on_navigation_debug_toggled)
 	box.add_child(navigation_debug_toggle)
 
+	navigable_highlight_toggle = CheckButton.new()
+	navigable_highlight_toggle.text = "Befahrbares hervorheben"
+	navigable_highlight_toggle.toggled.connect(_on_navigable_highlight_toggled)
+	box.add_child(navigable_highlight_toggle)
+
 	debug_status_label = Label.new()
-	debug_status_label.text = "Debug aus."
+	debug_status_label.text = "Highlight aus."
 	debug_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(debug_status_label)
 
@@ -344,6 +352,11 @@ func _build_position_editor_controls() -> Control:
 	position_edit_toggle.text = "Positionen bearbeiten"
 	position_edit_toggle.toggled.connect(_on_position_edit_toggled)
 	box.add_child(position_edit_toggle)
+
+	departure_edit_toggle = CheckButton.new()
+	departure_edit_toggle.text = "Startrichtung zeichnen"
+	departure_edit_toggle.toggled.connect(_on_departure_edit_toggled)
+	box.add_child(departure_edit_toggle)
 
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 8)
@@ -726,21 +739,40 @@ func _sync_map_editor_catalog() -> void:
 func _on_navigation_debug_toggled(is_enabled: bool) -> void:
 	if map_view != null:
 		map_view.set_navigation_debug_visible(is_enabled)
-	if debug_status_label != null:
-		debug_status_label.text = "Debug an: Wasserwege und Routen zur ausgewaehlten Stadt sichtbar. Pro Stadt gibt es nur den beweglichen Wasser-Stadtmarker." if is_enabled else "Debug aus."
+	_refresh_debug_status_text()
+
+func _on_navigable_highlight_toggled(is_enabled: bool) -> void:
+	if map_view != null:
+		map_view.set_navigable_highlight_visible(is_enabled)
+	_refresh_debug_status_text()
 
 func _on_waterway_edit_toggled(is_enabled: bool) -> void:
 	if map_view != null:
 		map_view.set_navigation_waterway_edit_enabled(is_enabled)
 		if is_enabled:
-			map_view.set_navigation_debug_visible(true)
-			if navigation_debug_toggle != null:
-				navigation_debug_toggle.set_pressed_no_signal(true)
+			map_view.set_navigable_highlight_visible(true)
+			if navigable_highlight_toggle != null:
+				navigable_highlight_toggle.set_pressed_no_signal(true)
 	if waterway_status_label != null:
 		var summary: Dictionary = map_view.manual_navigation_summary() if map_view != null else {}
 		waterway_status_label.text = _waterway_status_text(summary) if not is_enabled else "%s Linke Maustaste zeichnet direkt auf der Karte." % _waterway_status_text(summary)
 	if debug_status_label != null and is_enabled:
-		debug_status_label.text = "Debug an: Wasserwege koennen jetzt direkt auf der Karte bearbeitet werden."
+		debug_status_label.text = "Befahrbares hervorgehoben: Wasserwege koennen jetzt direkt auf der Karte bearbeitet werden."
+
+func _refresh_debug_status_text() -> void:
+	if debug_status_label == null:
+		return
+
+	var is_highlight_enabled := navigable_highlight_toggle != null and navigable_highlight_toggle.button_pressed
+	var is_debug_enabled := navigation_debug_toggle != null and navigation_debug_toggle.button_pressed
+	if is_highlight_enabled and is_debug_enabled:
+		debug_status_label.text = "Befahrbares und Debug-Routen sichtbar."
+	elif is_highlight_enabled:
+		debug_status_label.text = "Befahrbares hervorgehoben: See, Hafen-/Flusszugaenge und manuelle Korrekturen sichtbar."
+	elif is_debug_enabled:
+		debug_status_label.text = "Debug an: Routen zur ausgewaehlten Stadt sichtbar."
+	else:
+		debug_status_label.text = "Highlight aus."
 
 func _on_waterway_mode_selected(index: int) -> void:
 	if map_view == null:
@@ -761,7 +793,8 @@ func _on_save_waterways_pressed() -> void:
 	if map_view == null:
 		return
 	if map_view.save_manual_navigation_waterways():
-		waterway_status_label.text = "%s Gespeichert: %s" % [
+		_save_default_main_map(false)
+		waterway_status_label.text = "%s Hauptspiel-Wasserwege aktualisiert: %s" % [
 			_waterway_status_text(map_view.manual_navigation_summary()),
 			ProjectSettings.globalize_path(NAVIGATION_WATERWAYS_OVERRIDE_PATH)
 		]
@@ -772,13 +805,14 @@ func _on_reset_waterways_pressed() -> void:
 	if map_view == null:
 		return
 	map_view.reset_manual_navigation_waterways()
-	waterway_status_label.text = "Manuelle Wasserwege zurueckgesetzt."
+	_save_default_main_map(false)
+	waterway_status_label.text = "Manuelle Wasserwege zurueckgesetzt. Hauptspiel nutzt wieder die Basis-Navigation."
 
 func _waterway_status_text(summary: Dictionary) -> String:
 	var added := int(summary.get("added_cells", 0))
 	var removed := int(summary.get("removed_cells", 0))
 	var save_hint := " gespeichert" if FileAccess.file_exists(NAVIGATION_WATERWAYS_OVERRIDE_PATH) else ""
-	return "Manuelle Wasserwege%s: +%d / -%d Rasterzellen. Pinselgroesse rechts." % [save_hint, added, removed]
+	return "Hauptspiel-Wasserwege%s: +%d / -%d Rasterzellen. Pinselgroesse rechts." % [save_hint, added, removed]
 
 func _on_load_map_background_pressed() -> void:
 	if map_file_dialog != null:
@@ -805,6 +839,7 @@ func _on_map_background_file_selected(path: String) -> void:
 
 	if map_background_status_label != null:
 		map_background_status_label.text = "Aktuelle Karte: %s" % ProjectSettings.globalize_path(MAP_BACKGROUND_OVERRIDE_PATH)
+	_save_default_main_map(false)
 
 func _on_reset_map_background_pressed() -> void:
 	if map_view != null:
@@ -816,6 +851,7 @@ func _on_reset_map_background_pressed() -> void:
 
 	if map_background_status_label != null:
 		map_background_status_label.text = "Aktuelle Karte: Standardkarte"
+	_save_default_main_map(false)
 
 func _editor_city_kind_label(kind: String) -> String:
 	match kind:
@@ -994,7 +1030,7 @@ func _build_custom_map_export_data() -> Dictionary:
 			continue
 
 		var values := _city_base_values_for(city_id)
-		exported_cities.append({
+		var exported_city := {
 			"id": city_id,
 			"name": city.get("name", ""),
 			"region": city.get("region", ""),
@@ -1004,7 +1040,10 @@ func _build_custom_map_export_data() -> Dictionary:
 			"population_groups": values.get("population_groups", {}),
 			"production": values.get("production", {}),
 			"consumption": values.get("consumption", {})
-		})
+		}
+		if city.has("departure_position"):
+			exported_city["departure_position"] = city.get("departure_position", {})
+		exported_cities.append(exported_city)
 
 	return {
 		"version": EDITOR_VERSION,
@@ -1086,6 +1125,10 @@ func _on_map_editor_city_clicked(city_id: String) -> void:
 	_refresh_map_editor()
 
 func _on_position_edit_toggled(is_enabled: bool) -> void:
+	if is_enabled and departure_edit_toggle != null and departure_edit_toggle.button_pressed:
+		departure_edit_toggle.set_pressed_no_signal(false)
+		if map_view != null:
+			map_view.set_editor_departure_edit_enabled(false)
 	if map_view != null:
 		map_view.set_editor_position_edit_enabled(is_enabled)
 	if not is_enabled and city_position_autosave_timer != null and not city_position_autosave_timer.is_stopped():
@@ -1093,6 +1136,19 @@ func _on_position_edit_toggled(is_enabled: bool) -> void:
 		_save_city_positions(false)
 	if position_status_label != null:
 		position_status_label.text = "Positionsmodus aktiv." if is_enabled else "Positionsmodus aus."
+
+func _on_departure_edit_toggled(is_enabled: bool) -> void:
+	if is_enabled and position_edit_toggle != null and position_edit_toggle.button_pressed:
+		position_edit_toggle.set_pressed_no_signal(false)
+		if map_view != null:
+			map_view.set_editor_position_edit_enabled(false)
+	if map_view != null:
+		map_view.set_editor_departure_edit_enabled(is_enabled)
+	if not is_enabled and city_position_autosave_timer != null and not city_position_autosave_timer.is_stopped():
+		city_position_autosave_timer.stop()
+		_save_default_main_map(false)
+	if position_status_label != null:
+		position_status_label.text = "Startrichtung aktiv: Stadt waehlen und den ersten Wasserpunkt aus dem Hafen zeichnen." if is_enabled else "Startrichtung aus."
 
 func _on_map_editor_city_position_changed(city_id: String, position: Dictionary) -> void:
 	_set_city_position(city_id, position)
@@ -1109,6 +1165,23 @@ func _on_map_editor_city_position_changed(city_id: String, position: Dictionary)
 			int(position.get("y", 0))
 		]
 	_schedule_city_position_autosave()
+	_refresh_map_editor()
+
+func _on_map_editor_city_departure_changed(city_id: String, position: Dictionary) -> void:
+	_set_city_departure_position(city_id, position)
+	selected_editor_city_id = city_id
+	_add_editor_city_point(city_id)
+	if city_checkboxes.has(city_id):
+		var checkbox: CheckBox = city_checkboxes[city_id]
+		checkbox.set_pressed_no_signal(true)
+
+	if position_status_label != null:
+		position_status_label.text = "%s: Startrichtung %d / %d | Hauptspiel wird automatisch aktualisiert." % [
+			String(_editor_city_by_id(city_id).get("name", city_id)),
+			int(position.get("x", 0)),
+			int(position.get("y", 0))
+		]
+	_save_default_main_map(false)
 	_refresh_map_editor()
 
 func _schedule_city_position_autosave() -> void:
@@ -1138,6 +1211,22 @@ func _set_city_position(city_id: String, position: Dictionary) -> void:
 
 	if map_view != null:
 		map_view.set_editor_city_position(city_id, normalized_position)
+
+func _set_city_departure_position(city_id: String, position: Dictionary) -> void:
+	var normalized_position := {
+		"x": int(position.get("x", 0)),
+		"y": int(position.get("y", 0))
+	}
+	for key in ["hanse_cities", "cities"]:
+		var city_array: Array = catalog.get(key, [])
+		for index in range(city_array.size()):
+			var city: Dictionary = city_array[index]
+			if String(city.get("id", "")) != city_id:
+				continue
+			city["departure_position"] = normalized_position
+			city_array[index] = city
+			break
+		catalog[key] = city_array
 
 func _on_save_city_positions_pressed() -> void:
 	_save_city_positions(true)

@@ -407,13 +407,12 @@ func _set_player_city_destination(city_id: String) -> void:
 	if map_view == null or city_id.is_empty():
 		return
 
-	var target_position: Dictionary = map_view.get_city_harbor_position(city_id)
 	var current_city := String(player_ship.get("current_city", ""))
 	var path_points: Array = []
 	if not bool(player_ship.get("is_travelling", false)) and not current_city.is_empty():
 		path_points = map_view.get_city_route_source_points(current_city, city_id)
 	else:
-		path_points = map_view.get_navigation_path_between_source_points(player_ship.get("position", {}), target_position)
+		path_points = map_view.get_navigation_path_to_city_source_points(player_ship.get("position", {}), city_id)
 
 	_start_player_trip(path_points, city_id)
 
@@ -1264,6 +1263,9 @@ func _arrive_trader(trader: Dictionary) -> void:
 	_plan_trader_trip(trader)
 
 func _ship_segment_travel_days(ship: Dictionary) -> float:
+	if ship.has("travel_days"):
+		return float(ship.get("travel_days", 0.0))
+
 	var from_city_id: String = _ship_from_city(ship)
 	var to_city_id: String = _ship_to_city(ship)
 	var distance_px: float = map_view.get_route_distance_px(from_city_id, to_city_id) if map_view != null else 0.0
@@ -1356,13 +1358,21 @@ func _plan_trader_trip(trader: Dictionary) -> void:
 	trader["from"] = from_city_id
 	trader["to"] = target_city_id
 	trader["elapsed_days"] = 0.0
+	trader["travel_days"] = _route_travel_days_for_ship(trader, from_city_id, target_city_id)
 	_buy_trader_cargo(trader, from_city_id, target_city_id)
 	_log_trader_event("trader_depart", trader, {
 		"from": from_city_id,
 		"to": target_city_id,
-		"travel_days": _ship_segment_travel_days(trader),
+		"travel_days": float(trader.get("travel_days", 0.0)),
 		"cargo": trader.get("cargo", {}),
 	})
+
+func _route_travel_days_for_ship(ship: Dictionary, from_city_id: String, to_city_id: String) -> float:
+	var distance_px: float = map_view.get_route_distance_px(from_city_id, to_city_id) if map_view != null else 0.0
+	var speed: float = _ship_speed(ship)
+	if speed <= 0.0:
+		return 0.0
+	return max(0.1, distance_px / (BASE_SHIP_PIXELS_PER_DAY * speed))
 
 func _choose_target_city(trader: Dictionary, from_city_id: String) -> String:
 	var candidates: Array[Dictionary] = []
@@ -1393,7 +1403,7 @@ func _target_city_score(trader: Dictionary, from_city_id: String, target_city_id
 		var shortage: float = max(0.0, 1.0 - simulation.get_stock(target_city_id, good_id) / max(1.0, simulation.get_target_stock(target_city_id, good_id)))
 		score += max(0.0, target_price - source_price) + shortage * target_price * float(profile.get("supply_focus", 0.5))
 
-	var distance_px: float = map_view.get_route_distance_px(from_city_id, target_city_id) if map_view != null else 200.0
+	var distance_px: float = map_view.get_estimated_route_distance_px(from_city_id, target_city_id) if map_view != null else 200.0
 	var distance_penalty: float = max(1.0, distance_px / lerpf(180.0, 420.0, float(profile.get("risk", 0.5))))
 	return max(0.1, score / distance_penalty)
 
@@ -1508,18 +1518,22 @@ func _log_trader_event(event_type: String, trader: Dictionary, payload: Dictiona
 	if metrics_logger == null:
 		return
 
+	metrics_logger.log_event(event_type, simulation.day, simulation_time_days, _trader_event_payload(trader, payload))
+
+func _trader_event_payload(trader: Dictionary, payload: Dictionary) -> Dictionary:
 	var event_payload: Dictionary = payload.duplicate(true)
 	event_payload["trader_id"] = String(trader.get("id", ""))
 	event_payload["trader_name"] = String(trader.get("name", ""))
 	event_payload["ship_type"] = String(trader.get("ship_type", ""))
 	event_payload["profile"] = trader.get("profile", {})
-	metrics_logger.log_event(event_type, simulation.day, simulation_time_days, event_payload)
+	return event_payload
 
 func _log_daily_metrics() -> void:
 	if metrics_logger == null:
 		return
 
 	metrics_logger.log_daily_city_metrics(simulation.day, simulation_time_days, simulation, catalog.get("goods", []))
+	var trader_events: Array = []
 	for trader_entry in ai_traders:
 		var trader: Dictionary = trader_entry
 		var cargo: Dictionary = trader.get("cargo", {})
@@ -1528,7 +1542,7 @@ func _log_daily_metrics() -> void:
 			var entry: Dictionary = cargo[good_id]
 			cargo_amount += int(entry.get("amount", 0))
 
-		_log_trader_event("trader_daily", trader, {
+		var event_payload: Dictionary = _trader_event_payload(trader, {
 			"from": _ship_from_city(trader),
 			"to": _ship_to_city(trader),
 			"progress": _ship_progress(trader),
@@ -1537,6 +1551,8 @@ func _log_daily_metrics() -> void:
 			"cargo_amount": cargo_amount,
 			"cargo": cargo,
 		})
+		trader_events.append(metrics_logger._event_data("trader_daily", simulation.day, simulation_time_days, event_payload))
+	metrics_logger.log_events(trader_events)
 
 func _city_name(city_id: String) -> String:
 	for city_entry in catalog.get("cities", []):

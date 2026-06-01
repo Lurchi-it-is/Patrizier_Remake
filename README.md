@@ -4,7 +4,7 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.73-crisp-map-city-labels`
+Version: `0.2.83-smaller-ship-icons`
 
 Das Projektfundament enthaelt:
 

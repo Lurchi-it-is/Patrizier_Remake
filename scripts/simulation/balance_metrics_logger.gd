@@ -11,29 +11,41 @@ func _init(path: String = DEFAULT_LOG_PATH) -> void:
 	_reset_log()
 
 func log_event(event_type: String, day: int, simulation_time_days: float, payload: Dictionary) -> void:
-	var event: Dictionary = {
-		"session_id": session_id,
-		"event_type": event_type,
-		"day": day,
-		"simulation_time_days": simulation_time_days,
-		"payload": payload,
-	}
+	log_events([_event_data(event_type, day, simulation_time_days, payload)])
+
+func log_events(events: Array) -> void:
+	if events.is_empty():
+		return
+
 	var file: FileAccess = FileAccess.open(log_path, FileAccess.READ_WRITE)
 	if file == null:
 		push_warning("Could not open balance metrics log: %s" % log_path)
 		return
 
 	file.seek_end()
-	file.store_line(JSON.stringify(event))
+	for event_entry in events:
+		var event: Dictionary = event_entry
+		file.store_line(JSON.stringify(event))
 	file.close()
 
+func _event_data(event_type: String, day: int, simulation_time_days: float, payload: Dictionary) -> Dictionary:
+	return {
+		"session_id": session_id,
+		"event_type": event_type,
+		"day": day,
+		"simulation_time_days": simulation_time_days,
+		"payload": payload,
+	}
+
 func log_daily_city_metrics(day: int, simulation_time_days: float, simulation, goods: Array) -> void:
+	var events: Array = []
 	for city_id in simulation.city_state.keys():
 		var city: Dictionary = simulation.city_state[city_id]
+		var daily_consumption: Dictionary = simulation.get_daily_consumption(String(city_id))
 		for good_entry in goods:
 			var good: Dictionary = good_entry
 			var good_id: String = String(good.get("id", ""))
-			log_event("city_good_daily", day, simulation_time_days, {
+			events.append(_event_data("city_good_daily", day, simulation_time_days, {
 				"city_id": String(city_id),
 				"city_name": String(city.get("name", city_id)),
 				"good_id": good_id,
@@ -41,8 +53,9 @@ func log_daily_city_metrics(day: int, simulation_time_days: float, simulation, g
 				"target_stock": simulation.get_target_stock(String(city_id), good_id),
 				"price": simulation.get_price(String(city_id), good_id),
 				"production": float(city.get("production", {}).get(good_id, 0.0)),
-				"consumption": float(simulation.get_daily_consumption(String(city_id)).get(good_id, 0.0)),
-			})
+				"consumption": float(daily_consumption.get(good_id, 0.0)),
+			}))
+	log_events(events)
 
 func _reset_log() -> void:
 	var file: FileAccess = FileAccess.open(log_path, FileAccess.WRITE)

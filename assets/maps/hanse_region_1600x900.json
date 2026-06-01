@@ -14,7 +14,7 @@
   "data_sources": [
     "Natural Earth 1:50m Admin 0 countries",
     "Natural Earth 1:10m rivers and lake centerlines",
-    "Image-derived navigation water mask from the current illustrated map",
+    "Pixel-derived land/water contour mask from the current map image",
     "Researched historical waterway references for selected Hanse cities"
   ],
   "visual_style": {

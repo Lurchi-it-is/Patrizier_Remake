@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import heapq
 import math
+import argparse
 import urllib.request
 from pathlib import Path
 
@@ -26,12 +27,13 @@ RIVERS_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/mas
 
 WIDTH = 1600
 HEIGHT = 900
-NAV_GRID_CELL_SIZE = 4
+NAV_GRID_CELL_SIZE = 2
 NAV_GRID_WIDTH = WIDTH // NAV_GRID_CELL_SIZE
 NAV_GRID_HEIGHT = HEIGHT // NAV_GRID_CELL_SIZE
 NAV_RIVER_RADIUS_CELLS = 4
 NAV_HARBOR_RADIUS_CELLS = 2
 NAV_SEA_GATE_RADIUS_CELLS = 3
+NAV_WATER_COVERAGE_THRESHOLD = 0.42
 LON_MIN = -6.0
 LON_MAX = 34.6
 LAT_MIN = 49.3
@@ -55,6 +57,7 @@ RIVER_LIGHT = "#79aebb"
 CHART_LINE = "#dbc68d"
 TITLE_TEXT = "#f4e6bf"
 BRASS = "#c69a4f"
+_SOURCE_LAND_MASK_CACHE: np.ndarray | None = None
 
 HANSE_CITIES = [
     {"id": "london", "name": "London", "lon": -0.1276, "lat": 51.5072, "marker_lon": -0.102203, "marker_lat": 51.50906, "kind": "kontor"},
@@ -740,13 +743,30 @@ def add_polygon(
     )
 
 
-def build_visual_land_mask(country_data: dict, rows: int, cols: int) -> np.ndarray:
+def polygon_contains_points(polygon: list, points: np.ndarray) -> np.ndarray:
+    exterior = projected_ring(polygon[0])
+    if len(exterior) < 3:
+        return np.zeros(points.shape[0], dtype=bool)
+
+    mask = MplPath(exterior).contains_points(points)
+    for interior_ring in polygon[1:]:
+        interior = projected_ring(interior_ring)
+        if len(interior) >= 3:
+            mask &= ~MplPath(interior).contains_points(points)
+    return mask
+
+
+def build_source_land_mask(country_data: dict) -> np.ndarray:
+    global _SOURCE_LAND_MASK_CACHE
+    if _SOURCE_LAND_MASK_CACHE is not None:
+        return _SOURCE_LAND_MASK_CACHE.copy()
+
     x_min, x_max, y_min, y_max = world_extent()
-    xs = np.linspace(x_min, x_max, cols)
-    ys = np.linspace(y_min, y_max, rows)
+    xs = x_min + (np.arange(WIDTH, dtype=float) + 0.5) / float(WIDTH) * (x_max - x_min)
+    ys = y_max - (np.arange(HEIGHT, dtype=float) + 0.5) / float(HEIGHT) * (y_max - y_min)
     grid_x, grid_y = np.meshgrid(xs, ys)
     points = np.column_stack([grid_x.ravel(), grid_y.ravel()])
-    land = np.zeros(rows * cols, dtype=bool)
+    land = np.zeros(HEIGHT * WIDTH, dtype=bool)
 
     for feature in country_data["features"]:
         geometry = feature["geometry"]
@@ -755,11 +775,29 @@ def build_visual_land_mask(country_data: dict, rows: int, cols: int) -> np.ndarr
             if not intersects_map(polygon):
                 continue
 
-            exterior = projected_ring(polygon[0])
-            if len(exterior) < 3:
-                continue
+            land |= polygon_contains_points(polygon, points)
 
-            land |= MplPath(exterior).contains_points(points)
+    _SOURCE_LAND_MASK_CACHE = land.reshape((HEIGHT, WIDTH))
+    return _SOURCE_LAND_MASK_CACHE.copy()
+
+
+def build_visual_land_mask(country_data: dict, rows: int, cols: int) -> np.ndarray:
+    if rows == HEIGHT and cols == WIDTH:
+        return np.flipud(build_source_land_mask(country_data))
+
+    x_min, x_max, y_min, y_max = world_extent()
+    xs = x_min + (np.arange(cols, dtype=float) + 0.5) / float(cols) * (x_max - x_min)
+    ys = y_min + (np.arange(rows, dtype=float) + 0.5) / float(rows) * (y_max - y_min)
+    grid_x, grid_y = np.meshgrid(xs, ys)
+    points = np.column_stack([grid_x.ravel(), grid_y.ravel()])
+    land = np.zeros(rows * cols, dtype=bool)
+
+    for feature in country_data["features"]:
+        geometry = feature["geometry"]
+        polygons = geometry["coordinates"] if geometry["type"] == "MultiPolygon" else [geometry["coordinates"]]
+        for polygon in polygons:
+            if intersects_map(polygon):
+                land |= polygon_contains_points(polygon, points)
 
     return land.reshape((rows, cols))
 
@@ -767,12 +805,12 @@ def build_visual_land_mask(country_data: dict, rows: int, cols: int) -> np.ndarr
 def draw_geography(ax) -> None:
     country_data = load_country_data()
     x_min, x_max, y_min, y_max = world_extent()
-    rows, cols = 540, 960
+    rows, cols = HEIGHT, WIDTH
     terrain = build_land_texture(rows, cols)
     land_mask = build_visual_land_mask(country_data, rows, cols)
     land_rgba = np.dstack([terrain, np.where(land_mask, 1.0, 0.0)])
     extent = (x_min, x_max, y_min, y_max)
-    ax.imshow(land_rgba, extent=extent, origin="lower", interpolation="bicubic", zorder=3)
+    ax.imshow(land_rgba, extent=extent, origin="lower", interpolation="none", zorder=3)
 
     river_data = load_river_data()
     for feature in river_data["features"]:
@@ -918,7 +956,7 @@ def write_metadata() -> None:
         "data_sources": [
             "Natural Earth 1:50m Admin 0 countries",
             "Natural Earth 1:10m rivers and lake centerlines",
-            "Image-derived navigation water mask from the current illustrated map",
+            "Pixel-derived land/water contour mask from the current map image",
             "Researched historical waterway references for selected Hanse cities",
         ],
         "visual_style": {
@@ -952,24 +990,15 @@ def land_polygons(country_data: dict) -> list:
     return polygons
 
 
-def build_land_mask(country_data: dict) -> np.ndarray:
-    grid_points: list[tuple[float, float]] = []
-    for gy in range(NAV_GRID_HEIGHT):
-        for gx in range(NAV_GRID_WIDTH):
-            pixel_x = int(gx * NAV_GRID_CELL_SIZE + NAV_GRID_CELL_SIZE * 0.5)
-            pixel_y = int(gy * NAV_GRID_CELL_SIZE + NAV_GRID_CELL_SIZE * 0.5)
-            grid_points.append(project(*lon_lat_from_pixel(pixel_x, pixel_y)))
-
-    points = np.array(grid_points)
-    land = np.zeros(NAV_GRID_WIDTH * NAV_GRID_HEIGHT, dtype=bool)
-    for polygon in land_polygons(country_data):
-        exterior = projected_ring(polygon[0])
-        if len(exterior) < 3:
-            continue
-
-        land |= MplPath(exterior).contains_points(points)
-
-    return land.reshape((NAV_GRID_HEIGHT, NAV_GRID_WIDTH))
+def build_navigation_sea_mask(country_data: dict) -> np.ndarray:
+    source_water = np.logical_not(build_source_land_mask(country_data))
+    water_coverage = source_water.reshape(
+        NAV_GRID_HEIGHT,
+        NAV_GRID_CELL_SIZE,
+        NAV_GRID_WIDTH,
+        NAV_GRID_CELL_SIZE,
+    ).mean(axis=(1, 3))
+    return flood_connected_from_edges(water_coverage >= NAV_WATER_COVERAGE_THRESHOLD)
 
 
 def line_pixel_points(line: list) -> list[tuple[float, float]]:
@@ -1044,7 +1073,7 @@ def add_river_waterways(water: np.ndarray, river_data: dict) -> None:
 def build_image_sea_water_mask() -> np.ndarray:
     if not OUTPUT_IMAGE.exists():
         country_data = load_country_data()
-        return flood_connected_from_edges(np.logical_not(build_land_mask(country_data)))
+        return build_navigation_sea_mask(country_data)
 
     image = plt.imread(OUTPUT_IMAGE)
     if image.dtype.kind in ("u", "i"):
@@ -1052,30 +1081,24 @@ def build_image_sea_water_mask() -> np.ndarray:
     if image.shape[2] > 3:
         image = image[:, :, :3]
 
-    samples = np.zeros((NAV_GRID_HEIGHT, NAV_GRID_WIDTH, 3), dtype=float)
-    for gy in range(NAV_GRID_HEIGHT):
-        py = min(HEIGHT - 1, int(gy * NAV_GRID_CELL_SIZE + NAV_GRID_CELL_SIZE * 0.5))
-        y0 = max(0, py - 1)
-        y1 = min(HEIGHT, py + 2)
-        for gx in range(NAV_GRID_WIDTH):
-            px = min(WIDTH - 1, int(gx * NAV_GRID_CELL_SIZE + NAV_GRID_CELL_SIZE * 0.5))
-            x0 = max(0, px - 1)
-            x1 = min(WIDTH, px + 2)
-            samples[gy, gx] = image[y0:y1, x0:x1, :3].mean(axis=(0, 1))
-
-    red = samples[:, :, 0]
-    green = samples[:, :, 1]
-    blue = samples[:, :, 2]
-    blue_green_water = (
-        (blue > 0.20)
-        & (green > 0.18)
-        & (red < 0.48)
-        & (blue > red * 1.18 + 0.02)
-        & (green > red * 1.05)
+    red = image[:, :, 0]
+    green = image[:, :, 1]
+    blue = image[:, :, 2]
+    source_water = (
+        (blue > red * 1.12)
+        & (blue > green * 0.82)
+        & (red < 0.42)
+        & (green < 0.62)
+        & ((blue - red) > 0.035)
     )
-    dark_blue_water = (blue > 0.16) & (green > 0.15) & (red < 0.18) & (blue > red * 1.35)
-    water = np.logical_or(blue_green_water, dark_blue_water)
-    return flood_connected_from_edges(water)
+    source_water &= ~((red > 0.55) & (green > 0.55) & (blue > 0.55))
+    water_coverage = source_water.reshape(
+        NAV_GRID_HEIGHT,
+        NAV_GRID_CELL_SIZE,
+        NAV_GRID_WIDTH,
+        NAV_GRID_CELL_SIZE,
+    ).mean(axis=(1, 3))
+    return flood_connected_from_edges(water_coverage >= NAV_WATER_COVERAGE_THRESHOLD)
 
 
 def add_harbor_access_cells(water: np.ndarray) -> None:
@@ -1372,7 +1395,7 @@ def write_navigation_data() -> None:
     print(f"Wrote {OUTPUT_NAVIGATION_DEBUG}")
 
 
-def main() -> None:
+def render_map_image() -> None:
     ASSET_DIR.mkdir(parents=True, exist_ok=True)
     x_min, y_min = project(LON_MIN, LAT_MIN)
     x_max, y_max = project(LON_MAX, LAT_MAX)
@@ -1389,9 +1412,26 @@ def main() -> None:
 
     fig.savefig(OUTPUT_IMAGE, dpi=100, facecolor=SEA_DEEP)
     plt.close(fig)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Update Hanse map metadata and navigation data.")
+    parser.add_argument(
+        "--render-map",
+        action="store_true",
+        help="Regenerate the base map image. Without this flag, the existing map image is kept and used as the navigation source.",
+    )
+    args = parser.parse_args()
+
+    ASSET_DIR.mkdir(parents=True, exist_ok=True)
+    if args.render_map or not OUTPUT_IMAGE.exists():
+        render_map_image()
+        print(f"Wrote {OUTPUT_IMAGE}")
+    else:
+        print(f"Using existing {OUTPUT_IMAGE} as navigation source")
+
     write_metadata()
     write_navigation_data()
-    print(f"Wrote {OUTPUT_IMAGE}")
     print(f"Wrote {OUTPUT_META}")
 
 

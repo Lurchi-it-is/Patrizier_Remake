@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.2.83-smaller-ship-icons - 2026-06-01
+
+- Fahrende Schiffssymbole wurden einheitlich um 20 Prozent verkleinert.
+
+## 0.2.82-harbor-edge-arrival - 2026-06-01
+
+- Schiffe gelten bei Stadtzielen als angekommen, sobald ihr Mittelpunkt den Rand des Hafenmarkers erreicht.
+- Stadtziel-Routen werden am Schnittpunkt mit dem Hafenmarker-Kreis gekuerzt; Spieler- und KI-Schiffe nutzen dadurch denselben Ankunftspunkt.
+
+## 0.2.81-ship-collision-clearance - 2026-06-01
+
+- Rechteckiger Schiffsschatten und Badge-Schatten entfernt, damit keine Box um fahrende Schiffe sichtbar ist.
+- Schiffsrouten pruefen eine Kollisionsbreite gegen den Wasserrand; ausserhalb von Hafenbereichen werden nur Wasserzellen mit ausreichendem Randabstand genutzt.
+- Hafenbereiche bleiben als Kollisionsausnahme passierbar, die Route muss danach aber auf die seeseitige freie Wasserflaeche auslaufen.
+- Im Map Editor gezeichnete Startrichtungen werden auf den naechsten kollisionssicheren Wasserpunkt gelegt.
+
+## 0.2.80-remove-ship-wake - 2026-06-01
+
+- Fahrende Schiffe zeichnen keine Heckwelle mehr; die flache Kontaktspur unter dem Schiff bleibt erhalten.
+
+## 0.2.79-editor-departure-ship-markers - 2026-06-01
+
+- Map Editor: pro Stadt kann eine Startrichtung als erster befahrbarer Wasserpunkt aus dem Hafen eingezeichnet und in die Hauptspielkarte gespeichert werden.
+- Schiffsrouten nutzen gespeicherte Startrichtungen vor der normalen Zielroute, damit Modelle beim Ablegen weniger ueber Land ragen.
+- Spieler- und KI-Schiffe werden gleich gross gezeichnet; die Spielerkennung erfolgt ueber ein kompaktes Schild statt ueber ein groesseres Schiff.
+- Schiffssprites erhalten eine flache Wasser-Kontaktspur und dezente Heckwellen, damit sie weniger schwebend wirken.
+
+## 0.2.78-main-game-editor-apply - 2026-06-01
+
+- Map Editor speichert Wasserweg-Aenderungen jetzt explizit als Hauptspiel-Wasserwege und aktualisiert dabei die Hauptspielkarten-Daten.
+- Zuruecksetzen von Wasserwegen entfernt den Hauptspiel-Wasserwege-Override aus der aktiven Hauptkarte.
+- Kartenhintergrund laden/zuruecksetzen aktualisiert ebenfalls die aktive Hauptspielkarte.
+
+## 0.2.77-day-change-performance - 2026-06-01
+
+- Tageswechsel entlastet: Balance-Metriken werden gebuendelt geschrieben statt mit hunderten Datei-Oeffnungen pro Tag.
+- KI-Schiffe cachen ihre Reisezeit pro geplanter Route, damit UI-Refresh und Tagesmetriken nicht wiederholt Routenlaengen berechnen.
+- KI-Zielbewertung nutzt vorberechnete Routendistanzen, damit beim Eintreffen eines Schiffes nicht fuer jede Zielstadt ein Wasserpfad gesucht wird.
+
+## 0.2.76-harbor-departure-leg - 2026-06-01
+
+- Schiffe erhalten beim Start aus einem Stadthafen einen kurzen befahrbaren Ausfahrabschnitt, bevor sie der eigentlichen Route folgen.
+- Spieler- und KI-Schiffe nutzen denselben korrigierten Routenpfad, damit Schiffsmodelle beim Ablegen weniger ueber Land ragen.
+
+## 0.2.75-navigable-highlight - 2026-06-01
+
+- Map Editor: eigener Schalter "Befahrbares hervorheben" zeigt die komplette befahrbare Navigationsmaske ohne Routen-Debug.
+- Debugmodus und Befahrbar-Highlight sind getrennt schaltbar; Wasserweg-Bearbeitung aktiviert das Highlight automatisch.
+
+## 0.2.74-pixel-water-contours - 2026-06-01
+
+- Karten-Generator nutzt die vorhandene 1600x900-Kartenbilddatei als Quelle fuer die Land-/Wasserkonturen und ueberschreibt sie standardmaessig nicht mehr.
+- Navigationsmaske wird aus der aktuellen Karte abgeleitet, damit Wasserwege den sichtbaren Kuesten genauer folgen.
+- Navigationsraster von 4 auf 2 Pixel verfeinert.
+
 ## 0.2.73-crisp-map-city-labels - 2026-06-01
 
 - Stadtnamen werden als unskalierte Screen-Overlay-Schrift gerendert und bleiben dadurch beim Kartenzoom scharf.

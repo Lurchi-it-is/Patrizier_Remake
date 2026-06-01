@@ -2,6 +2,7 @@ extends Control
 
 signal editor_city_clicked(city_id: String)
 signal editor_city_position_changed(city_id: String, position: Dictionary)
+signal editor_city_departure_changed(city_id: String, position: Dictionary)
 signal map_right_clicked(source_position: Dictionary, city_id: String, is_water: bool)
 signal navigation_waterway_changed(summary: Dictionary)
 
@@ -23,8 +24,10 @@ const SHIP_DIRECTION_TEXTURES := [
 const MIN_ZOOM := 1.0
 const MAX_ZOOM := 5.0
 const ZOOM_STEP := 1.18
-const PLAYER_SHIP_ICON_SIZE := Vector2(54.0, 54.0)
-const AI_SHIP_ICON_SIZE := Vector2(38.0, 38.0)
+const HARBOR_DEPARTURE_DISTANCE_PX := 18.0
+const SHIP_COLLISION_HALF_WIDTH_PX := 6.0
+const SHIP_HARBOR_COLLISION_EXCEPTION_PX := 34.0
+const SHIP_ICON_SIZE := Vector2(32.0, 32.0)
 const GAME_CITY_MARKER_RADIUS := 8.0
 const EDITOR_CITY_MARKER_RADIUS := 4.0
 const EDITOR_SELECTED_CITY_MARKER_RADIUS := 5.5
@@ -40,18 +43,23 @@ var navigation_grid_cell_size: int = 4
 var manual_navigation_added_cells: Dictionary = {}
 var manual_navigation_removed_cells: Dictionary = {}
 var water_pathfinder: AStarGrid2D
+var ship_clearance_pathfinder: AStarGrid2D
+var nearest_ship_clearance_cell_cache: Dictionary = {}
 var dynamic_city_route_cache: Dictionary = {}
 var route_ships: Array = []
 var editor_cities: Array = []
 var placed_editor_city_ids: Array[String] = []
 var selected_editor_city_id: String = ""
 var is_editor_position_edit_enabled: bool = false
+var is_editor_departure_edit_enabled: bool = false
 var dragged_editor_city_id: String = ""
+var is_drawing_editor_departure: bool = false
 var pirate_zones: Array = []
 var simulation_day: int = 1
 var show_game_layer: bool = true
 var show_editor_layer: bool = false
 var show_route_lines: bool = true
+var show_navigable_highlight: bool = false
 var show_navigation_debug: bool = false
 var is_navigation_waterway_edit_enabled: bool = false
 var navigation_waterway_edit_mode: String = "add"
@@ -113,6 +121,19 @@ func _gui_input(event: InputEvent) -> void:
 				dragged_editor_city_id = ""
 				accept_event()
 				return
+			if show_editor_layer and is_editor_departure_edit_enabled:
+				if mouse_event.pressed:
+					var clicked_departure_city_id := _editor_city_id_at_screen_position(mouse_event.position)
+					if not clicked_departure_city_id.is_empty():
+						selected_editor_city_id = clicked_departure_city_id
+						editor_city_clicked.emit(clicked_departure_city_id)
+					is_drawing_editor_departure = not selected_editor_city_id.is_empty()
+					if is_drawing_editor_departure:
+						_set_editor_city_departure_to_screen_position(selected_editor_city_id, mouse_event.position)
+				else:
+					is_drawing_editor_departure = false
+				accept_event()
+				return
 			if mouse_event.pressed:
 				var clicked_city_id := _editor_city_id_at_screen_position(mouse_event.position)
 				if not clicked_city_id.is_empty():
@@ -130,6 +151,10 @@ func _gui_input(event: InputEvent) -> void:
 			accept_event()
 		elif not dragged_editor_city_id.is_empty():
 			_move_editor_city_to_screen_position(dragged_editor_city_id, motion_event.position)
+			_update_hovered_city(motion_event.position)
+			accept_event()
+		elif is_drawing_editor_departure and is_editor_departure_edit_enabled:
+			_set_editor_city_departure_to_screen_position(selected_editor_city_id, motion_event.position)
 			_update_hovered_city(motion_event.position)
 			accept_event()
 		elif is_panning and map_zoom > MIN_ZOOM:
@@ -167,6 +192,12 @@ func set_editor_position_edit_enabled(is_enabled: bool) -> void:
 		dragged_editor_city_id = ""
 	queue_redraw()
 
+func set_editor_departure_edit_enabled(is_enabled: bool) -> void:
+	is_editor_departure_edit_enabled = is_enabled
+	if not is_editor_departure_edit_enabled:
+		is_drawing_editor_departure = false
+	queue_redraw()
+
 func set_editor_city_position(city_id: String, position: Dictionary) -> void:
 	_set_editor_city_position(city_id, position, false)
 
@@ -191,11 +222,15 @@ func set_navigation_debug_visible(is_visible: bool) -> void:
 	show_navigation_debug = is_visible
 	queue_redraw()
 
+func set_navigable_highlight_visible(is_visible: bool) -> void:
+	show_navigable_highlight = is_visible
+	queue_redraw()
+
 func set_navigation_waterway_edit_enabled(is_enabled: bool) -> void:
 	is_navigation_waterway_edit_enabled = is_enabled
 	if not is_navigation_waterway_edit_enabled:
 		is_painting_navigation_waterway = false
-	show_navigation_debug = show_navigation_debug or is_enabled
+	show_navigable_highlight = show_navigable_highlight or is_enabled
 	queue_redraw()
 
 func set_navigation_waterway_edit_mode(mode: String) -> void:
@@ -254,8 +289,10 @@ func reset_map_texture() -> void:
 func _draw() -> void:
 	draw_set_transform(map_offset, 0.0, Vector2(map_zoom, map_zoom))
 	_draw_map_background()
+	if show_navigation_debug or show_navigable_highlight:
+		_draw_navigation_water_mask()
 	if show_navigation_debug:
-		_draw_navigation_debug_overlay()
+		_draw_selected_editor_debug_routes()
 	_draw_pirate_zones()
 	if show_game_layer:
 		if show_route_lines:
@@ -272,10 +309,6 @@ func _draw() -> void:
 func _draw_map_background() -> void:
 	draw_texture_rect(map_texture, Rect2(Vector2.ZERO, size), false)
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.03, 0.10), true)
-
-func _draw_navigation_debug_overlay() -> void:
-	_draw_navigation_water_mask()
-	_draw_selected_editor_debug_routes()
 
 func _draw_navigation_water_mask() -> void:
 	if navigation_grid_rows.is_empty() or navigation_grid_width <= 0 or navigation_grid_height <= 0:
@@ -346,10 +379,9 @@ func _draw_routes() -> void:
 		return
 
 	var ship_position := _interpolate_demo_route(route)
-	_draw_ship_icon(ship_position, AI_SHIP_ICON_SIZE, Color(1.0, 1.0, 1.0, 0.96), -0.2)
+	_draw_ship_icon(ship_position, SHIP_ICON_SIZE, Color(1.0, 1.0, 1.0, 0.96), -0.2)
 
 func _draw_route_ships() -> void:
-	var font := get_theme_default_font()
 	_draw_city_ship_markers()
 	for ship_entry in route_ships:
 		var ship: Dictionary = ship_entry
@@ -360,12 +392,8 @@ func _draw_route_ships() -> void:
 		var ship_position: Vector2 = ship_data.get("position", size * 0.5)
 		var ship_heading: float = float(ship_data.get("heading", -0.2))
 		var ship_color: Color = ship.get("color", Color(0.96, 0.96, 0.88))
-		var icon_size := PLAYER_SHIP_ICON_SIZE if bool(ship.get("is_player", false)) else AI_SHIP_ICON_SIZE
-		_draw_ship_icon(ship_position, icon_size, ship_color, ship_heading)
-
-		var ship_name := String(ship.get("name", ""))
-		if not ship_name.is_empty():
-			draw_string(font, ship_position + Vector2(icon_size.x * 0.34, -icon_size.y * 0.34), ship_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 12, ship_color)
+		_draw_ship_icon(ship_position, SHIP_ICON_SIZE, ship_color, ship_heading)
+		_draw_ship_badge(ship_position, bool(ship.get("is_player", false)))
 
 func _draw_city_ship_markers() -> void:
 	var docked_by_city := _docked_ships_by_city()
@@ -422,8 +450,27 @@ func _ship_is_docked(ship: Dictionary) -> bool:
 func _draw_ship_icon(ship_position: Vector2, icon_size: Vector2, modulate: Color, heading: float) -> void:
 	var texture: Texture2D = _ship_direction_texture(heading)
 	var icon_rect := Rect2(ship_position - icon_size * 0.5, icon_size)
-	draw_texture_rect(texture, Rect2(icon_rect.position + Vector2(2.0, 3.0), icon_size), false, Color(0.0, 0.0, 0.0, 0.30))
 	draw_texture_rect(texture, icon_rect, false, modulate)
+
+func _draw_ship_badge(ship_position: Vector2, is_player: bool) -> void:
+	var badge_center := ship_position + _screen_vector(0.0, -22.0)
+	var badge_width := _screen_units(16.0)
+	var badge_height := _screen_units(18.0)
+	var fill := Color(0.04, 0.18, 0.86, 0.96) if is_player else Color(0.88, 0.88, 0.82, 0.84)
+	var outline := Color(0.73, 0.83, 1.0, 0.96) if is_player else Color(0.48, 0.50, 0.48, 0.78)
+	var points := PackedVector2Array([
+		badge_center + Vector2(-badge_width * 0.50, -badge_height * 0.46),
+		badge_center + Vector2(badge_width * 0.50, -badge_height * 0.46),
+		badge_center + Vector2(badge_width * 0.42, badge_height * 0.22),
+		badge_center,
+		badge_center + Vector2(-badge_width * 0.42, badge_height * 0.22)
+	])
+	draw_colored_polygon(points, fill)
+	for index in range(points.size()):
+		draw_line(points[index], points[(index + 1) % points.size()], outline, _screen_units(1.0))
+	if is_player:
+		var font := get_theme_default_font()
+		draw_string(font, badge_center + _screen_vector(-3.8, 2.2), "1", HORIZONTAL_ALIGNMENT_LEFT, -1.0, _screen_font_size(10), Color(1.0, 0.96, 0.78, 0.96))
 
 func _ship_direction_texture(heading: float) -> Texture2D:
 	var slice := TAU / float(SHIP_DIRECTION_TEXTURES.size())
@@ -442,7 +489,6 @@ func _draw_cities() -> void:
 		draw_arc(pos, _screen_units(GAME_CITY_MARKER_RADIUS + 1.8), 0.0, TAU, 40, Color(0.98, 0.94, 0.72, 0.66), _screen_units(1.1))
 
 func _draw_editor_cities() -> void:
-	var font := get_theme_default_font()
 	for city_entry in editor_cities:
 		var city: Dictionary = city_entry
 		var city_id := String(city.get("id", ""))
@@ -454,6 +500,7 @@ func _draw_editor_cities() -> void:
 		var radius := EDITOR_SELECTED_CITY_MARKER_RADIUS if is_selected else EDITOR_CITY_MARKER_RADIUS
 		var color := _editor_city_color(String(city.get("kind", "")))
 
+		_draw_editor_departure_marker(city, pos, is_selected)
 		draw_circle(pos + _screen_vector(1.4, 1.6), _screen_units(radius + 1.2), Color(0.02, 0.02, 0.02, 0.42))
 		draw_circle(pos, _screen_units(radius + 1.0), Color(0.97, 0.94, 0.82, 0.90))
 		draw_circle(pos, _screen_units(radius), color)
@@ -461,6 +508,29 @@ func _draw_editor_cities() -> void:
 
 		if is_selected:
 			draw_arc(pos, _screen_units(radius + 4.0), 0.0, TAU, 48, Color(0.98, 0.96, 0.86, 0.42), _screen_units(0.9))
+
+func _draw_editor_departure_marker(city: Dictionary, city_position: Vector2, is_selected: bool) -> void:
+	if not city.has("departure_position"):
+		return
+
+	var departure_position := _scale_position(city.get("departure_position", {}))
+	if city_position.distance_to(departure_position) <= _screen_units(2.0):
+		return
+
+	var line_color := Color(0.18, 0.90, 0.95, 0.86 if is_selected else 0.44)
+	var shadow_color := Color(0.02, 0.04, 0.05, 0.58 if is_selected else 0.30)
+	draw_line(city_position, departure_position, shadow_color, _screen_units(4.0))
+	draw_line(city_position, departure_position, line_color, _screen_units(2.0))
+	var direction := (departure_position - city_position).normalized()
+	var side := direction.rotated(PI * 0.5)
+	var head_size := _screen_units(8.0 if is_selected else 6.0)
+	var arrow_points := PackedVector2Array([
+		departure_position,
+		departure_position - direction * head_size + side * head_size * 0.55,
+		departure_position - direction * head_size - side * head_size * 0.55
+	])
+	draw_colored_polygon(arrow_points, line_color)
+	draw_arc(departure_position, _screen_units(4.3 if is_selected else 3.2), 0.0, TAU, 24, Color(0.96, 0.98, 0.90, 0.84 if is_selected else 0.48), _screen_units(1.1))
 
 func _editor_city_color(kind: String) -> Color:
 	match kind:
@@ -644,6 +714,14 @@ func _move_editor_city_to_screen_position(city_id: String, screen_position: Vect
 	}
 	_set_editor_city_position(city_id, rounded_position, true)
 
+func _set_editor_city_departure_to_screen_position(city_id: String, screen_position: Vector2) -> void:
+	var source_position := _ship_clearance_source_position(_source_position_from_screen(screen_position))
+	var rounded_position := {
+		"x": int(round(float(source_position.get("x", 0.0)))),
+		"y": int(round(float(source_position.get("y", 0.0))))
+	}
+	_set_editor_city_departure_position(city_id, rounded_position, true)
+
 func _set_editor_city_position(city_id: String, position: Dictionary, should_emit: bool) -> void:
 	if city_id.is_empty():
 		return
@@ -666,6 +744,29 @@ func _set_editor_city_position(city_id: String, position: Dictionary, should_emi
 			"x": int(position.get("x", 0)),
 			"y": int(position.get("y", 0))
 		})
+	queue_redraw()
+
+func _set_editor_city_departure_position(city_id: String, position: Dictionary, should_emit: bool) -> void:
+	if city_id.is_empty():
+		return
+
+	var normalized_position := _normalized_source_position(position)
+	var rounded_position := {
+		"x": int(round(float(normalized_position.get("x", 0.0)))),
+		"y": int(round(float(normalized_position.get("y", 0.0))))
+	}
+	for index in range(editor_cities.size()):
+		var city: Dictionary = editor_cities[index]
+		if String(city.get("id", "")) != city_id:
+			continue
+
+		city["departure_position"] = rounded_position
+		editor_cities[index] = city
+		dynamic_city_route_cache.clear()
+		break
+
+	if should_emit:
+		editor_city_departure_changed.emit(city_id, rounded_position)
 	queue_redraw()
 
 func _emit_game_right_click(screen_position: Vector2) -> void:
@@ -717,6 +818,7 @@ func _rebuild_navigation_grid() -> void:
 	navigation_grid_rows = _build_runtime_navigation_rows(navigation_sea_grid_rows)
 	_build_water_pathfinder()
 	dynamic_city_route_cache.clear()
+	nearest_ship_clearance_cell_cache.clear()
 	queue_redraw()
 
 func _build_runtime_navigation_rows(sea_rows: Array) -> Array:
@@ -780,6 +882,7 @@ func _set_navigation_cell(rows: Array, cell: Vector2i, is_water: bool) -> void:
 func _build_water_pathfinder() -> void:
 	if navigation_grid_rows.is_empty() or navigation_grid_width <= 0 or navigation_grid_height <= 0:
 		water_pathfinder = null
+		ship_clearance_pathfinder = null
 		return
 
 	water_pathfinder = AStarGrid2D.new()
@@ -788,11 +891,21 @@ func _build_water_pathfinder() -> void:
 	water_pathfinder.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ALWAYS
 	water_pathfinder.update()
 
+	ship_clearance_pathfinder = AStarGrid2D.new()
+	ship_clearance_pathfinder.region = Rect2i(0, 0, navigation_grid_width, navigation_grid_height)
+	ship_clearance_pathfinder.cell_size = Vector2.ONE
+	ship_clearance_pathfinder.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ALWAYS
+	ship_clearance_pathfinder.update()
+
 	for y in range(navigation_grid_height):
 		var row := String(navigation_grid_rows[y])
 		for x in range(navigation_grid_width):
+			var cell := Vector2i(x, y)
 			if x >= row.length() or row.substr(x, 1) != "1":
 				water_pathfinder.set_point_solid(Vector2i(x, y), true)
+				ship_clearance_pathfinder.set_point_solid(cell, true)
+			elif not _is_ship_clearance_cell(cell):
+				ship_clearance_pathfinder.set_point_solid(cell, true)
 
 func _main_route() -> Array[String]:
 	var preferred_route: Array[String] = ["bremen", "hamburg", "luebeck", "visby", "danzig"]
@@ -820,6 +933,17 @@ func _navigation_points_between(from_city_id: String, to_city_id: String) -> Arr
 func get_city_harbor_position(city_id: String) -> Dictionary:
 	return _navigable_source_position(_city_source_position(city_id))
 
+func get_city_arrival_radius_px() -> float:
+	return GAME_CITY_MARKER_RADIUS
+
+func get_navigation_path_to_city_source_points(from_position: Dictionary, to_city_id: String) -> Array:
+	if to_city_id.is_empty():
+		return []
+
+	var target_position := get_city_harbor_position(to_city_id)
+	var source_points := get_navigation_path_between_source_points(from_position, target_position)
+	return _trim_source_path_to_city_arrival(source_points, to_city_id)
+
 func _city_source_position(city_id: String) -> Dictionary:
 	for city_entry in cities:
 		var city: Dictionary = city_entry
@@ -840,6 +964,22 @@ func _city_source_position(city_id: String) -> Dictionary:
 		"y": SOURCE_MAP_SIZE.y * 0.5
 	}
 
+func _city_departure_source_position(city_id: String) -> Dictionary:
+	if city_id.is_empty():
+		return {}
+
+	for city_entry in cities:
+		var city: Dictionary = city_entry
+		if String(city.get("id", "")) == city_id and city.has("departure_position"):
+			return _ship_clearance_source_position(city.get("departure_position", {}))
+
+	for city_entry in editor_cities:
+		var city: Dictionary = city_entry
+		if String(city.get("id", "")) == city_id and city.has("departure_position"):
+			return _ship_clearance_source_position(city.get("departure_position", {}))
+
+	return {}
+
 func _normalized_source_position(position: Dictionary) -> Dictionary:
 	return {
 		"x": clampf(float(position.get("x", SOURCE_MAP_SIZE.x * 0.5)), 0.0, SOURCE_MAP_SIZE.x),
@@ -855,6 +995,17 @@ func _navigable_source_position(position: Dictionary) -> Dictionary:
 	if water_cell.x < 0:
 		return normalized_position
 	return _source_position_from_grid_cell(water_cell)
+
+func _ship_clearance_source_position(position: Dictionary) -> Dictionary:
+	var source_position := _navigable_source_position(position)
+	var source_cell := _grid_cell_from_source_position(source_position)
+	if _is_ship_clearance_cell(source_cell):
+		return source_position
+
+	var clearance_cell := _nearest_ship_clearance_cell(source_cell)
+	if clearance_cell.x < 0:
+		return source_position
+	return _source_position_from_grid_cell(clearance_cell)
 
 func _route_points_with_current_endpoints(source_points: Array, from_city_id: String, to_city_id: String) -> Array:
 	var points := source_points.duplicate(true)
@@ -880,18 +1031,38 @@ func get_city_route_source_points(from_city_id: String, to_city_id: String) -> A
 
 	var start_position := get_city_harbor_position(from_city_id)
 	var target_position := get_city_harbor_position(to_city_id)
-	var source_points := get_navigation_path_between_source_points(start_position, target_position)
+	var departure_position := _city_departure_source_position(from_city_id)
+	var source_points: Array = []
+	if not departure_position.is_empty() and _source_positions_distance(start_position, departure_position) > 2.0:
+		var departure_leg := get_navigation_path_between_source_points(start_position, departure_position, false)
+		var route_leg := get_navigation_path_between_source_points(departure_position, target_position, false)
+		if not departure_leg.is_empty() and not route_leg.is_empty():
+			source_points.append_array(departure_leg)
+			source_points.append_array(route_leg.slice(1))
+		else:
+			source_points = get_navigation_path_between_source_points(start_position, target_position)
+	else:
+		source_points = get_navigation_path_between_source_points(start_position, target_position)
 
+	source_points = _trim_source_path_to_city_arrival(source_points, to_city_id)
 	dynamic_city_route_cache[cache_key] = source_points.duplicate(true)
 	return source_points
 
 func _dynamic_city_route_cache_key(from_city_id: String, to_city_id: String) -> String:
 	var start_position := get_city_harbor_position(from_city_id)
 	var target_position := get_city_harbor_position(to_city_id)
-	return "%s:%d,%d__%s:%d,%d" % [
+	var departure_position := _city_departure_source_position(from_city_id)
+	var departure_key := "auto"
+	if not departure_position.is_empty():
+		departure_key = "%d,%d" % [
+			roundi(float(departure_position.get("x", 0.0))),
+			roundi(float(departure_position.get("y", 0.0)))
+		]
+	return "%s:%d,%d:%s__%s:%d,%d" % [
 		from_city_id,
 		roundi(float(start_position.get("x", 0.0))),
 		roundi(float(start_position.get("y", 0.0))),
+		departure_key,
 		to_city_id,
 		roundi(float(target_position.get("x", 0.0))),
 		roundi(float(target_position.get("y", 0.0)))
@@ -947,7 +1118,51 @@ func _source_point_direction(from_position: Dictionary, to_position: Dictionary)
 		clampi(roundi(float(to_position.get("y", 0.0)) - float(from_position.get("y", 0.0))), -1, 1)
 	)
 
-func get_navigation_path_between_source_points(from_position: Dictionary, to_position: Dictionary) -> Array:
+func _trim_source_path_to_city_arrival(source_points: Array, city_id: String) -> Array:
+	if source_points.size() < 2 or city_id.is_empty():
+		return source_points
+
+	var city_position := get_city_harbor_position(city_id)
+	var center := Vector2(float(city_position.get("x", 0.0)), float(city_position.get("y", 0.0)))
+	var radius := get_city_arrival_radius_px()
+	var trimmed: Array = [source_points[0]]
+	for index in range(source_points.size() - 1):
+		var from_position: Dictionary = source_points[index]
+		var to_position: Dictionary = source_points[index + 1]
+		var from_point := Vector2(float(from_position.get("x", 0.0)), float(from_position.get("y", 0.0)))
+		var to_point := Vector2(float(to_position.get("x", 0.0)), float(to_position.get("y", 0.0)))
+		if from_point.distance_to(center) <= radius:
+			return trimmed
+		if to_point.distance_to(center) <= radius:
+			_append_source_point_if_distinct(trimmed, _source_position_from_segment_circle_entry(from_point, to_point, center, radius))
+			return trimmed
+		_append_source_point_if_distinct(trimmed, to_position)
+	return trimmed
+
+func _source_position_from_segment_circle_entry(from_point: Vector2, to_point: Vector2, center: Vector2, radius: float) -> Dictionary:
+	var segment := to_point - from_point
+	var a := segment.dot(segment)
+	if a <= 0.0:
+		return {"x": to_point.x, "y": to_point.y}
+
+	var relative := from_point - center
+	var b := 2.0 * relative.dot(segment)
+	var c := relative.dot(relative) - radius * radius
+	var discriminant := b * b - 4.0 * a * c
+	if discriminant < 0.0:
+		return {"x": to_point.x, "y": to_point.y}
+
+	var root := sqrt(discriminant)
+	var candidates := [(-b - root) / (2.0 * a), (-b + root) / (2.0 * a)]
+	var best_t := 1.0
+	for candidate in candidates:
+		var t := float(candidate)
+		if t >= 0.0 and t <= 1.0 and t <= best_t:
+			best_t = t
+	var point := from_point.lerp(to_point, best_t)
+	return {"x": point.x, "y": point.y}
+
+func get_navigation_path_between_source_points(from_position: Dictionary, to_position: Dictionary, allow_harbor_departure: bool = true) -> Array:
 	if navigation_grid_rows.is_empty():
 		return [from_position, to_position]
 
@@ -961,12 +1176,12 @@ func get_navigation_path_between_source_points(from_position: Dictionary, to_pos
 		return []
 
 	var points: Array = []
-	points.append(_source_position_from_grid_cell(start_cell))
-	var stride: int = max(1, path_cells.size() / 42)
-	for index in range(0, path_cells.size(), stride):
-		points.append(_source_position_from_grid_cell(path_cells[index]))
-	points.append(_source_position_from_grid_cell(target_cell))
-	return points
+	var start_position := _source_position_from_grid_cell(start_cell)
+	points.append(start_position)
+	for index in range(1, path_cells.size()):
+		var path_position := _source_position_from_grid_cell(path_cells[index])
+		_append_source_point_if_distinct(points, path_position)
+	return _simplify_source_points(points)
 
 func is_source_water_position(position: Dictionary) -> bool:
 	return _is_source_water_position(position)
@@ -980,6 +1195,19 @@ func get_route_distance_px(from_city_id: String, to_city_id: String) -> float:
 		return 1000000.0
 	return _source_path_distance(source_points)
 
+func get_estimated_route_distance_px(from_city_id: String, to_city_id: String) -> float:
+	var key := "%s__%s" % [from_city_id, to_city_id]
+	if navigation_routes.has(key):
+		var route: Dictionary = navigation_routes[key]
+		return float(route.get("distance_px", 1000000.0))
+
+	key = "%s__%s" % [to_city_id, from_city_id]
+	if navigation_routes.has(key):
+		var route: Dictionary = navigation_routes[key]
+		return float(route.get("distance_px", 1000000.0))
+
+	return _source_positions_distance(get_city_harbor_position(from_city_id), get_city_harbor_position(to_city_id))
+
 func _source_path_distance(source_points: Array) -> float:
 	var distance := 0.0
 	for index in range(source_points.size() - 1):
@@ -989,6 +1217,49 @@ func _source_path_distance(source_points: Array) -> float:
 		var to_point := Vector2(float(to_position.get("x", 0.0)), float(to_position.get("y", 0.0)))
 		distance += from_point.distance_to(to_point)
 	return distance
+
+func _harbor_departure_position(path_cells: Array[Vector2i], from_position: Dictionary) -> Dictionary:
+	if path_cells.size() < 2 or not _is_near_city_harbor(from_position):
+		return {}
+
+	var traversed := 0.0
+	var previous_position := _source_position_from_grid_cell(path_cells[0])
+	for index in range(1, path_cells.size()):
+		var current_position := _source_position_from_grid_cell(path_cells[index])
+		var segment_distance := _source_positions_distance(previous_position, current_position)
+		if segment_distance <= 0.0:
+			continue
+		if traversed + segment_distance >= HARBOR_DEPARTURE_DISTANCE_PX:
+			var local_progress := (HARBOR_DEPARTURE_DISTANCE_PX - traversed) / segment_distance
+			var from_point := Vector2(float(previous_position.get("x", 0.0)), float(previous_position.get("y", 0.0)))
+			var to_point := Vector2(float(current_position.get("x", 0.0)), float(current_position.get("y", 0.0)))
+			var departure_point := from_point.lerp(to_point, clampf(local_progress, 0.0, 1.0))
+			return {"x": departure_point.x, "y": departure_point.y}
+		traversed += segment_distance
+		previous_position = current_position
+
+	return _source_position_from_grid_cell(path_cells[path_cells.size() - 1])
+
+func _is_near_city_harbor(position: Dictionary) -> bool:
+	var source_position := _normalized_source_position(position)
+	var point := Vector2(float(source_position.get("x", 0.0)), float(source_position.get("y", 0.0)))
+	var tolerance: float = max(3.0, float(navigation_grid_cell_size) * 2.0)
+	for city_id in navigation_city_harbors.keys():
+		var harbor: Dictionary = navigation_city_harbors[city_id]
+		var harbor_position := _normalized_source_position(harbor.get("harbor_anchor", harbor.get("sea_gate", {})))
+		var harbor_point := Vector2(float(harbor_position.get("x", 0.0)), float(harbor_position.get("y", 0.0)))
+		if point.distance_to(harbor_point) <= tolerance:
+			return true
+	return false
+
+func _append_source_point_if_distinct(points: Array, position: Dictionary) -> void:
+	if points.is_empty() or _source_positions_distance(points[points.size() - 1], position) > 1.0:
+		points.append(position)
+
+func _source_positions_distance(from_position: Dictionary, to_position: Dictionary) -> float:
+	var from_point := Vector2(float(from_position.get("x", 0.0)), float(from_position.get("y", 0.0)))
+	var to_point := Vector2(float(to_position.get("x", 0.0)), float(to_position.get("y", 0.0)))
+	return from_point.distance_to(to_point)
 
 func _scale_position(position: Dictionary) -> Vector2:
 	return Vector2(
@@ -1120,6 +1391,75 @@ func _is_water_cell(cell_x: int, cell_y: int) -> bool:
 		return false
 	return row.substr(cell_x, 1) == "1"
 
+func _ship_clearance_radius_cells() -> int:
+	return maxi(1, ceili(SHIP_COLLISION_HALF_WIDTH_PX / float(maxi(1, navigation_grid_cell_size))))
+
+func _harbor_collision_exception_radius_cells() -> int:
+	return maxi(_ship_clearance_radius_cells() + 1, ceili(SHIP_HARBOR_COLLISION_EXCEPTION_PX / float(maxi(1, navigation_grid_cell_size))))
+
+func _is_ship_clearance_cell(cell: Vector2i) -> bool:
+	if not _is_water_cell(cell.x, cell.y):
+		return false
+
+	var radius := _ship_clearance_radius_cells()
+	for y in range(cell.y - radius, cell.y + radius + 1):
+		for x in range(cell.x - radius, cell.x + radius + 1):
+			var probe := Vector2i(x, y)
+			if cell.distance_to(probe) > float(radius):
+				continue
+			if not _is_water_cell(probe.x, probe.y):
+				return false
+	return true
+
+func _nearest_ship_clearance_cell(origin: Vector2i) -> Vector2i:
+	var cache_key := _cell_key(origin)
+	if nearest_ship_clearance_cell_cache.has(cache_key):
+		return nearest_ship_clearance_cell_cache[cache_key]
+
+	if _is_ship_clearance_cell(origin):
+		nearest_ship_clearance_cell_cache[cache_key] = origin
+		return origin
+
+	var max_radius := 44
+	for radius in range(1, max_radius + 1):
+		for y_offset in range(-radius, radius + 1):
+			for x_offset in range(-radius, radius + 1):
+				if abs(x_offset) != radius and abs(y_offset) != radius:
+					continue
+				var candidate := Vector2i(origin.x + x_offset, origin.y + y_offset)
+				if _is_ship_clearance_cell(candidate):
+					nearest_ship_clearance_cell_cache[cache_key] = candidate
+					return candidate
+	nearest_ship_clearance_cell_cache[cache_key] = Vector2i(-1, -1)
+	return Vector2i(-1, -1)
+
+func _is_ship_path_cell_allowed(cell: Vector2i, start_cell: Vector2i, target_cell: Vector2i) -> bool:
+	if not _is_water_cell(cell.x, cell.y):
+		return false
+	if cell == start_cell or cell == target_cell:
+		return true
+	if _is_harbor_collision_exception_cell(cell, start_cell, target_cell):
+		return true
+	return _is_ship_clearance_cell(cell)
+
+func _is_harbor_collision_exception_cell(cell: Vector2i, start_cell: Vector2i, target_cell: Vector2i) -> bool:
+	var exception_radius := _harbor_collision_exception_radius_cells()
+	if _is_known_harbor_cell(start_cell) and cell.distance_to(start_cell) <= float(exception_radius):
+		return true
+	if _is_known_harbor_cell(target_cell) and cell.distance_to(target_cell) <= float(exception_radius):
+		return true
+	return false
+
+func _is_known_harbor_cell(cell: Vector2i) -> bool:
+	var harbor_radius := maxi(2, ceili(8.0 / float(maxi(1, navigation_grid_cell_size))))
+	for city_id in navigation_city_harbors.keys():
+		var harbor: Dictionary = navigation_city_harbors[city_id]
+		var harbor_cell := _grid_cell_from_source_position(harbor.get("harbor_anchor", harbor.get("sea_gate", {})))
+		var sea_gate_cell := _grid_cell_from_source_position(harbor.get("sea_gate", harbor.get("harbor_anchor", {})))
+		if cell.distance_to(harbor_cell) <= float(harbor_radius) or cell.distance_to(sea_gate_cell) <= float(harbor_radius):
+			return true
+	return false
+
 func _is_sea_cell(cell_x: int, cell_y: int) -> bool:
 	if cell_y < 0 or cell_y >= navigation_sea_grid_rows.size() or cell_x < 0 or cell_x >= navigation_grid_width:
 		return false
@@ -1149,6 +1489,41 @@ func _find_water_path(start_cell: Vector2i, target_cell: Vector2i) -> Array[Vect
 	if start_cell == target_cell:
 		return [start_cell]
 
+	var start_clearance_cell := _nearest_ship_clearance_cell(start_cell)
+	var target_clearance_cell := _nearest_ship_clearance_cell(target_cell)
+	if start_clearance_cell.x >= 0 and target_clearance_cell.x >= 0 and ship_clearance_pathfinder != null:
+		var path: Array[Vector2i] = []
+		if start_cell != start_clearance_cell:
+			var start_leg := _find_basic_water_path(start_cell, start_clearance_cell)
+			if start_leg.is_empty():
+				return []
+			_append_cell_path(path, start_leg)
+		else:
+			path.append(start_cell)
+
+		var clearance_leg: Array[Vector2i] = ship_clearance_pathfinder.get_id_path(start_clearance_cell, target_clearance_cell)
+		if clearance_leg.is_empty():
+			return []
+		_append_cell_path(path, clearance_leg)
+
+		if target_cell != target_clearance_cell:
+			var target_leg := _find_basic_water_path(target_clearance_cell, target_cell)
+			if target_leg.is_empty():
+				return []
+			_append_cell_path(path, target_leg)
+		return path
+
+	return []
+
+func _append_cell_path(target: Array[Vector2i], source: Array[Vector2i]) -> void:
+	for cell in source:
+		if target.is_empty() or target[target.size() - 1] != cell:
+			target.append(cell)
+
+func _find_basic_water_path(start_cell: Vector2i, target_cell: Vector2i) -> Array[Vector2i]:
+	if start_cell == target_cell:
+		return [start_cell]
+
 	if water_pathfinder != null:
 		var id_path: Array[Vector2i] = water_pathfinder.get_id_path(start_cell, target_cell)
 		if not id_path.is_empty():
@@ -1174,7 +1549,7 @@ func _find_water_path(start_cell: Vector2i, target_cell: Vector2i) -> Array[Vect
 		closed[current_id] = true
 		for direction in directions:
 			var neighbor: Vector2i = current_cell + direction
-			if not _is_water_cell(neighbor.x, neighbor.y):
+			if not _is_ship_path_cell_allowed(neighbor, start_cell, target_cell):
 				continue
 
 			var neighbor_id: int = _cell_id(neighbor)
@@ -1232,7 +1607,7 @@ func _load_manual_navigation_waterways() -> void:
 	var data: Dictionary = parsed
 	var grid: Dictionary = data.get("grid", {})
 	if int(grid.get("width", navigation_grid_width)) != navigation_grid_width or int(grid.get("height", navigation_grid_height)) != navigation_grid_height or int(grid.get("cell_size", navigation_grid_cell_size)) != navigation_grid_cell_size:
-		push_warning("Manual navigation waterway overrides do not match the current navigation grid: %s" % CUSTOM_NAVIGATION_WATERWAYS_PATH)
+		print("Ignoring manual navigation waterway overrides for an older navigation grid: %s" % CUSTOM_NAVIGATION_WATERWAYS_PATH)
 		return
 
 	for cell_entry in data.get("added_cells", []):

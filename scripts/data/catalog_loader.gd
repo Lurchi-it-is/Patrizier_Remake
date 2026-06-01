@@ -118,7 +118,7 @@ func _city_array_by_id(city_array: Array) -> Dictionary:
 	return cities_by_id
 
 func _merge_custom_city_fields(target_city: Dictionary, custom_city: Dictionary) -> void:
-	for key in ["id", "name", "region", "kind", "position", "population", "population_groups", "production", "consumption", "stock", "target_stock"]:
+	for key in ["id", "name", "region", "kind", "position", "departure_position", "population", "population_groups", "production", "consumption", "stock", "target_stock"]:
 		if custom_city.has(key):
 			target_city[key] = custom_city[key]
 
@@ -131,7 +131,7 @@ func _apply_custom_city_fields_to_hanse_cities(catalog: Dictionary, custom_city_
 			continue
 
 		var custom_city: Dictionary = custom_city_fields_by_id[city_id]
-		for key in ["name", "region", "kind", "position"]:
+		for key in ["name", "region", "kind", "position", "departure_position"]:
 			if custom_city.has(key):
 				city[key] = custom_city[key]
 		hanse_cities[index] = city

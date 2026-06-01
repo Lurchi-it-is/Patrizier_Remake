@@ -1,6 +1,6 @@
 # KI-Haendler und Warenfluss
 
-Version: 0.2.73-crisp-map-city-labels
+Version: 0.2.83-smaller-ship-icons
 
 ## Zielbild
 

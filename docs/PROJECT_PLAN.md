@@ -1,6 +1,6 @@
 # Projektplan: Hanseatische Warenwirtschaftssimulation
 
-Version: 0.2.73-crisp-map-city-labels
+Version: 0.2.83-smaller-ship-icons
 Datum: 2026-06-01  
 Repo: https://github.com/Lurchi-it-is/Patrizier_Remake.git
 
