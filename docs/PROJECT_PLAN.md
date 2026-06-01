@@ -1,7 +1,7 @@
 # Projektplan: Hanseatische Warenwirtschaftssimulation
 
-Version: 0.2.48-illustrated-hanse-map
-Datum: 2026-05-31  
+Version: 0.2.57-directional-ship-sprites
+Datum: 2026-06-01  
 Repo: https://github.com/Lurchi-it-is/Patrizier_Remake.git
 
 ## Management Summary
@@ -288,6 +288,7 @@ Das ist einfach genug fuer ein MVP, aber tief genug fuer spaeteres Balancing.
 
 Empfohlene Richtung:
 
+- Die verbindliche visuelle Grundlage steht in `docs/DESIGN_GUIDELINES.md`.
 - Hauptkarte: klare 2.5D-Nord-/Ostseekarte mit animierten Schiffen, Wetterlagen, Handelsrouten und Stadtstatus
 - Stadtansicht: stilisierte Hafen- und Stadtsilhouette, keine komplexe Echtzeitstadt im MVP
 - UI: dichte Tabellen, Filter, Preisgraphen, Routenplanung, Warnungen

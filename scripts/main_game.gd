@@ -1278,7 +1278,8 @@ func _map_ship_entries() -> Array:
 			"position": player_ship.get("position", {}),
 			"path_points": player_ship.get("path_points", [player_ship.get("position", {})]),
 			"progress": _player_progress(),
-			"color": Color(0.76, 0.93, 1.0),
+			"color": Color(1.0, 1.0, 1.0, 1.0),
+			"is_player": true,
 		})
 	for ship_entry in ai_traders:
 		var ship: Dictionary = ship_entry

@@ -4,7 +4,7 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.48-illustrated-hanse-map`
+Version: `0.2.57-directional-ship-sprites`
 
 Das Projektfundament enthaelt:
 
@@ -33,6 +33,13 @@ Das Projektfundament enthaelt:
 - rechte Hauptspiel-Sidebar mit Spieleruebersicht, Kapital und aktiver Schiffsladung
 - Handelsfenster zeigt Schiffsbestand, saubere Handelsspalten und den durchschnittlich bezahlten Einkaufspreis je geladener Ware
 - Handelsfenster nutzt einen hanseatisch-mittelalterlichen Holz-/Goldstil mit Stadtpanel, Warentabelle, Warendetails, Statusleiste und Mengenwahl fuer 1x/5x/10x/Max
+- dokumentierte Designrichtlinie fuer modernes Hanse-UI, Kartenoverlays, Stadtansichten, Schiffe, Waren-Icons, Charaktere, Rangfortschritt und Asset-Pruefung
+- transparentes 2.5D-Koggen-Icon als Schiffsasset fuer die Weltkarte inklusive 256px-Token-Version
+- zweite, weniger comicartige Koggen-Variante mit gedeckterem, realistischeren Materialstil
+- Koggen-Variante mit am Modellfoto orientierter Silhouette: schmales Vorkastell, breiteres Achterkastell
+- korrigierte Koggen-Variante mit begehbarer Kastell-Logik und Ruder-Steuer auf dem Achterkastell
+- Koggen-Icon ersetzt die bisherigen Schiff-Platzhalter auf der Hauptspiel-Weltkarte
+- aus dem GLB-Modell gerenderte Richtungs-Sprites werden direkt in der Weltkarte genutzt, damit Schiffe ohne Auf-den-Kopf-Rotation in Fahrtrichtung wirken
 - Warenbestaende und gehandelte Warenmengen werden als ganze Einheiten gefuehrt
 - gedaempfte dynamische Preise, damit reine Ueberschusskaeufe keine exorbitanten Arbitragegewinne erzeugen
 - dokumentiertes KI-Haendlerkonzept fuer stabilisierenden Warenfluss, Haendlerprofile, Settings und MVP-Umsetzung

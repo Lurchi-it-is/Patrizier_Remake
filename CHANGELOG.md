@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.2.57-directional-ship-sprites - 2026-06-01
+
+- Acht transparente Richtungs-Sprites aus dem GLB-Schiffsmodell fuer die Weltkarte gerendert.
+- Kartenlogik von freier Sprite-Rotation auf Auswahl der passenden Richtungsansicht umgestellt, damit Schiffe nicht mehr auf den Kopf gedreht werden.
+- Render-Hilfsscript fuer kuenftige Neugenerierung der Richtungs-Sprites ergaenzt.
+
+## 0.2.56-rotated-map-ship-icon - 2026-06-01
+
+- Fehlerhafte Live-3D-Viewport-Darstellung der Weltkarten-Schiffe entfernt.
+- Koggen-Icon wird wieder direkt in der Kartenzeichnung gerendert und anhand der aktuellen Fahrtrichtung rotiert.
+- GLB-Schiffsmodell bleibt als importiertes Quell-/Referenzasset im Projekt, wird aber nicht mehr pro Schiff als eigene UI-Ansicht geladen.
+
+## 0.2.55-3d-map-ship-model - 2026-06-01
+
+- Bereitgestelltes GLB-Schiffsmodell als Projektasset unter `assets/ships/models` importiert.
+- Weltkarten-Schiffe auf transparente 3D-Viewport-Overlays umgestellt, damit sie sich an der aktuellen Fahrtrichtung orientieren koennen.
+- Validierung um das GLB-Modell und die neue 3D-Kartenmodellansicht erweitert.
+
+## 0.2.54-map-ship-icon - 2026-06-01
+
+- Koggen-Icon in die Weltkartenanzeige des Hauptspiels eingebunden.
+- Bisherige Kreis-/Linien-Platzhalter fuer Spieler- und KI-Schiffe durch das transparente Schiffsasset ersetzt.
+- Spieler- und KI-Schiffe ueber unterschiedliche Icongroessen auf der Karte lesbar gemacht.
+
+## 0.2.53-corrected-cog-deck-icon - 2026-06-01
+
+- Koggen-Icon-Variante mit korrigierter Kastell- und Decklogik ergaenzt.
+- Achterkastell-Zugang so angepasst, dass die Leiter auf ein begehbares Deck fuehrt.
+- Historisch plausibles Ruder-Steuer auf dem Achterkastell ergaenzt.
+
+## 0.2.52-model-hull-cog-icon - 2026-06-01
+
+- Weitere Koggen-Icon-Variante mit am Modellfoto orientiertem Rumpf ergaenzt.
+- Silhouette mit schmalem Vorkastell und breiterem Achterkastell fuer die Weltkarte umgesetzt.
+- Transparente 256px-Token-Version, grosse Alpha-Fassung und Chroma-Key-Quelle abgelegt.
+
+## 0.2.51-grounded-cog-map-icon - 2026-06-01
+
+- Zweite, weniger comicartige Koggen-Variante fuer Weltkartenbewegung ergaenzt.
+- Realistischere Materialwirkung mit gedeckterem Holz, ruhigerem Segeltuch und reduzierteren Konturen umgesetzt.
+- Zusaetzliche 256px-Token-Version und Chroma-Key-Quelle fuer die neue Variante abgelegt.
+
+## 0.2.50-hanse-cog-map-icon - 2026-06-01
+
+- Transparentes 2.5D-Weltkarten-Icon einer hanseatischen Kogge als neues Schiffsasset ergaenzt.
+- Zusaetzliche 256px-Token-Version fuer Kartenbewegung und UI-nahe Verwendung erzeugt.
+- Chroma-Key-Quellbild zur spaeteren Nachbearbeitung neben dem finalen Alpha-PNG abgelegt.
+
+## 0.2.49-design-guidelines - 2026-06-01
+
+- Designrichtlinie fuer UI, Karte, Stadtansichten, Gebaeude, Schiffe, Waren-Icons, Charaktere, Rangfortschritt, Animation und Sound dokumentiert.
+- Visuelle Richtung auf modernes, gut lesbares Hanse-UI mit Pergament-, Kontor-, Hafen- und Siegelmotiven festgelegt.
+- Farbpalette und Asset-Checkliste aus der aktuellen Hanseregion-Karte abgeleitet.
+
 ## 0.2.48-illustrated-hanse-map - 2026-05-31
 
 - Hanseregion-Weltkarte durch eine handgemalte, spieltaugliche Kartenillustration ersetzt.

@@ -197,6 +197,15 @@ $requiredPaths = @(
     "scripts\simulation\combat_resolver.gd",
     "scripts\ui\map_view.gd",
     "assets\ui\hanse_trade_window_frame.png",
+    "assets\ships\models\hanse_cog_map_model.glb",
+    "assets\ships\directions\hanse_cog_dir_00_e.png",
+    "assets\ships\directions\hanse_cog_dir_01_se.png",
+    "assets\ships\directions\hanse_cog_dir_02_s.png",
+    "assets\ships\directions\hanse_cog_dir_03_sw.png",
+    "assets\ships\directions\hanse_cog_dir_04_w.png",
+    "assets\ships\directions\hanse_cog_dir_05_nw.png",
+    "assets\ships\directions\hanse_cog_dir_06_n.png",
+    "assets\ships\directions\hanse_cog_dir_07_ne.png",
     "assets\maps\hanse_navigation_1600x900.json",
     "assets\maps\hanse_navigation_debug_1600x900.png"
 )

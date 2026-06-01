@@ -1,6 +1,6 @@
 # Hanse-Wirtschaftsbalancing
 
-Version: 0.2.48-illustrated-hanse-map
+Version: 0.2.57-directional-ship-sprites
 
 ## Recherchebasis
 

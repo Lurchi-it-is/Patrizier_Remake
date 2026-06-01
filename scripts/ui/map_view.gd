@@ -6,9 +6,22 @@ signal map_right_clicked(source_position: Dictionary, city_id: String, is_water:
 const SOURCE_MAP_SIZE := Vector2(1600.0, 900.0)
 const HANSE_REGION_MAP: Texture2D = preload("res://assets/maps/hanse_region_1600x900.png")
 const HANSE_NAVIGATION_DATA := "res://assets/maps/hanse_navigation_1600x900.json"
+const SHIP_DIRECTION_TEXTURES := [
+	preload("res://assets/ships/directions/hanse_cog_dir_00_e.png"),
+	preload("res://assets/ships/directions/hanse_cog_dir_01_se.png"),
+	preload("res://assets/ships/directions/hanse_cog_dir_02_s.png"),
+	preload("res://assets/ships/directions/hanse_cog_dir_03_sw.png"),
+	preload("res://assets/ships/directions/hanse_cog_dir_04_w.png"),
+	preload("res://assets/ships/directions/hanse_cog_dir_05_nw.png"),
+	preload("res://assets/ships/directions/hanse_cog_dir_06_n.png"),
+	preload("res://assets/ships/directions/hanse_cog_dir_07_ne.png"),
+]
 const MIN_ZOOM := 1.0
 const MAX_ZOOM := 5.0
 const ZOOM_STEP := 1.18
+const PLAYER_SHIP_ICON_SIZE := Vector2(54.0, 54.0)
+const AI_SHIP_ICON_SIZE := Vector2(38.0, 38.0)
+const SHIP_DIRECTION_INDEX_OFFSET := 4
 
 var cities: Array = []
 var navigation_routes: Dictionary = {}
@@ -165,25 +178,33 @@ func _draw_routes() -> void:
 		return
 
 	var ship_position := _interpolate_demo_route(route)
-	draw_circle(ship_position, 9.0, Color(0.96, 0.96, 0.88))
-	draw_line(ship_position + Vector2(-10, 8), ship_position + Vector2(12, 8), Color(0.96, 0.96, 0.88), 3.0)
+	_draw_ship_icon(ship_position, AI_SHIP_ICON_SIZE, Color(1.0, 1.0, 1.0, 0.96), -0.2)
 
 func _draw_route_ships() -> void:
 	var font := get_theme_default_font()
 	for ship_entry in route_ships:
 		var ship: Dictionary = ship_entry
-		var progress := clampf(float(ship.get("progress", 0.0)), 0.0, 1.0)
-		var route_points: Array[Vector2] = _ship_route_points(ship)
-
-		var ship_position := _interpolate_polyline(route_points, progress)
+		var ship_data := _ship_map_position_and_heading(ship)
+		var ship_position: Vector2 = ship_data.get("position", size * 0.5)
+		var ship_heading: float = float(ship_data.get("heading", -0.2))
 		var ship_color: Color = ship.get("color", Color(0.96, 0.96, 0.88))
-		draw_circle(ship_position + Vector2(1.5, 2.0), 8.0, Color(0.02, 0.02, 0.02, 0.42))
-		draw_circle(ship_position, 7.0, ship_color)
-		draw_line(ship_position + Vector2(-9, 7), ship_position + Vector2(11, 7), ship_color, 2.5)
+		var icon_size := PLAYER_SHIP_ICON_SIZE if bool(ship.get("is_player", false)) else AI_SHIP_ICON_SIZE
+		_draw_ship_icon(ship_position, icon_size, ship_color, ship_heading)
 
 		var ship_name := String(ship.get("name", ""))
 		if not ship_name.is_empty():
-			draw_string(font, ship_position + Vector2(12, -9), ship_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 12, ship_color)
+			draw_string(font, ship_position + Vector2(icon_size.x * 0.34, -icon_size.y * 0.34), ship_name, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 12, ship_color)
+
+func _draw_ship_icon(ship_position: Vector2, icon_size: Vector2, modulate: Color, heading: float) -> void:
+	var texture: Texture2D = _ship_direction_texture(heading)
+	var icon_rect := Rect2(ship_position - icon_size * 0.5, icon_size)
+	draw_texture_rect(texture, Rect2(icon_rect.position + Vector2(2.0, 3.0), icon_size), false, Color(0.0, 0.0, 0.0, 0.30))
+	draw_texture_rect(texture, icon_rect, false, modulate)
+
+func _ship_direction_texture(heading: float) -> Texture2D:
+	var slice := TAU / float(SHIP_DIRECTION_TEXTURES.size())
+	var index := posmod(roundi(heading / slice) + SHIP_DIRECTION_INDEX_OFFSET, SHIP_DIRECTION_TEXTURES.size())
+	return SHIP_DIRECTION_TEXTURES[index]
 
 func _draw_cities() -> void:
 	var font := get_theme_default_font()
@@ -520,6 +541,16 @@ func _ship_route_points(ship: Dictionary) -> Array[Vector2]:
 		route_points = [_city_position(from_city_id), _city_position(to_city_id)]
 	return route_points
 
+func _ship_map_position_and_heading(ship: Dictionary) -> Dictionary:
+	var progress := clampf(float(ship.get("progress", 0.0)), 0.0, 1.0)
+	var route_points: Array[Vector2] = _ship_route_points(ship)
+	var position := _interpolate_polyline(route_points, progress)
+	var direction := _polyline_direction(route_points, progress)
+	return {
+		"position": position,
+		"heading": direction.angle(),
+	}
+
 func _is_source_water_position(position: Dictionary) -> bool:
 	var cell := _grid_cell_from_source_position(position)
 	return _is_water_cell(cell.x, cell.y)
@@ -652,3 +683,29 @@ func _interpolate_polyline(points: Array[Vector2], progress: float) -> Vector2:
 		traversed += segment_length
 
 	return points[points.size() - 1]
+
+func _polyline_direction(points: Array[Vector2], progress: float) -> Vector2:
+	if points.size() < 2:
+		return Vector2(1.0, -0.25).normalized()
+
+	var total_length := 0.0
+	for index in range(points.size() - 1):
+		total_length += points[index].distance_to(points[index + 1])
+	if total_length <= 0.0:
+		return Vector2(1.0, -0.25).normalized()
+
+	var target_length := clampf(progress, 0.0, 1.0) * total_length
+	var traversed := 0.0
+	for index in range(points.size() - 1):
+		var segment := points[index + 1] - points[index]
+		var segment_length := segment.length()
+		if segment_length <= 0.0:
+			continue
+		if traversed + segment_length >= target_length:
+			return segment / segment_length
+		traversed += segment_length
+
+	var fallback_segment := points[points.size() - 1] - points[points.size() - 2]
+	if fallback_segment.length() <= 0.0:
+		return Vector2(1.0, -0.25).normalized()
+	return fallback_segment.normalized()
