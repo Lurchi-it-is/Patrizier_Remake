@@ -4,7 +4,7 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.57-directional-ship-sprites`
+Version: `0.2.58-merged-map-assets`
 
 Das Projektfundament enthaelt:
 

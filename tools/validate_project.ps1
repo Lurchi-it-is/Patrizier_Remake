@@ -242,13 +242,46 @@ foreach ($row in $navigation.grid.sea_rows) {
 }
 
 $hanseCities = Get-Content -Raw "data\hanse_cities.json" | ConvertFrom-Json
+$mapMeta = Get-Content -Raw "assets\maps\hanse_region_1600x900.json" | ConvertFrom-Json
 foreach ($city in $hanseCities) {
+    $metaCity = $mapMeta.city_pixels.$($city.id)
+    if ($null -eq $metaCity) {
+        throw "Map metadata has no city pixel entry for Hanse city '$($city.id)'"
+    }
+
+    if ($metaCity.position.x -ne $city.position.x -or $metaCity.position.y -ne $city.position.y) {
+        throw "Map metadata position for Hanse city '$($city.id)' does not match data/hanse_cities.json"
+    }
+
     if ($null -eq $navigation.city_harbors.$($city.id)) {
         throw "Navigation data has no harbor anchor for Hanse city '$($city.id)'"
     }
 
     if ($null -eq $navigation.city_harbors.$($city.id).sea_gate) {
         throw "Navigation data has no sea gate for Hanse city '$($city.id)'"
+    }
+
+    if (
+        $navigation.city_harbors.$($city.id).city_position.x -ne $city.position.x -or
+        $navigation.city_harbors.$($city.id).city_position.y -ne $city.position.y
+    ) {
+        throw "Navigation city position for Hanse city '$($city.id)' does not match data/hanse_cities.json"
+    }
+}
+
+$hanseCityById = @{}
+foreach ($city in $hanseCities) {
+    $hanseCityById[$city.id] = $city
+}
+
+foreach ($city in $cities) {
+    if (-not $hanseCityById.ContainsKey($city.id)) {
+        continue
+    }
+
+    $hanseCity = $hanseCityById[$city.id]
+    if ($city.position.x -ne $hanseCity.position.x -or $city.position.y -ne $hanseCity.position.y) {
+        throw "Start city position for '$($city.id)' does not match data/hanse_cities.json"
     }
 }
 

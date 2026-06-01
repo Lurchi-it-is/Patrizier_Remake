@@ -1,6 +1,7 @@
 extends Control
 
 signal editor_city_clicked(city_id: String)
+signal editor_city_position_changed(city_id: String, position: Dictionary)
 signal map_right_clicked(source_position: Dictionary, city_id: String, is_water: bool)
 
 const SOURCE_MAP_SIZE := Vector2(1600.0, 900.0)
@@ -34,6 +35,8 @@ var route_ships: Array = []
 var editor_cities: Array = []
 var placed_editor_city_ids: Array[String] = []
 var selected_editor_city_id: String = ""
+var is_editor_position_edit_enabled: bool = false
+var dragged_editor_city_id: String = ""
 var pirate_zones: Array = []
 var simulation_day: int = 1
 var show_game_layer: bool = true
@@ -70,6 +73,20 @@ func _gui_input(event: InputEvent) -> void:
 				_reset_zoom()
 				accept_event()
 				return
+			if show_editor_layer and is_editor_position_edit_enabled:
+				if mouse_event.pressed:
+					var clicked_editor_city_id := _editor_city_id_at_screen_position(mouse_event.position)
+					if clicked_editor_city_id.is_empty():
+						clicked_editor_city_id = selected_editor_city_id
+					if not clicked_editor_city_id.is_empty():
+						dragged_editor_city_id = clicked_editor_city_id
+						editor_city_clicked.emit(clicked_editor_city_id)
+						_move_editor_city_to_screen_position(clicked_editor_city_id, mouse_event.position)
+					accept_event()
+					return
+				dragged_editor_city_id = ""
+				accept_event()
+				return
 			if mouse_event.pressed:
 				var clicked_city_id := _editor_city_id_at_screen_position(mouse_event.position)
 				if not clicked_city_id.is_empty():
@@ -81,7 +98,11 @@ func _gui_input(event: InputEvent) -> void:
 			accept_event()
 	elif event is InputEventMouseMotion:
 		var motion_event := event as InputEventMouseMotion
-		if is_panning and map_zoom > MIN_ZOOM:
+		if not dragged_editor_city_id.is_empty():
+			_move_editor_city_to_screen_position(dragged_editor_city_id, motion_event.position)
+			_update_hovered_city(motion_event.position)
+			accept_event()
+		elif is_panning and map_zoom > MIN_ZOOM:
 			map_offset += motion_event.relative
 			_clamp_map_offset()
 			_update_hovered_city(motion_event.position)
@@ -108,6 +129,15 @@ func set_map_editor_selection(city_id: String, placed_city_ids: Array[String]) -
 	selected_editor_city_id = city_id
 	placed_editor_city_ids = placed_city_ids.duplicate()
 	queue_redraw()
+
+func set_editor_position_edit_enabled(is_enabled: bool) -> void:
+	is_editor_position_edit_enabled = is_enabled
+	if not is_editor_position_edit_enabled:
+		dragged_editor_city_id = ""
+	queue_redraw()
+
+func set_editor_city_position(city_id: String, position: Dictionary) -> void:
+	_set_editor_city_position(city_id, position, false)
 
 func set_simulation_day(day: int) -> void:
 	simulation_day = day
@@ -258,10 +288,11 @@ func _draw_legend() -> void:
 		cities.size()
 	]
 	if show_editor_layer:
-		text = "Map Editor | Zoom: %d%% | Editorpunkte: %d / %d | Rot: Piratenrisiko" % [
+		text = "Map Editor | Zoom: %d%% | Editorpunkte: %d / %d | %s" % [
 			int(round(map_zoom * 100.0)),
 			placed_editor_city_ids.size(),
-			editor_cities.size()
+			editor_cities.size(),
+			"Positionsmodus" if is_editor_position_edit_enabled else "Auswahlmodus"
 		]
 	var legend_width := 650.0 if show_editor_layer else 590.0
 	draw_rect(Rect2(Vector2(18, 18), Vector2(legend_width, 34)), Color(0.02, 0.03, 0.04, 0.55), true)
@@ -368,6 +399,37 @@ func _source_position_from_screen(screen_position: Vector2) -> Dictionary:
 		"x": clampf(map_position.x / max(size.x, 1.0) * SOURCE_MAP_SIZE.x, 0.0, SOURCE_MAP_SIZE.x),
 		"y": clampf(map_position.y / max(size.y, 1.0) * SOURCE_MAP_SIZE.y, 0.0, SOURCE_MAP_SIZE.y),
 	}
+
+func _move_editor_city_to_screen_position(city_id: String, screen_position: Vector2) -> void:
+	var source_position := _source_position_from_screen(screen_position)
+	var rounded_position := {
+		"x": int(round(float(source_position.get("x", 0.0)))),
+		"y": int(round(float(source_position.get("y", 0.0))))
+	}
+	_set_editor_city_position(city_id, rounded_position, true)
+
+func _set_editor_city_position(city_id: String, position: Dictionary, should_emit: bool) -> void:
+	if city_id.is_empty():
+		return
+
+	for index in range(editor_cities.size()):
+		var city: Dictionary = editor_cities[index]
+		if String(city.get("id", "")) != city_id:
+			continue
+
+		city["position"] = {
+			"x": int(position.get("x", 0)),
+			"y": int(position.get("y", 0))
+		}
+		editor_cities[index] = city
+		break
+
+	if should_emit:
+		editor_city_position_changed.emit(city_id, {
+			"x": int(position.get("x", 0)),
+			"y": int(position.get("y", 0))
+		})
+	queue_redraw()
 
 func _emit_game_right_click(screen_position: Vector2) -> void:
 	if not show_game_layer:

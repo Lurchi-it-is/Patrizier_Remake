@@ -1,6 +1,6 @@
 # Architektur
 
-Version: 0.2.57-directional-ship-sprites
+Version: 0.2.58-merged-map-assets
 
 ## Leitidee
 

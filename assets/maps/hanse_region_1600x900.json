@@ -14,6 +14,7 @@
   "data_sources": [
     "Natural Earth 1:50m Admin 0 countries",
     "Natural Earth 1:10m rivers and lake centerlines",
+    "Image-derived navigation water mask from the current illustrated map",
     "Researched historical waterway references for selected Hanse cities"
   ],
   "visual_style": {
@@ -334,11 +335,11 @@
       "name": "Hull",
       "lon": -0.3274,
       "lat": 53.7676,
-      "marker_lon": -0.31599999999999895,
-      "marker_lat": 53.76577777777778,
+      "marker_lon": 0.34375,
+      "marker_lat": 53.73733333333333,
       "position": {
-        "x": 224,
-        "y": 586
+        "x": 250,
+        "y": 588
       },
       "kind": "trade"
     },
@@ -346,10 +347,10 @@
       "name": "Boston",
       "lon": -0.0266,
       "lat": 52.9789,
-      "marker_lon": -0.036874999999999325,
+      "marker_lon": 0.19150000000000045,
       "marker_lat": 52.983555555555554,
       "position": {
-        "x": 235,
+        "x": 244,
         "y": 641
       },
       "kind": "trade"
@@ -358,11 +359,11 @@
       "name": "King's Lynn",
       "lon": 0.3976,
       "lat": 52.7543,
-      "marker_lon": 0.39449999999999985,
-      "marker_lat": 52.770222222222216,
+      "marker_lon": 0.5213749999999999,
+      "marker_lat": 52.84133333333333,
       "position": {
-        "x": 252,
-        "y": 656
+        "x": 257,
+        "y": 651
       },
       "kind": "trade"
     },
@@ -370,11 +371,11 @@
       "name": "Great Yarmouth",
       "lon": 1.7305,
       "lat": 52.6072,
-      "marker_lon": 1.7140000000000004,
-      "marker_lat": 52.628,
+      "marker_lon": 1.7901249999999989,
+      "marker_lat": 52.756,
       "position": {
-        "x": 304,
-        "y": 666
+        "x": 307,
+        "y": 657
       },
       "kind": "trade"
     },
@@ -454,11 +455,11 @@
       "name": "Luebeck",
       "lon": 10.6866,
       "lat": 53.8655,
-      "marker_lon": 10.874375,
-      "marker_lat": 54.02177777777778,
+      "marker_lon": 10.899750000000001,
+      "marker_lat": 54.05022222222222,
       "position": {
-        "x": 665,
-        "y": 568
+        "x": 666,
+        "y": 566
       },
       "kind": "core"
     },
@@ -466,11 +467,11 @@
       "name": "Wismar",
       "lon": 11.4629,
       "lat": 53.8931,
-      "marker_lon": 11.381874999999997,
-      "marker_lat": 53.964888888888886,
+      "marker_lon": 11.280375,
+      "marker_lat": 54.10711111111111,
       "position": {
-        "x": 685,
-        "y": 572
+        "x": 681,
+        "y": 562
       },
       "kind": "member"
     },
@@ -478,11 +479,11 @@
       "name": "Rostock",
       "lon": 12.0991,
       "lat": 54.0924,
-      "marker_lon": 12.01625,
-      "marker_lat": 54.17822222222222,
+      "marker_lon": 12.143125000000001,
+      "marker_lat": 54.292,
       "position": {
-        "x": 710,
-        "y": 557
+        "x": 715,
+        "y": 549
       },
       "kind": "member"
     },
@@ -490,11 +491,11 @@
       "name": "Stralsund",
       "lon": 13.077,
       "lat": 54.3091,
-      "marker_lon": 13.107375000000001,
-      "marker_lat": 54.334666666666664,
+      "marker_lon": 12.955124999999999,
+      "marker_lat": 54.42,
       "position": {
-        "x": 753,
-        "y": 546
+        "x": 747,
+        "y": 540
       },
       "kind": "member"
     },
@@ -502,10 +503,10 @@
       "name": "Greifswald",
       "lon": 13.3815,
       "lat": 54.0958,
-      "marker_lon": 13.437250000000002,
+      "marker_lon": 13.53875,
       "marker_lat": 54.164,
       "position": {
-        "x": 766,
+        "x": 770,
         "y": 558
       },
       "kind": "member"
@@ -514,11 +515,11 @@
       "name": "Stettin",
       "lon": 14.5528,
       "lat": 53.4285,
-      "marker_lon": 14.553749999999997,
-      "marker_lat": 53.42444444444445,
+      "marker_lon": 14.426875000000003,
+      "marker_lat": 53.708888888888886,
       "position": {
-        "x": 810,
-        "y": 610
+        "x": 805,
+        "y": 590
       },
       "kind": "member"
     },
@@ -598,11 +599,11 @@
       "name": "Bergen",
       "lon": 5.3221,
       "lat": 60.3929,
-      "marker_lon": 5.165000000000001,
-      "marker_lat": 60.32222222222222,
+      "marker_lon": 7.068125000000002,
+      "marker_lat": 60.18,
       "position": {
-        "x": 440,
-        "y": 125
+        "x": 515,
+        "y": 135
       },
       "kind": "kontor"
     },
@@ -634,11 +635,11 @@
       "name": "Visby",
       "lon": 18.2948,
       "lat": 57.6348,
-      "marker_lon": 18.2585,
-      "marker_lat": 57.64844444444444,
+      "marker_lon": 19.730250000000005,
+      "marker_lat": 57.492,
       "position": {
-        "x": 956,
-        "y": 313
+        "x": 1014,
+        "y": 324
       },
       "kind": "core"
     },
@@ -646,11 +647,11 @@
       "name": "Danzig",
       "lon": 18.6466,
       "lat": 54.352,
-      "marker_lon": 18.740625,
-      "marker_lat": 54.42,
+      "marker_lon": 19.273500000000006,
+      "marker_lat": 54.81822222222222,
       "position": {
-        "x": 975,
-        "y": 540
+        "x": 996,
+        "y": 512
       },
       "kind": "member"
     },
@@ -658,11 +659,11 @@
       "name": "Elbing",
       "lon": 19.4088,
       "lat": 54.1561,
-      "marker_lon": 19.12125,
-      "marker_lat": 54.37733333333333,
+      "marker_lon": 19.527250000000002,
+      "marker_lat": 54.47688888888889,
       "position": {
-        "x": 990,
-        "y": 543
+        "x": 1006,
+        "y": 536
       },
       "kind": "member"
     },
@@ -670,11 +671,11 @@
       "name": "Koenigsberg",
       "lon": 20.5106,
       "lat": 54.7104,
-      "marker_lon": 19.93325,
-      "marker_lat": 54.676,
+      "marker_lon": 20.2885,
+      "marker_lat": 54.78977777777778,
       "position": {
-        "x": 1022,
-        "y": 522
+        "x": 1036,
+        "y": 514
       },
       "kind": "member"
     },

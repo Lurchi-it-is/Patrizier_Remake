@@ -1,6 +1,6 @@
 # Projektplan: Hanseatische Warenwirtschaftssimulation
 
-Version: 0.2.57-directional-ship-sprites
+Version: 0.2.58-merged-map-assets
 Datum: 2026-06-01  
 Repo: https://github.com/Lurchi-it-is/Patrizier_Remake.git
 
