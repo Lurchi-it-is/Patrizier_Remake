@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.61-ship-horizontal-direction-flip - 2026-06-01
+
+- Horizontale Weltkarten-Schiffsrichtung gespiegelt, damit Links/Rechts mit den gerenderten Koggen-Sprites uebereinstimmt.
+- Nord/Sued bleiben dabei unveraendert auf den bereits korrekt zugeordneten Sprite-Ansichten.
+
+## 0.2.60-ship-direction-mapping - 2026-06-01
+
+- Weltkarten-Schiffe waehlen die acht Richtungs-Sprites jetzt ohne zusaetzliche 180-Grad-Verschiebung aus.
+- Dadurch stimmen Nord/Sued sowie die diagonalen Fahrtrichtungen wieder mit dem jeweils sichtbaren Schiffsbild ueberein.
+
 ## 0.2.59-route-target-position-overrides - 2026-06-01
 
 - Schiffsziele und vorgerenderte Routen-Endpunkte nutzen jetzt die aktuell geladenen Stadtpositionen aus Katalog bzw. `user://hanse_city_positions.json`.

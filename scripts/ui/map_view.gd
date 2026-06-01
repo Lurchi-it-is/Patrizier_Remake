@@ -22,7 +22,6 @@ const MAX_ZOOM := 5.0
 const ZOOM_STEP := 1.18
 const PLAYER_SHIP_ICON_SIZE := Vector2(54.0, 54.0)
 const AI_SHIP_ICON_SIZE := Vector2(38.0, 38.0)
-const SHIP_DIRECTION_INDEX_OFFSET := 4
 
 var cities: Array = []
 var navigation_routes: Dictionary = {}
@@ -233,7 +232,8 @@ func _draw_ship_icon(ship_position: Vector2, icon_size: Vector2, modulate: Color
 
 func _ship_direction_texture(heading: float) -> Texture2D:
 	var slice := TAU / float(SHIP_DIRECTION_TEXTURES.size())
-	var index := posmod(roundi(heading / slice) + SHIP_DIRECTION_INDEX_OFFSET, SHIP_DIRECTION_TEXTURES.size())
+	var mirrored_heading := PI - heading
+	var index := posmod(roundi(mirrored_heading / slice), SHIP_DIRECTION_TEXTURES.size())
 	return SHIP_DIRECTION_TEXTURES[index]
 
 func _draw_cities() -> void:

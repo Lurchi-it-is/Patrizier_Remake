@@ -1,6 +1,6 @@
 # Designrichtlinie
 
-Version: 0.2.59-route-target-position-overrides
+Version: 0.2.61-ship-horizontal-direction-flip
 
 ## Zielbild
 

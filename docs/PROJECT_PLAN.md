@@ -1,6 +1,6 @@
 # Projektplan: Hanseatische Warenwirtschaftssimulation
 
-Version: 0.2.59-route-target-position-overrides
+Version: 0.2.61-ship-horizontal-direction-flip
 Datum: 2026-06-01  
 Repo: https://github.com/Lurchi-it-is/Patrizier_Remake.git
 
