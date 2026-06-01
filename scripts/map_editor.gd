@@ -3,7 +3,8 @@ extends Control
 const CatalogLoader = preload("res://scripts/data/catalog_loader.gd")
 const MapView = preload("res://scripts/ui/map_view.gd")
 const CITY_VALUES_EXPORT_PATH := "user://custom_map_city_values.json"
-const EDITOR_VERSION := "0.2.48-illustrated-hanse-map"
+const CITY_POSITIONS_EXPORT_PATH := "user://hanse_city_positions.json"
+const EDITOR_VERSION := "0.2.49-city-marker-alignment"
 const POPULATION_GROUP_DISTRIBUTION_BY_KIND := {
 	"core": {"poor": 0.40, "craftsmen": 0.35, "burghers": 0.20, "patricians": 0.05},
 	"kontor": {"poor": 0.35, "craftsmen": 0.25, "burghers": 0.30, "patricians": 0.10},
@@ -51,6 +52,8 @@ var city_checkbox_list: VBoxContainer
 var editor_info_label: RichTextLabel
 var city_values_panel: VBoxContainer
 var selected_city_values_label: Label
+var position_edit_toggle: CheckButton
+var position_status_label: Label
 var population_spinbox: SpinBox
 var population_group_total_label: Label
 var export_status_label: Label
@@ -102,6 +105,7 @@ func _build_layout() -> void:
 	map_view.set_catalog(catalog)
 	map_view.set_layers(false, true)
 	map_view.editor_city_clicked.connect(_on_map_editor_city_clicked)
+	map_view.editor_city_position_changed.connect(_on_map_editor_city_position_changed)
 	map_panel.add_child(map_view)
 
 	var sidebar_scroll := ScrollContainer.new()
@@ -190,6 +194,8 @@ func _build_map_editor_panel() -> Control:
 	content.add_child(editor_info_label)
 
 	content.add_child(HSeparator.new())
+	content.add_child(_build_position_editor_controls())
+	content.add_child(HSeparator.new())
 	content.add_child(_build_city_values_panel())
 	content.add_child(HSeparator.new())
 	content.add_child(_build_export_controls())
@@ -197,6 +203,44 @@ func _build_map_editor_panel() -> Control:
 	_populate_city_checkboxes()
 
 	return panel
+
+func _build_position_editor_controls() -> Control:
+	var box := VBoxContainer.new()
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_theme_constant_override("separation", 6)
+
+	var heading := Label.new()
+	heading.text = "Stadtpositionen"
+	heading.add_theme_font_size_override("font_size", 18)
+	box.add_child(heading)
+
+	position_edit_toggle = CheckButton.new()
+	position_edit_toggle.text = "Positionen bearbeiten"
+	position_edit_toggle.toggled.connect(_on_position_edit_toggled)
+	box.add_child(position_edit_toggle)
+
+	var buttons := HBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 8)
+	box.add_child(buttons)
+
+	var save_positions := Button.new()
+	save_positions.text = "Positionen speichern"
+	save_positions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	save_positions.pressed.connect(_on_save_city_positions_pressed)
+	buttons.add_child(save_positions)
+
+	var show_all := Button.new()
+	show_all.text = "Alle anzeigen"
+	show_all.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	show_all.pressed.connect(_on_select_all_editor_cities_pressed)
+	buttons.add_child(show_all)
+
+	position_status_label = Label.new()
+	position_status_label.text = "Stadt waehlen, Positionsmodus aktivieren, Marker ziehen oder auf die Zielstelle klicken."
+	position_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(position_status_label)
+
+	return box
 
 func _build_city_values_panel() -> Control:
 	city_values_panel = VBoxContainer.new()
@@ -395,14 +439,18 @@ func _refresh_map_editor() -> void:
 		return
 
 	var position: Dictionary = city.get("position", {})
+	var water_text := "Wasser"
+	if map_view != null and not map_view.is_source_water_position(position):
+		water_text = "Land"
 	var values := _city_base_values_for(selected_editor_city_id)
-	editor_info_label.text = "[b]%s[/b]\n%s | %.4f, %.4f\nKartenpunkt: %d / %d\nEinwohner: %d\nEinwohnergruppen: %s\nErzeugung/Zufluss: %s\nVerbrauch/Tag: %s\nAusgewaehlt: %d / %d" % [
+	editor_info_label.text = "[b]%s[/b]\n%s | %.4f, %.4f\nKartenpunkt: %d / %d | %s\nEinwohner: %d\nEinwohnergruppen: %s\nErzeugung/Zufluss: %s\nVerbrauch/Tag: %s\nAusgewaehlt: %d / %d" % [
 		city.get("name", ""),
 		city.get("region", ""),
 		float(city.get("lat", 0.0)),
 		float(city.get("lon", 0.0)),
 		int(position.get("x", 0)),
 		int(position.get("y", 0)),
+		water_text,
 		int(values.get("population", 0)),
 		_format_population_groups_summary(values.get("population_groups", {})),
 		_format_goods_summary(values.get("production", {})),
@@ -689,6 +737,69 @@ func _on_map_editor_city_clicked(city_id: String) -> void:
 		var checkbox: CheckBox = city_checkboxes[city_id]
 		checkbox.set_pressed_no_signal(true)
 	_refresh_map_editor()
+
+func _on_position_edit_toggled(is_enabled: bool) -> void:
+	if map_view != null:
+		map_view.set_editor_position_edit_enabled(is_enabled)
+	if position_status_label != null:
+		position_status_label.text = "Positionsmodus aktiv." if is_enabled else "Positionsmodus aus."
+
+func _on_map_editor_city_position_changed(city_id: String, position: Dictionary) -> void:
+	_set_city_position(city_id, position)
+	selected_editor_city_id = city_id
+	_add_editor_city_point(city_id)
+	if city_checkboxes.has(city_id):
+		var checkbox: CheckBox = city_checkboxes[city_id]
+		checkbox.set_pressed_no_signal(true)
+
+	if position_status_label != null:
+		position_status_label.text = "%s: %d / %d" % [
+			String(_editor_city_by_id(city_id).get("name", city_id)),
+			int(position.get("x", 0)),
+			int(position.get("y", 0))
+		]
+	_refresh_map_editor()
+
+func _set_city_position(city_id: String, position: Dictionary) -> void:
+	var normalized_position := {
+		"x": int(position.get("x", 0)),
+		"y": int(position.get("y", 0))
+	}
+	for key in ["hanse_cities", "cities"]:
+		var city_array: Array = catalog.get(key, [])
+		for index in range(city_array.size()):
+			var city: Dictionary = city_array[index]
+			if String(city.get("id", "")) != city_id:
+				continue
+			city["position"] = normalized_position
+			city_array[index] = city
+			break
+		catalog[key] = city_array
+
+	if map_view != null:
+		map_view.set_editor_city_position(city_id, normalized_position)
+
+func _on_save_city_positions_pressed() -> void:
+	var positions: Array[Dictionary] = []
+	for city_entry in catalog.get("hanse_cities", []):
+		var city: Dictionary = city_entry
+		positions.append({
+			"id": String(city.get("id", "")),
+			"name": String(city.get("name", "")),
+			"position": city.get("position", {})
+		})
+
+	var file := FileAccess.open(CITY_POSITIONS_EXPORT_PATH, FileAccess.WRITE)
+	if file == null:
+		position_status_label.text = "Speichern fehlgeschlagen: %s" % FileAccess.get_open_error()
+		return
+
+	file.store_string(JSON.stringify({
+		"version": EDITOR_VERSION,
+		"positions": positions
+	}, "\t"))
+	file.close()
+	position_status_label.text = "Gespeichert: %s" % ProjectSettings.globalize_path(CITY_POSITIONS_EXPORT_PATH)
 
 func _on_city_population_changed(value: float) -> void:
 	if is_refreshing_value_controls or selected_editor_city_id.is_empty():

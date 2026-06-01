@@ -15,7 +15,7 @@
     "kind": "trade",
     "lon": -0.3274,
     "lat": 53.7676,
-    "position": { "x": 224, "y": 586 }
+    "position": { "x": 250, "y": 588 }
   },
   {
     "id": "boston",
@@ -24,7 +24,7 @@
     "kind": "trade",
     "lon": -0.0266,
     "lat": 52.9789,
-    "position": { "x": 235, "y": 641 }
+    "position": { "x": 244, "y": 641 }
   },
   {
     "id": "kings_lynn",
@@ -33,7 +33,7 @@
     "kind": "trade",
     "lon": 0.3976,
     "lat": 52.7543,
-    "position": { "x": 252, "y": 656 }
+    "position": { "x": 257, "y": 651 }
   },
   {
     "id": "great_yarmouth",
@@ -42,7 +42,7 @@
     "kind": "trade",
     "lon": 1.7305,
     "lat": 52.6072,
-    "position": { "x": 304, "y": 666 }
+    "position": { "x": 307, "y": 657 }
   },
   {
     "id": "bruegge",
@@ -105,7 +105,7 @@
     "kind": "core",
     "lon": 10.6866,
     "lat": 53.8655,
-    "position": { "x": 665, "y": 568 }
+    "position": { "x": 666, "y": 566 }
   },
   {
     "id": "wismar",
@@ -114,7 +114,7 @@
     "kind": "member",
     "lon": 11.4629,
     "lat": 53.8931,
-    "position": { "x": 685, "y": 572 }
+    "position": { "x": 681, "y": 562 }
   },
   {
     "id": "rostock",
@@ -123,7 +123,7 @@
     "kind": "member",
     "lon": 12.0991,
     "lat": 54.0924,
-    "position": { "x": 710, "y": 557 }
+    "position": { "x": 715, "y": 549 }
   },
   {
     "id": "stralsund",
@@ -132,7 +132,7 @@
     "kind": "member",
     "lon": 13.077,
     "lat": 54.3091,
-    "position": { "x": 753, "y": 546 }
+    "position": { "x": 747, "y": 540 }
   },
   {
     "id": "greifswald",
@@ -141,7 +141,7 @@
     "kind": "member",
     "lon": 13.3815,
     "lat": 54.0958,
-    "position": { "x": 766, "y": 558 }
+    "position": { "x": 770, "y": 558 }
   },
   {
     "id": "stettin",
@@ -150,7 +150,7 @@
     "kind": "member",
     "lon": 14.5528,
     "lat": 53.4285,
-    "position": { "x": 810, "y": 610 }
+    "position": { "x": 805, "y": 590 }
   },
   {
     "id": "kopenhagen",
@@ -213,7 +213,7 @@
     "kind": "kontor",
     "lon": 5.3221,
     "lat": 60.3929,
-    "position": { "x": 440, "y": 125 }
+    "position": { "x": 515, "y": 135 }
   },
   {
     "id": "stockholm",
@@ -240,7 +240,7 @@
     "kind": "core",
     "lon": 18.2948,
     "lat": 57.6348,
-    "position": { "x": 956, "y": 313 }
+    "position": { "x": 1014, "y": 324 }
   },
   {
     "id": "danzig",
@@ -249,7 +249,7 @@
     "kind": "member",
     "lon": 18.6466,
     "lat": 54.352,
-    "position": { "x": 975, "y": 540 }
+    "position": { "x": 996, "y": 512 }
   },
   {
     "id": "elbing",
@@ -258,7 +258,7 @@
     "kind": "member",
     "lon": 19.4088,
     "lat": 54.1561,
-    "position": { "x": 990, "y": 543 }
+    "position": { "x": 1006, "y": 536 }
   },
   {
     "id": "koenigsberg",
@@ -267,7 +267,7 @@
     "kind": "member",
     "lon": 20.5106,
     "lat": 54.7104,
-    "position": { "x": 1022, "y": 522 }
+    "position": { "x": 1036, "y": 514 }
   },
   {
     "id": "memel",

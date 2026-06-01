@@ -1,6 +1,6 @@
 # Hanse-Wirtschaftsbalancing
 
-Version: 0.2.48-illustrated-hanse-map
+Version: 0.2.49-city-marker-alignment
 
 ## Recherchebasis
 

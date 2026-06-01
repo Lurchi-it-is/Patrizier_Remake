@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.49-city-marker-alignment - 2026-06-01
+
+- Alle Stadtmarker auf der neuen illustrierten Hanseregion-Karte visuell nachgeprueft und an die sichtbaren Hafen-, Fluss-, Haff- und Kuestenzugaenge angepasst.
+- Luebeck auf den oestlichen Trave-/Luebecker-Bucht-Zugang und Danzig auf die sichtbare Bucht-/Weichselmuendung verschoben.
+- Visby auf Gotland statt auf Oeland oder die schwedische Festlandkueste gesetzt.
+- Weitere deutliche Fehlpositionen wie Bergen sowie mehrere Nordsee-, Ostsee- und Haffstaedte korrigiert.
+- Stadtkatalog, feste Startstadtdaten, Kartenmetadaten, Navigationsdaten und Generator-Overrides synchronisiert.
+- Map Editor um einen Positionsmodus erweitert, mit dem Stadtmarker direkt auf der aktuellen Kartenillustration verschoben und als `user://hanse_city_positions.json` gespeichert werden koennen.
+- Katalogloader nutzt gespeicherte Stadtpositions-Overrides aus `user://hanse_city_positions.json`.
+- Navigations-Wassererkennung im Generator auf eine Bildanalyse der aktuellen Karten-PNG umgestellt, damit sie zu verschobenen illustrierten Kuestenlinien passt.
+- Projektvalidierung um Positionsabgleiche zwischen Stadtkatalog, Kartenmetadaten, Navigationsdaten und Startstadtdaten erweitert.
+
 ## 0.2.48-illustrated-hanse-map - 2026-05-31
 
 - Hanseregion-Weltkarte durch eine handgemalte, spieltaugliche Kartenillustration ersetzt.

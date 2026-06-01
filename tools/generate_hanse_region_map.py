@@ -98,35 +98,35 @@ HANSE_CITIES = [
 
 WATER_ALIGNED_MARKER_PIXELS = {
     "london": {"x": 231, "y": 744},
-    "hull": {"x": 224, "y": 586},
-    "boston": {"x": 235, "y": 641},
-    "kings_lynn": {"x": 252, "y": 656},
-    "great_yarmouth": {"x": 304, "y": 666},
+    "hull": {"x": 250, "y": 588},
+    "boston": {"x": 244, "y": 641},
+    "kings_lynn": {"x": 257, "y": 651},
+    "great_yarmouth": {"x": 307, "y": 657},
     "bruegge": {"x": 366, "y": 752},
     "koeln": {"x": 511, "y": 785},
     "kampen": {"x": 469, "y": 671},
     "bremen": {"x": 584, "y": 634},
     "stade": {"x": 610, "y": 598},
     "hamburg": {"x": 630, "y": 601},
-    "luebeck": {"x": 665, "y": 568},
-    "wismar": {"x": 685, "y": 572},
-    "rostock": {"x": 710, "y": 557},
-    "stralsund": {"x": 753, "y": 546},
-    "greifswald": {"x": 766, "y": 558},
-    "stettin": {"x": 810, "y": 610},
+    "luebeck": {"x": 666, "y": 566},
+    "wismar": {"x": 681, "y": 562},
+    "rostock": {"x": 715, "y": 549},
+    "stralsund": {"x": 747, "y": 540},
+    "greifswald": {"x": 770, "y": 558},
+    "stettin": {"x": 805, "y": 590},
     "kopenhagen": {"x": 732, "y": 451},
     "malmoe": {"x": 746, "y": 457},
     "skanor_falsterbo": {"x": 743, "y": 471},
     "helsingborg": {"x": 736, "y": 426},
     "aalborg": {"x": 646, "y": 348},
     "oslo": {"x": 653, "y": 166},
-    "bergen": {"x": 440, "y": 125},
+    "bergen": {"x": 515, "y": 135},
     "stockholm": {"x": 949, "y": 195},
     "kalmar": {"x": 881, "y": 382},
-    "visby": {"x": 956, "y": 313},
-    "danzig": {"x": 975, "y": 540},
-    "elbing": {"x": 990, "y": 543},
-    "koenigsberg": {"x": 1022, "y": 522},
+    "visby": {"x": 1014, "y": 324},
+    "danzig": {"x": 996, "y": 512},
+    "elbing": {"x": 1006, "y": 536},
+    "koenigsberg": {"x": 1036, "y": 514},
     "memel": {"x": 1068, "y": 450},
     "riga": {"x": 1186, "y": 362},
     "reval": {"x": 1212, "y": 184},
@@ -918,11 +918,12 @@ def write_metadata() -> None:
         "data_sources": [
             "Natural Earth 1:50m Admin 0 countries",
             "Natural Earth 1:10m rivers and lake centerlines",
+            "Image-derived navigation water mask from the current illustrated map",
             "Researched historical waterway references for selected Hanse cities",
         ],
         "visual_style": {
-            "name": "detailed_historical_landcover_view",
-            "basis": "Top-down Hanse-era world view with satellite-inspired regional terrain: cultivated lowlands, denser northern/eastern forests, wetlands and rough highlands, without modern roads or cities.",
+            "name": "illustrated_hanse_strategy_map",
+            "basis": "Hand-painted Hanse-era strategy map background with accurate coastline-first composition, restrained historical waterway visibility, readable forests, wetlands, coastal lowlands and plausible highland regions. North German Plain, Denmark and the southern Baltic coast remain flat; larger mountains are limited to Norway, Scotland and the southern map edge.",
         },
         "historical_waterways": [
             {
@@ -1038,6 +1039,43 @@ def add_river_waterways(water: np.ndarray, river_data: dict) -> None:
                     gx = max(0, min(NAV_GRID_WIDTH - 1, int(px) // NAV_GRID_CELL_SIZE))
                     gy = max(0, min(NAV_GRID_HEIGHT - 1, int(py) // NAV_GRID_CELL_SIZE))
                     mark_water_circle(water, gx, gy, NAV_RIVER_RADIUS_CELLS)
+
+
+def build_image_sea_water_mask() -> np.ndarray:
+    if not OUTPUT_IMAGE.exists():
+        country_data = load_country_data()
+        return flood_connected_from_edges(np.logical_not(build_land_mask(country_data)))
+
+    image = plt.imread(OUTPUT_IMAGE)
+    if image.dtype.kind in ("u", "i"):
+        image = image.astype(float) / 255.0
+    if image.shape[2] > 3:
+        image = image[:, :, :3]
+
+    samples = np.zeros((NAV_GRID_HEIGHT, NAV_GRID_WIDTH, 3), dtype=float)
+    for gy in range(NAV_GRID_HEIGHT):
+        py = min(HEIGHT - 1, int(gy * NAV_GRID_CELL_SIZE + NAV_GRID_CELL_SIZE * 0.5))
+        y0 = max(0, py - 1)
+        y1 = min(HEIGHT, py + 2)
+        for gx in range(NAV_GRID_WIDTH):
+            px = min(WIDTH - 1, int(gx * NAV_GRID_CELL_SIZE + NAV_GRID_CELL_SIZE * 0.5))
+            x0 = max(0, px - 1)
+            x1 = min(WIDTH, px + 2)
+            samples[gy, gx] = image[y0:y1, x0:x1, :3].mean(axis=(0, 1))
+
+    red = samples[:, :, 0]
+    green = samples[:, :, 1]
+    blue = samples[:, :, 2]
+    blue_green_water = (
+        (blue > 0.20)
+        & (green > 0.18)
+        & (red < 0.48)
+        & (blue > red * 1.18 + 0.02)
+        & (green > red * 1.05)
+    )
+    dark_blue_water = (blue > 0.16) & (green > 0.15) & (red < 0.18) & (blue > red * 1.35)
+    water = np.logical_or(blue_green_water, dark_blue_water)
+    return flood_connected_from_edges(water)
 
 
 def add_harbor_access_cells(water: np.ndarray) -> None:
@@ -1224,10 +1262,8 @@ def route_distance_pixels(path: list[tuple[int, int]]) -> float:
 
 
 def build_navigation_data() -> dict:
-    country_data = load_country_data()
     river_data = load_river_data()
-    land = build_land_mask(country_data)
-    sea_water = flood_connected_from_edges(np.logical_not(land))
+    sea_water = build_image_sea_water_mask()
     access_water = np.zeros((NAV_GRID_HEIGHT, NAV_GRID_WIDTH), dtype=bool)
     add_river_waterways(access_water, river_data)
     add_harbor_access_cells(access_water)

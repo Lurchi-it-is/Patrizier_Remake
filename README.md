@@ -4,7 +4,7 @@ Eigenstaendige Warenwirtschaftssimulation im Hanse-Setting des Spaetmittelalters
 
 ## Status
 
-Version: `0.2.48-illustrated-hanse-map`
+Version: `0.2.49-city-marker-alignment`
 
 Das Projektfundament enthaelt:
 
