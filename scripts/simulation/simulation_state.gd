@@ -20,6 +20,8 @@ func _init(catalog: Dictionary) -> void:
 		var city: Dictionary = city_entry
 		var state: Dictionary = city.duplicate(true)
 		_normalize_stock_values(state)
+		state["production_remainder"] = {}
+		state["consumption_remainder"] = {}
 		city_state[state["id"]] = state
 
 func advance_days(days: int) -> void:
@@ -28,6 +30,9 @@ func advance_days(days: int) -> void:
 		_advance_one_day()
 
 func get_price(city_id: String, good_id: String) -> int:
+	return get_buy_price(city_id, good_id)
+
+func get_buy_price(city_id: String, good_id: String) -> int:
 	if not city_state.has(city_id) or not goods_by_id.has(good_id):
 		return 0
 
@@ -35,7 +40,19 @@ func get_price(city_id: String, good_id: String) -> int:
 	var good: Dictionary = goods_by_id[good_id]
 	var stock: float = float(city.get("stock", {}).get(good_id, 0))
 	var target: float = float(city.get("target_stock", {}).get(good_id, 1))
-	return TradePrice.calculate(int(good.get("base_price", 1)), stock, target)
+	var consumption: float = float(_combined_daily_consumption(city).get(good_id, 0.0))
+	return TradePrice.calculate_buy_price(int(good.get("base_price", 1)), stock, target, consumption, String(good.get("category", "")))
+
+func get_sell_price(city_id: String, good_id: String) -> int:
+	if not city_state.has(city_id) or not goods_by_id.has(good_id):
+		return 0
+
+	var city: Dictionary = city_state[city_id]
+	var good: Dictionary = goods_by_id[good_id]
+	var stock: float = float(city.get("stock", {}).get(good_id, 0))
+	var target: float = float(city.get("target_stock", {}).get(good_id, 1))
+	var consumption: float = float(_combined_daily_consumption(city).get(good_id, 0.0))
+	return TradePrice.calculate_sell_price(int(good.get("base_price", 1)), stock, target, consumption, String(good.get("category", "")))
 
 func get_stock(city_id: String, good_id: String) -> int:
 	if not city_state.has(city_id):
@@ -51,37 +68,86 @@ func get_target_stock(city_id: String, good_id: String) -> int:
 	var city: Dictionary = city_state[city_id]
 	return _whole_units(city.get("target_stock", {}).get(good_id, 0))
 
-func buy_from_city(city_id: String, good_id: String, requested_amount: float) -> Dictionary:
+func quote_buy_from_city(city_id: String, good_id: String, requested_amount: float) -> Dictionary:
 	if not city_state.has(city_id) or not goods_by_id.has(good_id) or requested_amount <= 0.0:
 		return {"amount": 0, "unit_price": 0, "total_price": 0.0}
 
-	var unit_price: int = get_price(city_id, good_id)
 	var city: Dictionary = city_state[city_id]
+	var good: Dictionary = goods_by_id[good_id]
 	var stock: Dictionary = city.get("stock", {})
 	var available: int = _whole_units(stock.get(good_id, 0))
 	var requested_units: int = _whole_units(requested_amount)
 	var amount: int = mini(requested_units, available)
 	if amount <= 0:
-		return {"amount": 0, "unit_price": unit_price, "total_price": 0.0}
+		return {"amount": 0, "unit_price": get_buy_price(city_id, good_id), "total_price": 0.0}
 
+	var target: float = float(city.get("target_stock", {}).get(good_id, 1))
+	var consumption: float = float(_combined_daily_consumption(city).get(good_id, 0.0))
+	var price_result: Dictionary = TradePrice.calculate_average_buy(
+		int(good.get("base_price", 1)),
+		float(available),
+		target,
+		amount,
+		consumption,
+		String(good.get("category", ""))
+	)
+	return {"amount": amount, "unit_price": int(price_result.get("unit_price", 0)), "total_price": float(price_result.get("total_price", 0.0))}
+
+func buy_from_city(city_id: String, good_id: String, requested_amount: float) -> Dictionary:
+	if not city_state.has(city_id) or not goods_by_id.has(good_id) or requested_amount <= 0.0:
+		return {"amount": 0, "unit_price": 0, "total_price": 0.0}
+
+	var quote: Dictionary = quote_buy_from_city(city_id, good_id, requested_amount)
+	var amount: int = int(quote.get("amount", 0))
+	if amount <= 0:
+		return quote
+
+	var city: Dictionary = city_state[city_id]
+	var stock: Dictionary = city.get("stock", {})
+	var available: int = _whole_units(stock.get(good_id, 0))
 	stock[good_id] = maxi(0, available - amount)
 	city["stock"] = stock
-	return {"amount": amount, "unit_price": unit_price, "total_price": amount * float(unit_price)}
+	return quote
+
+func quote_sell_to_city(city_id: String, good_id: String, amount: float) -> Dictionary:
+	if not city_state.has(city_id) or not goods_by_id.has(good_id) or amount <= 0.0:
+		return {"amount": 0, "unit_price": 0, "total_price": 0.0}
+
+	var city: Dictionary = city_state[city_id]
+	var good: Dictionary = goods_by_id[good_id]
+	var stock: Dictionary = city.get("stock", {})
+	var sold_units: int = _whole_units(amount)
+	if sold_units <= 0:
+		return {"amount": 0, "unit_price": get_sell_price(city_id, good_id), "total_price": 0.0}
+
+	var current_stock: int = _whole_units(stock.get(good_id, 0))
+	var target: float = float(city.get("target_stock", {}).get(good_id, 1))
+	var consumption: float = float(_combined_daily_consumption(city).get(good_id, 0.0))
+	var price_result: Dictionary = TradePrice.calculate_average_sell(
+		int(good.get("base_price", 1)),
+		float(current_stock),
+		target,
+		sold_units,
+		consumption,
+		String(good.get("category", ""))
+	)
+	return {"amount": sold_units, "unit_price": int(price_result.get("unit_price", 0)), "total_price": float(price_result.get("total_price", 0.0))}
 
 func sell_to_city(city_id: String, good_id: String, amount: float) -> Dictionary:
 	if not city_state.has(city_id) or not goods_by_id.has(good_id) or amount <= 0.0:
 		return {"amount": 0, "unit_price": 0, "total_price": 0.0}
 
-	var unit_price: int = get_price(city_id, good_id)
+	var quote: Dictionary = quote_sell_to_city(city_id, good_id, amount)
+	var sold_units: int = int(quote.get("amount", 0))
+	if sold_units <= 0:
+		return quote
+
 	var city: Dictionary = city_state[city_id]
 	var stock: Dictionary = city.get("stock", {})
-	var sold_units: int = _whole_units(amount)
-	if sold_units <= 0:
-		return {"amount": 0, "unit_price": unit_price, "total_price": 0.0}
-
-	stock[good_id] = _whole_units(stock.get(good_id, 0)) + sold_units
+	var current_stock: int = _whole_units(stock.get(good_id, 0))
+	stock[good_id] = current_stock + sold_units
 	city["stock"] = stock
-	return {"amount": sold_units, "unit_price": unit_price, "total_price": sold_units * float(unit_price)}
+	return quote
 
 func city_ids() -> Array[String]:
 	var ids: Array[String] = []
@@ -97,16 +163,27 @@ func _advance_one_day() -> void:
 
 func _apply_production(city: Dictionary) -> void:
 	var stock: Dictionary = city.get("stock", {})
+	var remainder: Dictionary = city.get("production_remainder", {})
 	for good_id in city.get("production", {}).keys():
-		stock[good_id] = _whole_units(stock.get(good_id, 0)) + _daily_units(city["production"][good_id])
+		var daily_amount: float = float(city["production"][good_id])
+		var total_amount: float = float(remainder.get(good_id, 0.0)) + max(0.0, daily_amount)
+		var produced_units: int = _whole_units(total_amount)
+		remainder[good_id] = total_amount - float(produced_units)
+		stock[good_id] = _whole_units(stock.get(good_id, 0)) + produced_units
 	city["stock"] = stock
+	city["production_remainder"] = remainder
 
 func _apply_consumption(city: Dictionary) -> void:
 	var stock: Dictionary = city.get("stock", {})
+	var remainder: Dictionary = city.get("consumption_remainder", {})
 	var consumption: Dictionary = _combined_daily_consumption(city)
 	for good_id in consumption.keys():
-		stock[good_id] = maxi(0, _whole_units(stock.get(good_id, 0)) - _daily_units(consumption[good_id]))
+		var total_amount: float = float(remainder.get(good_id, 0.0)) + max(0.0, float(consumption[good_id]))
+		var requested_units: int = _whole_units(total_amount)
+		remainder[good_id] = total_amount - float(requested_units)
+		stock[good_id] = maxi(0, _whole_units(stock.get(good_id, 0)) - requested_units)
 	city["stock"] = stock
+	city["consumption_remainder"] = remainder
 
 func get_daily_consumption(city_id: String) -> Dictionary:
 	if not city_state.has(city_id):
@@ -140,6 +217,3 @@ func _normalize_stock_values(city: Dictionary) -> void:
 
 func _whole_units(value: Variant) -> int:
 	return max(0, floori(float(value)))
-
-func _daily_units(value: Variant) -> int:
-	return max(0, roundi(float(value)))

@@ -294,7 +294,7 @@ func _market_goods_preview(city_id: String) -> String:
 		var good_id := String(good.get("id", ""))
 		entries.append("%s %d" % [
 			_good_label(good),
-			simulation.get_price(city_id, good_id)
+			simulation.get_buy_price(city_id, good_id)
 		])
 	return " | ".join(entries)
 
@@ -620,7 +620,7 @@ func _build_trade_goods_panel(city_id: String) -> Control:
 		var is_selected := good_id == selected_trade_good_id
 		grid.add_child(_trade_value_cell(_good_label(good), 168.0, HORIZONTAL_ALIGNMENT_LEFT, is_selected))
 		grid.add_child(_trade_value_cell("%d" % simulation.get_stock(city_id, good_id), 64.0, HORIZONTAL_ALIGNMENT_RIGHT, is_selected))
-		grid.add_child(_trade_value_cell("%d" % simulation.get_price(city_id, good_id), 58.0, HORIZONTAL_ALIGNMENT_RIGHT, is_selected))
+		grid.add_child(_trade_value_cell("%d" % simulation.get_buy_price(city_id, good_id), 58.0, HORIZONTAL_ALIGNMENT_RIGHT, is_selected))
 		grid.add_child(_trade_value_cell("%d" % _player_cargo_amount(good_id), 58.0, HORIZONTAL_ALIGNMENT_RIGHT, is_selected))
 		grid.add_child(_trade_value_cell(_player_average_price_text(good_id), 72.0, HORIZONTAL_ALIGNMENT_RIGHT, is_selected))
 
@@ -670,8 +670,8 @@ func _build_trade_good_details_panel(city_id: String) -> Control:
 	var price_box := HBoxContainer.new()
 	price_box.add_theme_constant_override("separation", 8)
 	content.add_child(price_box)
-	price_box.add_child(_trade_price_card("Einkauf", "%d" % simulation.get_price(city_id, good_id), Color(0.36, 0.12, 0.08)))
-	price_box.add_child(_trade_price_card("Verkauf", "%d" % simulation.get_price(city_id, good_id), Color(0.13, 0.25, 0.12)))
+	price_box.add_child(_trade_price_card("Einkauf", "%d" % simulation.get_buy_price(city_id, good_id), Color(0.36, 0.12, 0.08)))
+	price_box.add_child(_trade_price_card("Verkauf", "%d" % simulation.get_sell_price(city_id, good_id), Color(0.13, 0.25, 0.12)))
 	return panel
 
 func _build_trade_footer(city_id: String) -> Control:
@@ -991,12 +991,20 @@ func _player_buyable_amount(city_id: String, good_id: String) -> int:
 	return _trade_limited_amount(_player_max_buyable_amount(city_id, good_id))
 
 func _player_max_buyable_amount(city_id: String, good_id: String) -> int:
-	var unit_price: int = simulation.get_price(city_id, good_id)
+	var unit_price: int = simulation.get_buy_price(city_id, good_id)
 	if unit_price <= 0:
 		return 0
 
-	var affordable_amount: int = floori(player_capital / float(unit_price))
-	return mini(mini(_player_cargo_remaining(), simulation.get_stock(city_id, good_id)), affordable_amount)
+	var low: int = 0
+	var high: int = mini(_player_cargo_remaining(), simulation.get_stock(city_id, good_id))
+	while low < high:
+		var mid: int = floori(float(low + high + 1) / 2.0)
+		var quote: Dictionary = simulation.quote_buy_from_city(city_id, good_id, mid)
+		if float(quote.get("total_price", 0.0)) <= player_capital:
+			low = mid
+		else:
+			high = mid - 1
+	return low
 
 func _trade_limited_amount(max_amount: int) -> int:
 	if max_amount <= 0:
@@ -1364,8 +1372,8 @@ func _target_city_score(trader: Dictionary, from_city_id: String, target_city_id
 	for good_entry in catalog.get("goods", []):
 		var good: Dictionary = good_entry
 		var good_id := String(good.get("id", ""))
-		var source_price: float = float(simulation.get_price(from_city_id, good_id))
-		var target_price: float = float(simulation.get_price(target_city_id, good_id))
+		var source_price: float = float(simulation.get_buy_price(from_city_id, good_id))
+		var target_price: float = float(simulation.get_sell_price(target_city_id, good_id))
 		var shortage: float = max(0.0, 1.0 - simulation.get_stock(target_city_id, good_id) / max(1.0, simulation.get_target_stock(target_city_id, good_id)))
 		score += max(0.0, target_price - source_price) + shortage * target_price * float(profile.get("supply_focus", 0.5))
 
@@ -1439,8 +1447,8 @@ func _cargo_opportunities(from_city_id: String, target_city_id: String) -> Array
 		if available <= 0:
 			continue
 
-		var source_price: float = float(simulation.get_price(from_city_id, good_id))
-		var target_price: float = float(simulation.get_price(target_city_id, good_id))
+		var source_price: float = float(simulation.get_buy_price(from_city_id, good_id))
+		var target_price: float = float(simulation.get_sell_price(target_city_id, good_id))
 		var target_shortage: float = max(0.0, 1.0 - simulation.get_stock(target_city_id, good_id) / max(1.0, simulation.get_target_stock(target_city_id, good_id)))
 		var score: float = max(0.0, target_price - source_price) + target_shortage * target_price * 0.45
 		if score <= 0.0 and rng.randf() > 0.18:
@@ -1461,7 +1469,7 @@ func _sell_trader_cargo(trader: Dictionary, city_id: String) -> void:
 			continue
 
 		var avg_price: float = float(entry.get("avg_price", 0.0))
-		var current_price: float = float(simulation.get_price(city_id, good_id))
+		var current_price: float = float(simulation.get_sell_price(city_id, good_id))
 		var desired_margin: float = lerpf(0.03, 0.18, float(profile.get("patience", 0.5)))
 		var sell_with_loss_chance: float = lerpf(0.22, 0.04, float(profile.get("patience", 0.5)))
 		if current_price < avg_price * (1.0 + desired_margin) and rng.randf() > sell_with_loss_chance:

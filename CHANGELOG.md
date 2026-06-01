@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.50-tempered-price-signals - 2026-06-01
+
+- Preisprofile deutlich gedaempft, damit Stadtunterschiede weniger offensichtlich und Routen weniger sofort loesbar wirken.
+- Kauf-/Verkaufsspannen reduziert und Ueberschuss-Mindestpreise angehoben; Luxus- und Importwaren bleiben attraktiv, springen aber nicht mehr so hart.
+- Validierung begrenzt Startpreisstreuungen enger, passend zur abgeschwaechten Preislogik.
+
+## 0.2.49-patrician-style-pricing - 2026-05-31
+
+- Preisbildung an klassischer Hanse-Handelsspiel-Logik ausgerichtet: Lagerreichweite, Warengruppenprofile und getrennte Kauf-/Verkaufspreise ersetzen die stark gedaempfte Einheitsformel.
+- Kauf und Verkauf grosser Warenmengen werden als Durchschnitt ueber die durch die Transaktion veraenderte Marktlage abgerechnet.
+- Max-Kaufmenge beruecksichtigt den Durchschnittspreis der gesamten Transaktion, damit das Kapital nicht durch steigende Mengenpreise ueberzogen wird.
+- Kleine taegliche Produktions- und Verbrauchswerte sammeln interne Restmengen, damit Warenlager ganzzahlig bleiben und Werte unter `0.5` langfristig trotzdem wirken.
+- KI-Haendler bewerten Einkaufschancen mit Stadt-Verkaufspreisen und Zielmaerkte mit Stadt-Ankaufspreisen; Balancing-Metriken loggen Kauf- und Verkaufspreise separat.
+- Projektvalidierung auf die neue Preisformel und Bid/Ask-Spanne aktualisiert.
+
 ## 0.2.48-illustrated-hanse-map - 2026-05-31
 
 - Hanseregion-Weltkarte durch eine handgemalte, spieltaugliche Kartenillustration ersetzt.

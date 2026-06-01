@@ -1,6 +1,6 @@
 # Projektplan: Hanseatische Warenwirtschaftssimulation
 
-Version: 0.2.48-illustrated-hanse-map
+Version: 0.2.50-tempered-price-signals
 Datum: 2026-05-31  
 Repo: https://github.com/Lurchi-it-is/Patrizier_Remake.git
 
@@ -277,8 +277,9 @@ Minimal benoetigte Entitaeten:
 Empfohlene Formel fuer den Start:
 
 - Jede Stadt hat je Ware einen Tagesverbrauch und einen Zielbestand.
-- `stock_ratio = aktueller Bestand / Zielbestand`
-- Preis steigt stark unter 1.0 und sinkt moderat ueber 1.0.
+- Preise entstehen aus Lagerreichweite und Bestandsschwellen statt nur aus einem glatten Bestand/Zielbestand-Verhaeltnis.
+- Kauf- und Verkaufspreise unterscheiden sich; groessere Transaktionen werden als Durchschnitt ueber die veraenderte Marktlage abgerechnet.
+- Preisprofile unterscheiden Grundbedarf, Konservierungswaren, Bau-/Schiffbaumaterial, Rohstoffe, Metalle und Luxuswaren.
 - Produktion laeuft nur, wenn Input, Arbeiter und Betriebskosten vorhanden sind.
 - Bevoelkerung waechst, wenn Grundwaren ueber mehrere Wochen stabil verfuegbar sind.
 

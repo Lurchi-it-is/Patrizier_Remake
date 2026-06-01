@@ -1,6 +1,6 @@
 # Architektur
 
-Version: 0.2.48-illustrated-hanse-map
+Version: 0.2.50-tempered-price-signals
 
 ## Leitidee
 
@@ -32,8 +32,8 @@ Die Wirtschaftssimulation soll datengetrieben und testbar bleiben. Godot rendert
 - KI-Haendler kaufen und verkaufen im Hauptspiel gegen echte Stadtlager; Balancing-Metriken werden als JSONL nach `user://balance_metrics.jsonl` geschrieben.
 - Die rechte Hauptspiel-Sidebar ist auf Spielerstatus fokussiert: Kapital, Position, aktives Schiff und Ladung. Markt- und Piraten-Demoausgaben erscheinen dort nicht mehr.
 - Spielerhandel fuehrt einen Kapitalstand, aktualisiert die Schiffsladung und speichert je Ware den durchschnittlich bezahlten Einkaufspreis fuer das Handelsfenster.
-- Warenbestaende in Stadtlagern und Schiffsladungen sind spielseitig ganze Einheiten; Handel mit Teilmengen wie halben Faessern ist nicht erlaubt.
-- Dynamische Preise reagieren gedaempft auf Lagerueberschuss und Mangel; Startpreis-Spannen werden validiert, damit Marktunterschiede nicht allein durch offensichtliche Ueberschussstaedte trivialen Gewinn erzeugen.
+- Warenbestaende in Stadtlagern und Schiffsladungen sind spielseitig ganze Einheiten; Handel mit Teilmengen wie halben Faessern ist nicht erlaubt. Kleine Tageswerte aus Produktion und Verbrauch sammeln interne Restmengen, bis daraus ganze Einheiten entstehen.
+- Dynamische Preise reagieren warentypisch, aber gedaempft auf Lagerreichweite, Ueberschuss und Mangel; Kauf- und Verkaufspreise sind getrennt und groessere Handelsmengen werden als Durchschnitt ueber die Bestandsveraenderung abgerechnet.
 - Das Handelsfenster bleibt ein separates zentriertes Fenster und ist visuell als Holz-/Gold-Handelsoberflaeche mit Stadtpanel, Warentabelle, Warendetails, Mengenwahl und Statusleiste aufgebaut.
 - Der Hanseorte-Katalog priorisiert Kuesten-, Sund-, Haff- und Hafenstandorte, wenn weitere Handelsorte ergaenzt werden.
 - `scenes/launcher.tscn` ist der technische Godot-Projektstart und waehlt anhand des Export-Feature-Tags `main_game` oder `map_editor` die eigentliche Einstiegsszene.
@@ -43,7 +43,7 @@ Die Wirtschaftssimulation soll datengetrieben und testbar bleiben. Godot rendert
 ## Erste Simulationsgrenzen
 
 - Ein Simulations-Tag ist der kleinste regulare Wirtschaftstick.
-- Preise werden aus Basispreis, Stadtbestand und Zielbestand berechnet.
+- Preise werden aus Basispreis, Warengruppe, Stadtbestand, Zielbestand und Tagesverbrauch als Lagerreichweite berechnet.
 - Stadtverbrauch besteht aus explizitem Stadt-/Gewerbeverbrauch plus Bedarfen der Einwohnergruppen; diese Logik gilt fuer feste Staedte und exportierte Map-Editor-Staedte.
 - Produktions- und Verbrauchswerte laufen pro Tag in der jeweiligen Wareneinheit aus `data/goods.json`.
 - `production` steht in den Stadtprofilen fuer lokale Erzeugung plus gesicherten Tageszufluss aus dem direkten Hinterland oder Kontorhandel und wird im Map Editor als `Erzeugung/Zufluss` angezeigt.

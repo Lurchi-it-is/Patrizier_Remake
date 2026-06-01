@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.48-illustrated-hanse-map
+Version: 0.2.50-tempered-price-signals
 
 ## Branch- und Worktree-Regel
 

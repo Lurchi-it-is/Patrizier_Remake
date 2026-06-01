@@ -40,6 +40,8 @@ func log_daily_city_metrics(day: int, simulation_time_days: float, simulation, g
 				"stock": simulation.get_stock(String(city_id), good_id),
 				"target_stock": simulation.get_target_stock(String(city_id), good_id),
 				"price": simulation.get_price(String(city_id), good_id),
+				"buy_price": simulation.get_buy_price(String(city_id), good_id),
+				"sell_price": simulation.get_sell_price(String(city_id), good_id),
 				"production": float(city.get("production", {}).get(good_id, 0.0)),
 				"consumption": float(simulation.get_daily_consumption(String(city_id)).get(good_id, 0.0)),
 			})

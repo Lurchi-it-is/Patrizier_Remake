@@ -155,27 +155,112 @@ foreach ($goodId in $regionalConsumption.Keys) {
     }
 }
 
+function Get-PriceProfile([string]$category) {
+    $profiles = @{
+        food = @{ min = 0.84; max = 1.45; surplus = 3.10; shortageCurve = 1.20; surplusCurve = 1.25; spread = 0.03 }
+        preservation = @{ min = 0.82; max = 1.55; surplus = 3.20; shortageCurve = 1.15; surplusCurve = 1.20; spread = 0.04 }
+        construction = @{ min = 0.84; max = 1.40; surplus = 3.20; shortageCurve = 1.20; surplusCurve = 1.25; spread = 0.035 }
+        shipbuilding = @{ min = 0.82; max = 1.48; surplus = 3.20; shortageCurve = 1.16; surplusCurve = 1.20; spread = 0.04 }
+        raw_material = @{ min = 0.80; max = 1.55; surplus = 3.30; shortageCurve = 1.12; surplusCurve = 1.15; spread = 0.045 }
+        metal = @{ min = 0.80; max = 1.60; surplus = 3.30; shortageCurve = 1.10; surplusCurve = 1.15; spread = 0.05 }
+        luxury = @{ min = 0.76; max = 1.85; surplus = 3.80; shortageCurve = 1.00; surplusCurve = 1.05; spread = 0.075 }
+    }
+
+    if ($profiles.ContainsKey($category)) {
+        return $profiles[$category]
+    }
+
+    return @{ min = 0.82; max = 1.55; surplus = 3.20; shortageCurve = 1.15; surplusCurve = 1.20; spread = 0.05 }
+}
+
+function Get-CityDailyConsumption($city) {
+    $dailyConsumption = @{}
+    foreach ($property in $city.consumption.PSObject.Properties) {
+        $dailyConsumption[$property.Name] = [double]$property.Value
+    }
+
+    foreach ($groupProperty in $city.population_groups.PSObject.Properties) {
+        $group = $populationGroups | Where-Object { $_.id -eq $groupProperty.Name } | Select-Object -First 1
+        foreach ($need in $group.daily_consumption_per_1000.PSObject.Properties) {
+            if (-not $dailyConsumption.ContainsKey($need.Name)) {
+                $dailyConsumption[$need.Name] = 0.0
+            }
+
+            $dailyConsumption[$need.Name] += ([double]$groupProperty.Value / 1000.0) * [double]$need.Value
+        }
+    }
+
+    return $dailyConsumption
+}
+
+function Get-EffectiveStockRatio([double]$stock, [double]$target, [double]$dailyConsumption) {
+    if ($target -le 0) {
+        return 1.0
+    }
+
+    $reserveConsumption = [math]::Max(0.01, $target / 30.0)
+    $effectiveConsumption = [math]::Max($dailyConsumption, $reserveConsumption)
+    $targetDays = [math]::Max(1.0, $target / $effectiveConsumption)
+    $stockDays = [math]::Max(0.0, $stock) / $effectiveConsumption
+    return [math]::Min([math]::Max([math]::Min($stock / $target, $stockDays / $targetDays), 0.0), 4.0)
+}
+
+function Get-MarketPrice([int]$basePrice, [double]$stock, [double]$target, [double]$dailyConsumption, [string]$category) {
+    if ($target -le 0) {
+        return [math]::Max($basePrice, 1)
+    }
+
+    $profile = Get-PriceProfile $category
+    $stockRatio = Get-EffectiveStockRatio $stock $target $dailyConsumption
+    if ($stockRatio -lt 1.0) {
+        $scarcity = [math]::Pow(1.0 - [math]::Min([math]::Max($stockRatio, 0.0), 1.0), [double]$profile.shortageCurve)
+        $multiplier = 1.0 + ([double]$profile.max - 1.0) * $scarcity
+    } else {
+        $surplusSpan = [math]::Max(0.1, [double]$profile.surplus - 1.0)
+        $surplus = [math]::Pow([math]::Min([math]::Max(($stockRatio - 1.0) / $surplusSpan, 0.0), 1.0), [double]$profile.surplusCurve)
+        $multiplier = 1.0 + ([double]$profile.min - 1.0) * $surplus
+    }
+
+    return [math]::Max([int][math]::Round([double]$basePrice * $multiplier), 1)
+}
+
+function Get-BuyPrice([int]$basePrice, [double]$stock, [double]$target, [double]$dailyConsumption, [string]$category) {
+    $profile = Get-PriceProfile $category
+    $marketPrice = Get-MarketPrice $basePrice $stock $target $dailyConsumption $category
+    return [math]::Max([int][math]::Round([double]$marketPrice * (1.0 + [double]$profile.spread)), 1)
+}
+
+function Get-SellPrice([int]$basePrice, [double]$stock, [double]$target, [double]$dailyConsumption, [string]$category) {
+    $profile = Get-PriceProfile $category
+    $marketPrice = Get-MarketPrice $basePrice $stock $target $dailyConsumption $category
+    return [math]::Max([int][math]::Round([double]$marketPrice * (1.0 - [double]$profile.spread)), 1)
+}
+
 foreach ($goodId in $goodIds.Keys) {
     $good = $goodsById[$goodId]
-    $prices = @()
+    $buyPrices = @()
     foreach ($city in $cities) {
         $stock = [double]$city.stock.$goodId
         $target = [double]$city.target_stock.$goodId
-        if ($target -le 0) {
-            $prices += [int]$good.base_price
-            continue
+        $dailyConsumption = Get-CityDailyConsumption $city
+        $consumption = 0.0
+        if ($dailyConsumption.ContainsKey($goodId)) {
+            $consumption = [double]$dailyConsumption[$goodId]
         }
 
-        $stockRatio = [math]::Min([math]::Max($stock / $target, 0.35), 2.25)
-        $scarcityMultiplier = [math]::Pow(1.0 / $stockRatio, 0.34)
-        $boundedMultiplier = [math]::Min([math]::Max($scarcityMultiplier, 0.78), 1.38)
-        $prices += [int][math]::Round([double]$good.base_price * $boundedMultiplier)
+        $buyPrice = Get-BuyPrice ([int]$good.base_price) $stock $target $consumption ([string]$good.category)
+        $sellPrice = Get-SellPrice ([int]$good.base_price) $stock $target $consumption ([string]$good.category)
+        if ($buyPrice -le $sellPrice) {
+            throw "Bid/ask spread for good '$goodId' is invalid in city '$($city.id)': buy $buyPrice sell $sellPrice"
+        }
+
+        $buyPrices += $buyPrice
     }
 
-    $minPrice = ($prices | Measure-Object -Minimum).Minimum
-    $maxPrice = ($prices | Measure-Object -Maximum).Maximum
-    if ($minPrice -le 0 -or ($maxPrice / $minPrice) -gt 1.75) {
-        throw "Start price spread for good '$goodId' is too high: $minPrice..$maxPrice"
+    $minPrice = ($buyPrices | Measure-Object -Minimum).Minimum
+    $maxPrice = ($buyPrices | Measure-Object -Maximum).Maximum
+    if ($minPrice -le 0 -or ($maxPrice / $minPrice) -gt 2.35) {
+        throw "Start buy price spread for good '$goodId' is too high: $minPrice..$maxPrice"
     }
 }
 

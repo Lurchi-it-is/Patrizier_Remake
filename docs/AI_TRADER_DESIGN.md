@@ -1,6 +1,6 @@
 # KI-Haendler und Warenfluss
 
-Version: 0.2.48-illustrated-hanse-map
+Version: 0.2.50-tempered-price-signals
 
 ## Zielbild
 
@@ -33,14 +33,14 @@ KI und Spieler handeln auf denselben Stadtlagern. Es gibt keinen separaten KI-Ma
 
 Preise entstehen aus dem Verhaeltnis von aktuellem Lagerbestand zu Sollbestand:
 
-- Jede Ware hat Mindestpreis, Basispreis und Hoechstpreis.
-- Bei Sollbestand liegt der Preis nahe am Basispreis.
-- Je weiter der Bestand vom Sollbestand abweicht, desto staerker schlaegt der Preis nicht-linear aus.
-- Niedriger Bestand erhoeht Preise.
-- Hoher Bestand senkt Preise.
+- Jede Warengruppe hat eigene, bewusst gedaempfte Preisprofile fuer Mindestniveau, Knappheitsspitzen, Ueberschussdaempfung und Handelsspanne.
+- Bei ausreichender Lagerreichweite liegt der Marktpreis nahe am Basispreis.
+- Je weiter Lagerreichweite und Bestand vom Sollbestand abweichen, desto staerker schlaegt der Preis nicht-linear aus.
+- Niedriger Bestand und geringe Lagerreichweite erhoehen Preise.
+- Hoher Bestand und lange Lagerreichweite senken Preise.
 - Bei `0` Bestand wird trotzdem ein Preis angezeigt, der als Nachfrage-/Marktsignal dient.
 - Kaufen ist nur moeglich, wenn realer Bestand vorhanden ist.
-- Verkaufen ist immer moeglich, auch bei Ueberfluss, aber dann zu niedrigerem Preis.
+- Verkaufen ist immer moeglich, auch bei Ueberfluss, aber dann zum niedrigeren Stadt-Ankaufspreis.
 
 ## Produktion, Verbrauch und Bevoelkerung
 
