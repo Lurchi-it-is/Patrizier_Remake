@@ -1,5 +1,75 @@
 # Changelog
 
+## 0.2.73-crisp-map-city-labels - 2026-06-01
+
+- Stadtnamen werden als unskalierte Screen-Overlay-Schrift gerendert und bleiben dadurch beim Kartenzoom scharf.
+- Stadtlabels bleiben im Hauptspiel und Map Editor sichtbar, waehrend Marker weiter an der Karte verankert sind.
+
+## 0.2.72-fixed-size-map-markers - 2026-06-01
+
+- Stadtmarker und Marker-Klickbereiche bleiben beim Kartenzoom in Bildschirmgroesse konstant.
+- Hafenanzeiger fuer angedockte Schiffe wurde an die Designrichtlinie angepasst: kleines Petrol-/Messing-Ankerschild mit Holzsteg statt generischem Leuchtpunkt.
+
+## 0.2.71-scaled-city-markers-and-dock-badges - 2026-06-01
+
+- Karten-Stadtmarker im Hauptspiel kleiner gezeichnet und mit kleineren Beschriftungen versehen.
+- Klickbereiche der Stadtmarker folgen jetzt der Karten-Zoomskalierung.
+- Angedockte Schiffe werden neben der Stadt mit einem eigenen Hafen-/Schiffsmarker angezeigt, statt direkt auf dem Stadtmarker zu liegen.
+
+## 0.2.70-current-marker-routing - 2026-06-01
+
+- Stadt-zu-Stadt-Routen werden jetzt direkt zwischen den aktuell sichtbaren Wasser-Stadtmarkern berechnet.
+- Alte vorberechnete Hafen-Zwischenpunkte bestimmen die Fahrziele nicht mehr.
+- Fehlende Wasserverbindungen werden nicht mehr als gerade Landlinie kaschiert, sondern muessen im Map Editor als Wasserweg eingezeichnet werden.
+
+## 0.2.69-single-water-city-marker - 2026-06-01
+
+- Map Editor: Debugmodus zeichnet keine separaten Hafen-Ankerpunkte mehr, damit pro Stadt nur noch ein sichtbarer Marker existiert.
+- Der sichtbare Stadtmarker bleibt der bewegliche Wasser-/Zielpunkt, den Routen und Schiffe verwenden.
+
+## 0.2.68-main-map-editor-persistence - 2026-06-01
+
+- Map Editor bearbeitet jetzt die aktuell gespeicherte Hauptspielkarte statt einer rein separaten Custom-Karte.
+- Gespeicherte aktive Staedte aus `user://custom_map_city_values.json` werden vom Hauptspiel als Stadtliste geladen.
+- Im Map Editor geloeschte Staedte werden als `deleted_city_ids` gespeichert und beim naechsten Editor-/Hauptspielstart ausgefiltert.
+- Das Hauptspiel startet mit der ersten aktiven Stadt, falls die bisherige Spieler-Startstadt nicht mehr Teil der gespeicherten Karte ist.
+
+## 0.2.67-manual-waterway-editor - 2026-06-01
+
+- Map Editor: Wasserwege koennen im Debugmodus manuell mit einem Pinsel eingezeichnet oder entfernt werden.
+- Manuelle Navigationskorrekturen werden als `user://custom_navigation_waterways.json` gespeichert und direkt fuer Pathfinding, Debuganzeige und Schiffsrouten genutzt.
+- Custom-Kartenexport verweist auf gespeicherte manuelle Wasserweg-Overrides, wenn sie vorhanden sind.
+
+## 0.2.66-strict-water-pathing-mask - 2026-06-01
+
+- Runtime-Pathing nutzt jetzt eine strengere Navigationsmaske aus `sea_rows` plus expliziten Stadt-Hafenzugaengen.
+- Debug-Wassermaske unterscheidet offene See und Hafen-/Flusszugaenge, statt die breite Generator-Rohmaske als einheitlich befahrbar zu zeigen.
+- Stadt-zu-Stadt-Routen werden vor Anzeige und Schiffsbewegung auf der Runtime-Wassermaske nachgezogen, damit lange vereinfachte Routensegmente nicht quer ueber Land laufen.
+
+## 0.2.65-map-debug-and-background - 2026-06-01
+
+- Map Editor: Debugmodus als Schalter ergaenzt, der Wasserwege, Hafenpunkte und Routen zur ausgewaehlten Stadt sichtbar macht.
+- Map Editor: eigenes Kartenbild kann geladen und als `user://custom_map_background.png` gespeichert werden.
+- Custom-Kartenexport dokumentiert den aktuell verwendeten Custom-Kartenhintergrund.
+
+## 0.2.64-water-snapped-city-routing - 2026-06-01
+
+- Stadtpositionen fuer sichtbare Hauptspiel-Marker und Schiffszielpunkte werden auf den naechsten befahrbaren Wasserpunkt normalisiert.
+- Map-Editor-Positionsverschiebungen speichern dadurch Hafenpunkte statt Landpunkte.
+- CPU-Haendler fahren am Routenende nicht mehr ueber Land zu verschobenen Stadtmarkern.
+
+## 0.2.63-position-aware-routing - 2026-06-01
+
+- Verschobene Stadtpositionen im Map Editor werden automatisch als Positions-Override gespeichert.
+- Stadtmarker, Hafenpositionen, Schiffspfad-Endpunkte und Reisezeiten nutzen die aktuell geladenen Stadtpositionen.
+- Stadt-zu-Stadt-Routen bleiben auf der vorhandenen Navigationsroute, fahren aber sichtbar bis zur verschobenen Hafenposition.
+
+## 0.2.62-map-editor-delete-cities - 2026-06-01
+
+- Map Editor: Staedte koennen jetzt aus Editor-Liste, Kartenmarkern, Grundwerten und Exportdaten entfernt werden.
+- Stadt-Auswahlzeilen im Map Editor kompakter und optisch dezenter gestaltet.
+- Map-Editor-Version an die Projektversion angepasst.
+
 ## 0.2.61-ship-horizontal-direction-flip - 2026-06-01
 
 - Horizontale Weltkarten-Schiffsrichtung gespiegelt, damit Links/Rechts mit den gerenderten Koggen-Sprites uebereinstimmt.

@@ -1,6 +1,6 @@
 # Entwicklung
 
-Version: 0.2.61-ship-horizontal-direction-flip
+Version: 0.2.73-crisp-map-city-labels
 
 ## Branch- und Worktree-Regel
 

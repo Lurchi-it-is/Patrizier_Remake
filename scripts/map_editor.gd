@@ -4,7 +4,9 @@ const CatalogLoader = preload("res://scripts/data/catalog_loader.gd")
 const MapView = preload("res://scripts/ui/map_view.gd")
 const CITY_VALUES_EXPORT_PATH := "user://custom_map_city_values.json"
 const CITY_POSITIONS_EXPORT_PATH := "user://hanse_city_positions.json"
-const EDITOR_VERSION := "0.2.59-route-target-position-overrides"
+const MAP_BACKGROUND_OVERRIDE_PATH := "user://custom_map_background.png"
+const NAVIGATION_WATERWAYS_OVERRIDE_PATH := "user://custom_navigation_waterways.json"
+const EDITOR_VERSION := "0.2.73-crisp-map-city-labels"
 const POPULATION_GROUP_DISTRIBUTION_BY_KIND := {
 	"core": {"poor": 0.40, "craftsmen": 0.35, "burghers": 0.20, "patricians": 0.05},
 	"kontor": {"poor": 0.35, "craftsmen": 0.25, "burghers": 0.30, "patricians": 0.10},
@@ -57,21 +59,42 @@ var position_status_label: Label
 var population_spinbox: SpinBox
 var population_group_total_label: Label
 var export_status_label: Label
+var debug_status_label: Label
+var map_background_status_label: Label
+var map_file_dialog: FileDialog
+var navigation_debug_toggle: CheckButton
+var waterway_edit_toggle: CheckButton
+var waterway_mode_option: OptionButton
+var waterway_brush_spinbox: SpinBox
+var waterway_status_label: Label
+var city_position_autosave_timer: Timer
 var city_checkboxes: Dictionary = {}
 var city_value_controls: Dictionary = {}
 var population_group_controls: Dictionary = {}
 var city_base_values: Dictionary = {}
 var selected_editor_city_id: String = ""
 var placed_editor_city_ids: Array[String] = []
+var deleted_editor_city_ids: Array[String] = []
 var is_refreshing_value_controls: bool = false
 
 func _ready() -> void:
 	var loader := CatalogLoader.new()
 	catalog = loader.load_all()
+	deleted_editor_city_ids = _string_array_from_variant(catalog.get("deleted_city_ids", []))
 	_initialize_city_base_values()
+	_initialize_active_editor_city_ids()
 
 	_build_layout()
+	_build_city_position_autosave_timer()
+	_build_map_file_dialog()
 	_refresh_map_editor()
+
+func _build_city_position_autosave_timer() -> void:
+	city_position_autosave_timer = Timer.new()
+	city_position_autosave_timer.one_shot = true
+	city_position_autosave_timer.wait_time = 0.35
+	city_position_autosave_timer.timeout.connect(_on_city_position_autosave_timeout)
+	add_child(city_position_autosave_timer)
 
 func _build_layout() -> void:
 	var background := ColorRect.new()
@@ -106,6 +129,7 @@ func _build_layout() -> void:
 	map_view.set_layers(false, true)
 	map_view.editor_city_clicked.connect(_on_map_editor_city_clicked)
 	map_view.editor_city_position_changed.connect(_on_map_editor_city_position_changed)
+	map_view.navigation_waterway_changed.connect(_on_navigation_waterway_changed)
 	map_panel.add_child(map_view)
 
 	var sidebar_scroll := ScrollContainer.new()
@@ -194,6 +218,8 @@ func _build_map_editor_panel() -> Control:
 	content.add_child(editor_info_label)
 
 	content.add_child(HSeparator.new())
+	content.add_child(_build_debug_map_controls())
+	content.add_child(HSeparator.new())
 	content.add_child(_build_position_editor_controls())
 	content.add_child(HSeparator.new())
 	content.add_child(_build_city_values_panel())
@@ -203,6 +229,106 @@ func _build_map_editor_panel() -> Control:
 	_populate_city_checkboxes()
 
 	return panel
+
+func _build_debug_map_controls() -> Control:
+	var box := VBoxContainer.new()
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_theme_constant_override("separation", 6)
+
+	var heading := Label.new()
+	heading.text = "Debug und Karte"
+	heading.add_theme_font_size_override("font_size", 18)
+	box.add_child(heading)
+
+	navigation_debug_toggle = CheckButton.new()
+	navigation_debug_toggle.text = "Debugmodus"
+	navigation_debug_toggle.toggled.connect(_on_navigation_debug_toggled)
+	box.add_child(navigation_debug_toggle)
+
+	debug_status_label = Label.new()
+	debug_status_label.text = "Debug aus."
+	debug_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(debug_status_label)
+
+	var map_buttons := HBoxContainer.new()
+	map_buttons.add_theme_constant_override("separation", 8)
+	box.add_child(map_buttons)
+
+	var load_map := Button.new()
+	load_map.text = "Karte laden"
+	load_map.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	load_map.pressed.connect(_on_load_map_background_pressed)
+	map_buttons.add_child(load_map)
+
+	var reset_map := Button.new()
+	reset_map.text = "Standardkarte"
+	reset_map.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reset_map.pressed.connect(_on_reset_map_background_pressed)
+	map_buttons.add_child(reset_map)
+
+	map_background_status_label = Label.new()
+	map_background_status_label.text = "Aktuelle Karte: Standardkarte" if not FileAccess.file_exists(MAP_BACKGROUND_OVERRIDE_PATH) else "Aktuelle Karte: user://custom_map_background.png"
+	map_background_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(map_background_status_label)
+
+	box.add_child(HSeparator.new())
+
+	waterway_edit_toggle = CheckButton.new()
+	waterway_edit_toggle.text = "Wasserwege bearbeiten"
+	waterway_edit_toggle.toggled.connect(_on_waterway_edit_toggled)
+	box.add_child(waterway_edit_toggle)
+
+	var waterway_mode_row := HBoxContainer.new()
+	waterway_mode_row.add_theme_constant_override("separation", 8)
+	box.add_child(waterway_mode_row)
+
+	waterway_mode_option = OptionButton.new()
+	waterway_mode_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	waterway_mode_option.add_item("Wasser zeichnen", 0)
+	waterway_mode_option.add_item("Wasser entfernen", 1)
+	waterway_mode_option.item_selected.connect(_on_waterway_mode_selected)
+	waterway_mode_row.add_child(waterway_mode_option)
+
+	waterway_brush_spinbox = SpinBox.new()
+	waterway_brush_spinbox.min_value = 1
+	waterway_brush_spinbox.max_value = 8
+	waterway_brush_spinbox.step = 1
+	waterway_brush_spinbox.value = 2
+	waterway_brush_spinbox.custom_minimum_size = Vector2(82, 0)
+	waterway_brush_spinbox.value_changed.connect(_on_waterway_brush_changed)
+	waterway_mode_row.add_child(waterway_brush_spinbox)
+
+	var waterway_buttons := HBoxContainer.new()
+	waterway_buttons.add_theme_constant_override("separation", 8)
+	box.add_child(waterway_buttons)
+
+	var save_waterways := Button.new()
+	save_waterways.text = "Wasserwege speichern"
+	save_waterways.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	save_waterways.pressed.connect(_on_save_waterways_pressed)
+	waterway_buttons.add_child(save_waterways)
+
+	var reset_waterways := Button.new()
+	reset_waterways.text = "Zuruecksetzen"
+	reset_waterways.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reset_waterways.pressed.connect(_on_reset_waterways_pressed)
+	waterway_buttons.add_child(reset_waterways)
+
+	waterway_status_label = Label.new()
+	waterway_status_label.text = _waterway_status_text({})
+	waterway_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(waterway_status_label)
+
+	return box
+
+func _build_map_file_dialog() -> void:
+	map_file_dialog = FileDialog.new()
+	map_file_dialog.title = "Kartenbild waehlen"
+	map_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	map_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	map_file_dialog.filters = PackedStringArray(["*.png, *.jpg, *.jpeg ; Bilddateien"])
+	map_file_dialog.file_selected.connect(_on_map_background_file_selected)
+	add_child(map_file_dialog)
 
 func _build_position_editor_controls() -> Control:
 	var box := VBoxContainer.new()
@@ -389,13 +515,13 @@ func _build_export_controls() -> Control:
 	export_box.add_theme_constant_override("separation", 6)
 
 	var save_button := Button.new()
-	save_button.text = "Custom-Karte speichern"
+	save_button.text = "Hauptkarte speichern"
 	save_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	save_button.pressed.connect(_on_save_custom_map_pressed)
 	export_box.add_child(save_button)
 
 	export_status_label = Label.new()
-	export_status_label.text = "Speichert ausgewaehlte Staedte mit Grundwerten."
+	export_status_label.text = "Speichert die aktive Hauptspielkarte inklusive aktiver Staedte."
 	export_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	export_box.add_child(export_status_label)
 
@@ -403,6 +529,8 @@ func _build_export_controls() -> Control:
 
 func _populate_city_checkboxes() -> void:
 	var hanse_cities: Array = catalog.get("hanse_cities", [])
+	for child in city_checkbox_list.get_children():
+		child.queue_free()
 	city_checkboxes.clear()
 
 	if hanse_cities.is_empty():
@@ -412,18 +540,77 @@ func _populate_city_checkboxes() -> void:
 	for city_entry in hanse_cities:
 		var city: Dictionary = city_entry
 		var city_id := String(city.get("id", ""))
+		var row := HBoxContainer.new()
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_theme_constant_override("separation", 4)
+		city_checkbox_list.add_child(row)
+
 		var checkbox := CheckBox.new()
 		checkbox.text = "%s - %s" % [city.get("name", ""), _editor_city_kind_label(String(city.get("kind", "")))]
 		checkbox.focus_mode = Control.FOCUS_NONE
+		checkbox.custom_minimum_size = Vector2(0, 24)
 		checkbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		checkbox.add_theme_font_size_override("font_size", 12)
+		checkbox.add_theme_color_override("font_color", Color(0.74, 0.77, 0.72))
+		checkbox.add_theme_color_override("font_hover_color", Color(0.90, 0.88, 0.78))
+		checkbox.add_theme_color_override("font_pressed_color", Color(0.96, 0.90, 0.62))
+		checkbox.add_theme_constant_override("h_separation", 4)
 		checkbox.toggled.connect(_on_editor_city_toggled.bind(city_id))
-		city_checkbox_list.add_child(checkbox)
+		checkbox.set_pressed_no_signal(placed_editor_city_ids.has(city_id))
+		row.add_child(checkbox)
 		city_checkboxes[city_id] = checkbox
+
+		var delete_button := Button.new()
+		delete_button.text = "x"
+		delete_button.tooltip_text = "Stadt loeschen"
+		delete_button.focus_mode = Control.FOCUS_NONE
+		delete_button.custom_minimum_size = Vector2(26, 24)
+		delete_button.add_theme_font_size_override("font_size", 12)
+		delete_button.add_theme_color_override("font_color", Color(0.70, 0.52, 0.48))
+		delete_button.add_theme_color_override("font_hover_color", Color(0.95, 0.68, 0.58))
+		delete_button.add_theme_stylebox_override("normal", _compact_city_button_style(Color(0.12, 0.12, 0.11, 0.18), Color(0.34, 0.30, 0.26, 0.30)))
+		delete_button.add_theme_stylebox_override("hover", _compact_city_button_style(Color(0.18, 0.11, 0.10, 0.34), Color(0.54, 0.35, 0.30, 0.55)))
+		delete_button.add_theme_stylebox_override("pressed", _compact_city_button_style(Color(0.24, 0.12, 0.10, 0.45), Color(0.70, 0.42, 0.34, 0.70)))
+		delete_button.pressed.connect(_on_delete_editor_city_pressed.bind(city_id))
+		row.add_child(delete_button)
+
+func _compact_city_button_style(background_color: Color, border_color: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = background_color
+	style.border_color = border_color
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 3
+	style.corner_radius_top_right = 3
+	style.corner_radius_bottom_left = 3
+	style.corner_radius_bottom_right = 3
+	return style
 
 func _add_editor_city_point(city_id: String) -> void:
 	if city_id.is_empty() or placed_editor_city_ids.has(city_id):
 		return
 	placed_editor_city_ids.append(city_id)
+
+func _initialize_active_editor_city_ids() -> void:
+	placed_editor_city_ids.clear()
+	for city_entry in catalog.get("cities", []):
+		var city: Dictionary = city_entry
+		var city_id := String(city.get("id", ""))
+		if city_id.is_empty() or _editor_city_by_id(city_id).is_empty():
+			continue
+		_add_editor_city_point(city_id)
+
+	if placed_editor_city_ids.is_empty():
+		for city_entry in catalog.get("hanse_cities", []):
+			var city: Dictionary = city_entry
+			_add_editor_city_point(String(city.get("id", "")))
+			if placed_editor_city_ids.size() >= 5:
+				break
+
+	if not placed_editor_city_ids.is_empty():
+		selected_editor_city_id = placed_editor_city_ids[0]
 
 func _refresh_map_editor() -> void:
 	if map_view != null:
@@ -505,6 +692,130 @@ func _editor_city_by_id(city_id: String) -> Dictionary:
 		if city.get("id", "") == city_id:
 			return city
 	return {}
+
+func _string_array_from_variant(value: Variant) -> Array[String]:
+	var result: Array[String] = []
+	if typeof(value) != TYPE_ARRAY:
+		return result
+
+	for entry in value:
+		var text := String(entry)
+		if not text.is_empty() and not result.has(text):
+			result.append(text)
+	return result
+
+func _remove_city_from_catalog_array(array_key: String, city_id: String) -> void:
+	var source_cities: Array = catalog.get(array_key, [])
+	var filtered_cities: Array = []
+	for city_entry in source_cities:
+		var city: Dictionary = city_entry
+		if String(city.get("id", "")) != city_id:
+			filtered_cities.append(city)
+	catalog[array_key] = filtered_cities
+
+func _first_placed_city_id() -> String:
+	for city_id in placed_editor_city_ids:
+		if not _editor_city_by_id(city_id).is_empty():
+			return city_id
+	return ""
+
+func _sync_map_editor_catalog() -> void:
+	if map_view != null:
+		map_view.set_catalog(catalog)
+
+func _on_navigation_debug_toggled(is_enabled: bool) -> void:
+	if map_view != null:
+		map_view.set_navigation_debug_visible(is_enabled)
+	if debug_status_label != null:
+		debug_status_label.text = "Debug an: Wasserwege und Routen zur ausgewaehlten Stadt sichtbar. Pro Stadt gibt es nur den beweglichen Wasser-Stadtmarker." if is_enabled else "Debug aus."
+
+func _on_waterway_edit_toggled(is_enabled: bool) -> void:
+	if map_view != null:
+		map_view.set_navigation_waterway_edit_enabled(is_enabled)
+		if is_enabled:
+			map_view.set_navigation_debug_visible(true)
+			if navigation_debug_toggle != null:
+				navigation_debug_toggle.set_pressed_no_signal(true)
+	if waterway_status_label != null:
+		var summary: Dictionary = map_view.manual_navigation_summary() if map_view != null else {}
+		waterway_status_label.text = _waterway_status_text(summary) if not is_enabled else "%s Linke Maustaste zeichnet direkt auf der Karte." % _waterway_status_text(summary)
+	if debug_status_label != null and is_enabled:
+		debug_status_label.text = "Debug an: Wasserwege koennen jetzt direkt auf der Karte bearbeitet werden."
+
+func _on_waterway_mode_selected(index: int) -> void:
+	if map_view == null:
+		return
+	map_view.set_navigation_waterway_edit_mode("remove" if index == 1 else "add")
+	if waterway_status_label != null:
+		waterway_status_label.text = _waterway_status_text(map_view.manual_navigation_summary())
+
+func _on_waterway_brush_changed(value: float) -> void:
+	if map_view != null:
+		map_view.set_navigation_waterway_brush_radius(int(value))
+
+func _on_navigation_waterway_changed(summary: Dictionary) -> void:
+	if waterway_status_label != null:
+		waterway_status_label.text = _waterway_status_text(summary)
+
+func _on_save_waterways_pressed() -> void:
+	if map_view == null:
+		return
+	if map_view.save_manual_navigation_waterways():
+		waterway_status_label.text = "%s Gespeichert: %s" % [
+			_waterway_status_text(map_view.manual_navigation_summary()),
+			ProjectSettings.globalize_path(NAVIGATION_WATERWAYS_OVERRIDE_PATH)
+		]
+	else:
+		waterway_status_label.text = "Wasserwege konnten nicht gespeichert werden: %s" % FileAccess.get_open_error()
+
+func _on_reset_waterways_pressed() -> void:
+	if map_view == null:
+		return
+	map_view.reset_manual_navigation_waterways()
+	waterway_status_label.text = "Manuelle Wasserwege zurueckgesetzt."
+
+func _waterway_status_text(summary: Dictionary) -> String:
+	var added := int(summary.get("added_cells", 0))
+	var removed := int(summary.get("removed_cells", 0))
+	var save_hint := " gespeichert" if FileAccess.file_exists(NAVIGATION_WATERWAYS_OVERRIDE_PATH) else ""
+	return "Manuelle Wasserwege%s: +%d / -%d Rasterzellen. Pinselgroesse rechts." % [save_hint, added, removed]
+
+func _on_load_map_background_pressed() -> void:
+	if map_file_dialog != null:
+		map_file_dialog.popup_centered_ratio(0.72)
+
+func _on_map_background_file_selected(path: String) -> void:
+	var image := Image.new()
+	var load_error := image.load(path)
+	if load_error != OK:
+		if map_background_status_label != null:
+			map_background_status_label.text = "Karte konnte nicht geladen werden: %s" % path
+		return
+
+	var save_error := image.save_png(MAP_BACKGROUND_OVERRIDE_PATH)
+	if save_error != OK:
+		if map_background_status_label != null:
+			map_background_status_label.text = "Karte konnte nicht gespeichert werden: %s" % ProjectSettings.globalize_path(MAP_BACKGROUND_OVERRIDE_PATH)
+		return
+
+	if map_view != null and not map_view.set_map_texture_from_path(MAP_BACKGROUND_OVERRIDE_PATH):
+		if map_background_status_label != null:
+			map_background_status_label.text = "Karte wurde gespeichert, aber die Vorschau konnte nicht geladen werden."
+		return
+
+	if map_background_status_label != null:
+		map_background_status_label.text = "Aktuelle Karte: %s" % ProjectSettings.globalize_path(MAP_BACKGROUND_OVERRIDE_PATH)
+
+func _on_reset_map_background_pressed() -> void:
+	if map_view != null:
+		map_view.reset_map_texture()
+
+	if FileAccess.file_exists(MAP_BACKGROUND_OVERRIDE_PATH):
+		var absolute_path := ProjectSettings.globalize_path(MAP_BACKGROUND_OVERRIDE_PATH)
+		DirAccess.remove_absolute(absolute_path)
+
+	if map_background_status_label != null:
+		map_background_status_label.text = "Aktuelle Karte: Standardkarte"
 
 func _editor_city_kind_label(kind: String) -> String:
 	match kind:
@@ -697,16 +1008,52 @@ func _build_custom_map_export_data() -> Dictionary:
 
 	return {
 		"version": EDITOR_VERSION,
+		"mode": "main_game_default_map",
+		"map_background": MAP_BACKGROUND_OVERRIDE_PATH if FileAccess.file_exists(MAP_BACKGROUND_OVERRIDE_PATH) else "",
+		"navigation_waterways": NAVIGATION_WATERWAYS_OVERRIDE_PATH if FileAccess.file_exists(NAVIGATION_WATERWAYS_OVERRIDE_PATH) else "",
+		"deleted_city_ids": deleted_editor_city_ids,
 		"cities": exported_cities
 	}
 
 func _on_editor_city_toggled(is_checked: bool, city_id: String) -> void:
+	if _editor_city_by_id(city_id).is_empty():
+		return
+
 	selected_editor_city_id = city_id
 	if is_checked:
 		_add_editor_city_point(city_id)
 	else:
 		placed_editor_city_ids.erase(city_id)
 	_refresh_map_editor()
+
+func _on_delete_editor_city_pressed(city_id: String) -> void:
+	var city := _editor_city_by_id(city_id)
+	if city.is_empty():
+		return
+
+	var city_name := String(city.get("name", city_id))
+	_remove_city_from_catalog_array("hanse_cities", city_id)
+	_remove_city_from_catalog_array("cities", city_id)
+	placed_editor_city_ids.erase(city_id)
+	if not deleted_editor_city_ids.has(city_id):
+		deleted_editor_city_ids.append(city_id)
+	city_base_values.erase(city_id)
+
+	if selected_editor_city_id == city_id:
+		selected_editor_city_id = _first_placed_city_id()
+
+	_populate_city_checkboxes()
+	for placed_city_id in placed_editor_city_ids:
+		if city_checkboxes.has(placed_city_id):
+			city_checkboxes[placed_city_id].set_pressed_no_signal(true)
+
+	_sync_map_editor_catalog()
+	if export_status_label != null:
+		export_status_label.text = "Geloescht: %s" % city_name
+	if position_status_label != null:
+		position_status_label.text = "Stadt entfernt: %s" % city_name
+	_refresh_map_editor()
+	_save_default_main_map(false)
 
 func _on_clear_editor_cities_pressed() -> void:
 	placed_editor_city_ids.clear()
@@ -741,6 +1088,9 @@ func _on_map_editor_city_clicked(city_id: String) -> void:
 func _on_position_edit_toggled(is_enabled: bool) -> void:
 	if map_view != null:
 		map_view.set_editor_position_edit_enabled(is_enabled)
+	if not is_enabled and city_position_autosave_timer != null and not city_position_autosave_timer.is_stopped():
+		city_position_autosave_timer.stop()
+		_save_city_positions(false)
 	if position_status_label != null:
 		position_status_label.text = "Positionsmodus aktiv." if is_enabled else "Positionsmodus aus."
 
@@ -753,12 +1103,22 @@ func _on_map_editor_city_position_changed(city_id: String, position: Dictionary)
 		checkbox.set_pressed_no_signal(true)
 
 	if position_status_label != null:
-		position_status_label.text = "%s: %d / %d" % [
+		position_status_label.text = "%s: %d / %d | Auf Wasserpunkt gesetzt, Pathing wird angepasst." % [
 			String(_editor_city_by_id(city_id).get("name", city_id)),
 			int(position.get("x", 0)),
 			int(position.get("y", 0))
 		]
+	_schedule_city_position_autosave()
 	_refresh_map_editor()
+
+func _schedule_city_position_autosave() -> void:
+	if city_position_autosave_timer == null:
+		_save_city_positions(false)
+		return
+	city_position_autosave_timer.start()
+
+func _on_city_position_autosave_timeout() -> void:
+	_save_city_positions(false)
 
 func _set_city_position(city_id: String, position: Dictionary) -> void:
 	var normalized_position := {
@@ -780,6 +1140,9 @@ func _set_city_position(city_id: String, position: Dictionary) -> void:
 		map_view.set_editor_city_position(city_id, normalized_position)
 
 func _on_save_city_positions_pressed() -> void:
+	_save_city_positions(true)
+
+func _save_city_positions(show_success_status: bool) -> bool:
 	var positions: Array[Dictionary] = []
 	for city_entry in catalog.get("hanse_cities", []):
 		var city: Dictionary = city_entry
@@ -792,14 +1155,18 @@ func _on_save_city_positions_pressed() -> void:
 	var file := FileAccess.open(CITY_POSITIONS_EXPORT_PATH, FileAccess.WRITE)
 	if file == null:
 		position_status_label.text = "Speichern fehlgeschlagen: %s" % FileAccess.get_open_error()
-		return
+		return false
 
 	file.store_string(JSON.stringify({
 		"version": EDITOR_VERSION,
 		"positions": positions
 	}, "\t"))
 	file.close()
-	position_status_label.text = "Gespeichert: %s" % ProjectSettings.globalize_path(CITY_POSITIONS_EXPORT_PATH)
+	if show_success_status:
+		position_status_label.text = "Gespeichert: %s" % ProjectSettings.globalize_path(CITY_POSITIONS_EXPORT_PATH)
+	else:
+		position_status_label.text = "Position automatisch gespeichert. Schiffe nutzen den befahrbaren Hafenpunkt."
+	return true
 
 func _on_city_population_changed(value: float) -> void:
 	if is_refreshing_value_controls or selected_editor_city_id.is_empty():
@@ -847,11 +1214,21 @@ func _on_save_custom_map_pressed() -> void:
 		export_status_label.text = "Keine Staedte ausgewaehlt."
 		return
 
+	if _save_default_main_map(true):
+		_save_city_positions(false)
+
+func _save_default_main_map(show_success_status: bool) -> bool:
 	var file := FileAccess.open(CITY_VALUES_EXPORT_PATH, FileAccess.WRITE)
 	if file == null:
-		export_status_label.text = "Speichern fehlgeschlagen: %s" % FileAccess.get_open_error()
-		return
+		if export_status_label != null:
+			export_status_label.text = "Speichern fehlgeschlagen: %s" % FileAccess.get_open_error()
+		return false
 
 	file.store_string(JSON.stringify(_build_custom_map_export_data(), "\t"))
 	file.close()
-	export_status_label.text = "Gespeichert: %s" % ProjectSettings.globalize_path(CITY_VALUES_EXPORT_PATH)
+	if export_status_label != null:
+		if show_success_status:
+			export_status_label.text = "Hauptkarte gespeichert: %s" % ProjectSettings.globalize_path(CITY_VALUES_EXPORT_PATH)
+		else:
+			export_status_label.text = "Hauptkarte automatisch aktualisiert: %s" % ProjectSettings.globalize_path(CITY_VALUES_EXPORT_PATH)
+	return true

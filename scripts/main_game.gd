@@ -352,11 +352,12 @@ func _index_ship_types() -> void:
 		ship_type_by_id[String(ship_type.get("id", ""))] = ship_type
 
 func _initialize_player_ship() -> void:
-	var start_position: Dictionary = map_view.get_city_harbor_position(PLAYER_START_CITY_ID) if map_view != null else {"x": 0.0, "y": 0.0}
+	var start_city_id := _player_start_city_id()
+	var start_position: Dictionary = map_view.get_city_harbor_position(start_city_id) if map_view != null and not start_city_id.is_empty() else {"x": 0.0, "y": 0.0}
 	player_ship = {
 		"name": "Spieler",
 		"ship_type": PLAYER_SHIP_TYPE_ID,
-		"current_city": PLAYER_START_CITY_ID,
+		"current_city": start_city_id,
 		"target_city": "",
 		"position": start_position,
 		"path_points": [start_position],
@@ -366,6 +367,24 @@ func _initialize_player_ship() -> void:
 		"is_travelling": false,
 		"cargo": {},
 	}
+
+func _player_start_city_id() -> String:
+	if _catalog_has_city(PLAYER_START_CITY_ID):
+		return PLAYER_START_CITY_ID
+
+	for city_entry in catalog.get("cities", []):
+		var city: Dictionary = city_entry
+		var city_id := String(city.get("id", ""))
+		if not city_id.is_empty():
+			return city_id
+	return ""
+
+func _catalog_has_city(city_id: String) -> bool:
+	for city_entry in catalog.get("cities", []):
+		var city: Dictionary = city_entry
+		if String(city.get("id", "")) == city_id:
+			return true
+	return false
 
 func _on_map_right_clicked(source_position: Dictionary, city_id: String, is_water: bool) -> void:
 	if player_ship.is_empty():
@@ -1277,6 +1296,8 @@ func _map_ship_entries() -> Array:
 			"name": String(player_ship.get("name", "Spieler")),
 			"position": player_ship.get("position", {}),
 			"path_points": player_ship.get("path_points", [player_ship.get("position", {})]),
+			"current_city": String(player_ship.get("current_city", "")),
+			"is_travelling": bool(player_ship.get("is_travelling", false)),
 			"progress": _player_progress(),
 			"color": Color(1.0, 1.0, 1.0, 1.0),
 			"is_player": true,
@@ -1285,6 +1306,8 @@ func _map_ship_entries() -> Array:
 		var ship: Dictionary = ship_entry
 		ships.append({
 			"name": String(ship.get("name", "")),
+			"current_city": String(ship.get("current_city", "")),
+			"is_travelling": true,
 			"from": _ship_from_city(ship),
 			"to": _ship_to_city(ship),
 			"progress": _ship_progress(ship),
